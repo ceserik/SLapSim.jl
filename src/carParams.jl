@@ -13,11 +13,12 @@ mutable struct carParameters{T}
     motorForce::carParameter
     CL::carParameter
     CD::carParameter
+    speed::carParameter
 end
 
 # Constructor
-function carParameters(mass::carParameter{T}, motorForce::carParameter{T}, CL::carParameter{T}, CD::carParameter{T}) where T
-    carParameters{T}(mass, motorForce, CL, CD)
+function carParameters(mass::carParameter{T}, motorForce::carParameter{T}, CL::carParameter{T}, CD::carParameter{T}, speed::carParameter{T}) where T
+    carParameters{T}(mass, motorForce, CL, CD, speed)
 end
 
 # Define the Car struct with parameters
@@ -25,10 +26,11 @@ mutable struct Car
     carFunction
     carParameters
     controlMapping
+    stateMapping
 
     # Inner constructor
-    function Car(carFunction, carParameters, controlMapping = nothing)
-        new(carFunction, carParameters, controlMapping)
+    function Car(carFunction, carParameters, controlMapping = nothing, stateMapping = nothing)
+        new(carFunction, carParameters, controlMapping,stateMapping)
     end
 end
 
