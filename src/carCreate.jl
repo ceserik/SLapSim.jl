@@ -8,6 +8,7 @@ function createCTU25()
     CL = carParameter(5.0, "Lift Coefficient", "-")
     CD = carParameter(2.0, "Drag Coefficient", "-")
     speed = carParameter(15.0,"Speed X","m/s")
+    powerLimit = carParameter(80000.0,"PowerLimit","W")
 
     p = carParameters(
         mass,
@@ -15,6 +16,7 @@ function createCTU25()
         CL,
         CD,
         speed,
+        powerLimit
     )
 
     function controlMapping(input, controls)

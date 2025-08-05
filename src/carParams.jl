@@ -14,11 +14,18 @@ mutable struct carParameters{T}
     CL::carParameter
     CD::carParameter
     speed::carParameter
+    powerLimit::carParameter
 end
 
 # Constructor
-function carParameters(mass::carParameter{T}, motorForce::carParameter{T}, CL::carParameter{T}, CD::carParameter{T}, speed::carParameter{T}) where T
-    carParameters{T}(mass, motorForce, CL, CD, speed)
+function carParameters(
+    mass::carParameter{T},
+    motorForce::carParameter{T},
+    CL::carParameter{T},
+    CD::carParameter{T},
+    speed::carParameter{T},
+    powerLimit::carParameter{T}) where T
+    carParameters{T}(mass, motorForce, CL, CD, speed,powerLimit)
 end
 
 # Define the Car struct with parameters

@@ -12,18 +12,6 @@ model = Model(Ipopt.Optimizer)
 #car.mass.value = @variable(model,u)
 #out = car.controlMapping(car.carParameters,[@variable(model,u1),@variable(model,u2)])
 
-struct track
-    curvature
-    rho
-    μ
-end
-
-trackParameters = track(
-    4,
-    1.225,
-    1
-)
-
 
 
 inputs = car.controlMapping(car.carParameters,[@variable(model,u),2])

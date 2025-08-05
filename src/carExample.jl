@@ -6,9 +6,10 @@ function massPointCar(car, parameters, trackParameters, optiModel=nothing)
     
     # Get parameters
     m = parameters.mass.value
-    FxMotor = parameters.motorForce.value
+    inputForce = parameters.motorForce.value
     CL = parameters.CL.value
     CD = parameters.CD.value
+    maxPower = parameters.powerLimit.value
     # Get state
     vx = parameters.speed.value
 
@@ -22,21 +23,21 @@ function massPointCar(car, parameters, trackParameters, optiModel=nothing)
     Fy = vx^2 * c
 
 
-    maxMotorForce = 6507
-    maxPower = 80000
+    maxMotorForce = 6507 #calculated for ctu25
+    
     
 
     #print(Fy)
     FxMax = sqrt((Fz*μ + m*9.81*μ)^2 - Fy^2)
     # Add optimization constraints if model is provided
     if optiModel !== nothing
-        @constraint(optiModel, FxMotor <= 1000)
-        @constraint(optiModel, FxMotor >= -1000)
-        @constraint(optiModel, Fx <= FxMax) #Fx = min(FxMotor, FxMax)
-        @constraint(optiModel, Fx <= FxMotor) #Fx = min(FxMotor, FxMax)
+        @constraint(optiModel, inputForce <= 1000)
+        @constraint(optiModel, inputForce >= -1000)
+        @constraint(optiModel, Fx <= FxMax) #Fx = min(inputForce, FxMax)
+        @constraint(optiModel, Fx <= inputForce) #Fx = min(inputForce, FxMax)
     
     else
-        Fx = min(FxMotor, FxMax)
+        Fx = min(inputForce, FxMax)
         Fx = max(Fx, -FxMax)
 
         Fx = min(Fx,maxMotorForce)
