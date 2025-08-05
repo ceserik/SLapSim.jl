@@ -3,10 +3,10 @@ include("carParams.jl")
 
 #Simple mass point model
 function createCTU25()
-    mass = carParameter(150.0, "Mass", "kg")
+    mass = carParameter(280.0, "Mass", "kg")
     motorForce = carParameter(1000.0, "motorForce", "N")
-    CL = carParameter(2.8, "Lift Coefficient", "-")
-    CD = carParameter(1.0, "Drag Coefficient", "-")
+    CL = carParameter(5.0, "Lift Coefficient", "-")
+    CD = carParameter(2.0, "Drag Coefficient", "-")
     speed = carParameter(15.0,"Speed X","m/s")
 
     p = carParameters(
@@ -17,17 +17,15 @@ function createCTU25()
         speed,
     )
 
-    function controlMapping(params, controls)
-        paramcopy = deepcopy(params)
-        paramcopy.motorForce.value = controls[1]  
+    function controlMapping(input, controls)
+        input.motorForce.value = controls[1]  
         #paramcopy.CL.value = controls[2]
-        return paramcopy
+        return input
     end
 
-    function stateMapping(params,states)
-        paramcopy = deepcopy(params)
-        paramcopy.speed.value = states[1]
-        return paramcopy
+    function stateMapping(input,states)
+        input.speed.value = states[1]
+        return input
     end
     car = Car(
         massPointCar,

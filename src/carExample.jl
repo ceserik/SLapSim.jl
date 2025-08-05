@@ -15,11 +15,17 @@ function massPointCar(car, parameters, trackParameters, optiModel=nothing)
     # Get track parameters
     c = trackParameters.curvature
     rho = trackParameters.rho
-    μ = trackParameters.μ
+    μ = trackParameters.μ*1
 
     # Calculate forces
     Fz = 1/2 * rho * CL * vx^2
     Fy = vx^2 * c
+
+
+    maxMotorForce = 6507
+    maxPower = 80000
+    
+
     #print(Fy)
     FxMax = sqrt((Fz*μ + m*9.81*μ)^2 - Fy^2)
     # Add optimization constraints if model is provided
@@ -31,6 +37,17 @@ function massPointCar(car, parameters, trackParameters, optiModel=nothing)
     
     else
         Fx = min(FxMotor, FxMax)
+        Fx = max(Fx, -FxMax)
+
+        Fx = min(Fx,maxMotorForce)
+
+        #power limitation
+        FxPowerMax = maxPower/vx
+
+        Fx = min(Fx,FxPowerMax)
+        
+        
+        Fx -= 1/2 *rho*CL*vx^2
     end
 
 
