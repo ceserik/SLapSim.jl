@@ -8,14 +8,14 @@ function massPointCar(car, parameters, trackParameters, optiModel=nothing)
     m = parameters.mass.value
     FxMotor = parameters.motorForce.value
     CL = parameters.CL.value
-    
+    CD = parameters.CD.value
     # Get state
     vx = parameters.speed.value
 
     # Get track parameters
     c = trackParameters.curvature
     rho = trackParameters.rho
-    μ = trackParameters.μ*1
+    μ = trackParameters.μ
 
     # Calculate forces
     Fz = 1/2 * rho * CL * vx^2
@@ -47,7 +47,7 @@ function massPointCar(car, parameters, trackParameters, optiModel=nothing)
         Fx = min(Fx,FxPowerMax)
         
         
-        Fx -= 1/2 *rho*CL*vx^2
+        Fx -= 1/2 *rho*CD*vx^2
     end
 
 

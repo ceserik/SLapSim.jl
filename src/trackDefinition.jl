@@ -3,6 +3,7 @@ mutable struct Track{T<:Real, F<:Function}
     curvature
     rho::T
     μ::T
+    samplingDistance::T
     mapping::F
 end
 
@@ -14,16 +15,17 @@ end
 # Constructor for a simple track with default parameters
 function simpleTrack(;
     straight_length::Int = 100,
-    clothoid_points::Int = 5,
+    clothoid_points::Int = 50,
     circle_length::Int = 100,
     straight_length2::Int = 100,
     ρ::Real = 1.225,  # air density
-    μ::Real = 1.0     # friction coefficient
+    μ::Real = 0.5,     # friction coefficient
+    samplingDistance = 1.0
 )
     # Define track segments
     straight = fill(0.0001, straight_length)
-    clothoid = LinRange(0.0, 1/15, clothoid_points)
-    circle = fill(1/15, circle_length)
+    clothoid = LinRange(0.0, 1/10, clothoid_points)
+    circle = fill(1/10, circle_length)
     straight2 = fill(0.0001, straight_length2)
     
     # Combine segments into full track
@@ -34,6 +36,7 @@ function simpleTrack(;
         curvature,
         ρ,
         μ,
+        samplingDistance,
         trackMapping
     )
 end
