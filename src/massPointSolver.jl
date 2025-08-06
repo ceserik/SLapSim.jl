@@ -3,7 +3,7 @@ include("carCreate.jl")
 include("trackDefinition.jl")
 # solver solves first forward pass, then bakcward pass and takes minimums of speeds
 car = createCTU25()
-track = simpleTrack()
+track = singleTurn()
 
 
 
@@ -26,10 +26,7 @@ function massPointSolver(car, track)
 
     #forward pass
     for i = 1:length(track.curvature)-1
-        car.controlMapping(inputs, [99999, 0])
-        car.stateMapping(inputs, vForward[i])
-
-        track.mapping(track, trackCopy, i)
+        car.mapping(inputs,track,trackCopy,[99999],vForward[i],i)
         dv = car.carFunction(car, inputs, trackCopy)[1]
         dv = max(0, dv)
         v = sqrt(vForward[i]^2 + 2 * dv * Δs)
@@ -41,10 +38,7 @@ function massPointSolver(car, track)
     #backward pass
     vBackward = deepcopy(vxMax)
     for i = length(track.curvature):-1:2
-        car.controlMapping(inputs, [-99999, 0])
-        car.stateMapping(inputs, vBackward[i])
-
-        track.mapping(track, trackCopy, i)
+        car.mapping(inputs,track,trackCopy,[-99999],vBackward[i],i)
         dv = car.carFunction(car, inputs, trackCopy)[1]
         v = sqrt(vBackward[i]^2 - 2 * dv * Δs)
 
@@ -68,3 +62,6 @@ function massPointSolver(car, track)
     f
 
 end
+
+
+massPointSolver(car,track)
