@@ -8,6 +8,10 @@ mutable struct Track
     x::Any
     y::Any
     theta::Any
+    widthR::Any
+    widthL::Any
+    inclination::Any
+    slope::Any
 end
 
 # Define a function to sample track properties at a given index

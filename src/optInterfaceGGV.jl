@@ -76,7 +76,7 @@ initial = [4; 0; 0; 0; 0; 0]
 #set initial states
 #@constraint(model,X[1,:] .== initial)
 
-@constraint(model,X[1,1] .== 4)
+@constraint(model,X[1,1] .== 1)
 @constraint(model,X[1,6] .>= 0)
 @constraint(model,diff(X[:,6]) .>=0)
 
@@ -85,10 +85,10 @@ initial = [4; 0; 0; 0; 0; 0]
 optimize!(model)
 
 # Plotting the results
-fig = Figure()
+fig = Figure(resolution = (800, 600))
 ax = Axis(fig[1, 1], xlabel = "Step", ylabel = "Velocity (vx)")
 lines!(ax, 1:N, value.(X[:,1]))
-display(fig)
+display(GLMakie.Screen(), fig)  # This creates a new window
 
 
 
