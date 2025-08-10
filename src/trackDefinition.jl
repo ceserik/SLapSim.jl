@@ -1,9 +1,11 @@
+using GLMakie
+#include("trackProcessing.jl")
 # Define the basic track structure with proper type annotations
 mutable struct Track
     curvature::Any
     rho::Any
     μ::Any
-    samplingDistance::Any
+    samplingDistance::Any #rename to sample distances
     mapping::Any
     x::Any
     y::Any
@@ -12,11 +14,15 @@ mutable struct Track
     widthL::Any
     inclination::Any
     slope::Any
+    fcurve::Any
+    s::Any
 end
 
 # Define a function to sample track properties at a given index
-function trackMapping(track::Track,trackCopy::Track ,index::Integer)
-    trackCopy.curvature = track.curvature[index]
+function trackMapping(track::Track,trackCopy::Track ,s)
+    #trackCopy.curvature = track.curvature[index]
+    trackCopy.curvature = interp1(track.samplingDistance,track.curvature,s)
+    trackCopy.theta = interp1(track.samplingDistance,track.theta,s)
 end
 
 # Constructor for a simple track with default parameters
@@ -47,6 +53,12 @@ function simpleTrack(;
         trackMapping,
         0,
         0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0
     )
 end
@@ -63,31 +75,52 @@ function singleTurn()
     straightX = zeros(straightLength)
     straightY = LinRange(0,straightLength,straightLength)
 
-    angle = LinRange(pi,0,30)
-    circleX = cos.(angle) .* circleRadius .+ circleRadius
-    circleY = sin.(angle) .* circleRadius .+ straightLength 
+    clothoidLength = 70
+    clothoidAngle = LinRange(pi/2, 0, clothoidLength)
+    clothoidX = zeros(clothoidLength)
+    clothoidY = zeros(clothoidLength)
 
-    X = [straightX; circleX]
-    Y = [straightY; circleY]
+    for i in 1:clothoidLength
+        s = i / clothoidLength
+        clothoidX[i] = circleRadius * s * cos(clothoidAngle[i])
+        clothoidY[i] = straightLength + circleRadius * s * sin(clothoidAngle[i])
+    end
+
+
+    X = [straightX; clothoidX]
+    Y = [straightY; clothoidY]
+
+    #angle = LinRange(pi,0,30)
+    #circleX = cos.(angle) .* circleRadius .+ circleRadius
+    #circleY = sin.(angle) .* circleRadius .+ straightLength 
+
+    #X = [straightX; circleX[1:end]]
+    #Y = [straightY.-1; circleY[1:end]]
     #lines(X,Y)
 
     #track should be smoothed and curvature should be calculated properly
     #for now curvature is hardcoded
 
-    curvature = [zeros(straightLength);fill(1/circleRadius,30)]
-    theta = [fill(pi/2,straightLength);collect(angle)]
+    #curvature = [zeros(straightLength);fill(1/circleRadius,30)]
+    #theta = [fill(pi/2,straightLength);collect(angle)]
     ## will be done automatically for future tracks
 
 
     track = Track(
-        curvature,
+        0,#curvature,
         1.225,
         1,
         1,#this is very wrong, 1 just for compatiblity, should be calculated with curvature and theta
         trackMapping,
         X,
         Y,
-        theta
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
         )
     return track
 end

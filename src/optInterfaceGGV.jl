@@ -3,7 +3,7 @@ using LinearAlgebra
 using JuMP, Ipopt, Zygote
 using ControlSystemsBase
 include("carCreate.jl")
-include("trackDefinition.jl")
+include("trackProcessing.jl")
 
 function f(s,u,x)
     car.mapping(instantCarParams,track,instantTrack,u,x,s)
@@ -13,15 +13,15 @@ end
 
 ## here I need to define trnasofmation of ODE with respect to time to ODE with respect to path
 function time2path(s,instantCarParams,instantTrack,car)
-    track.mapping(track,instantTrack,s)
+    #track.mapping(track,instantTrack,s)
     dxdt = car.carFunction(car,instantCarParams,instantTrack,model)
     v_x = instantCarParams.vx.value
     v_y = instantCarParams.vy.value
     psi = instantCarParams.psi.value
     n = instantCarParams.n.value
 
-    th = track.theta[s]
-    C = track.curvature[s]
+    th = instantTrack.theta
+    C = instantTrack.curvature
     # until better track model is added epsilon = 0
     #epsilon = psi-th #where psi is heading of car realtive to intertial frame, th is heading of track
 
@@ -44,6 +44,7 @@ end
 
 car = createCTU25()
 track = singleTurn()
+smooth_by_OCP(track,1e1,0.5)
 
 #the track is assumed to be discretized before
 
@@ -59,12 +60,12 @@ N = length(track.curvature)
 @variable(model,U[1:N-1])
 @variable(model,X[1:N,1:6], start = 10.0)
 
-N = 100
-s = 1:length(track.curvature)
+N = length(track.samplingDistance)
+s = track.samplingDistance#1:length(track.curvature)
 t_final = X[end,6]
 
 
-for k = 1:N-1 # loop over control intervals
+for k = 1:N-2 # loop over control intervals
     x_next = X[k,:] + (s[k+1]-s[k]) * f(s[k], U[k,:], X[k,:]);
     @constraint(model,X[k+1,:] .== x_next)
 end
@@ -87,7 +88,7 @@ optimize!(model)
 # Plotting the results
 fig = Figure(resolution = (800, 600))
 ax = Axis(fig[1, 1], xlabel = "Step", ylabel = "Velocity (vx)")
-lines!(ax, 1:N, value.(X[:,1]))
+lines!(ax, value.(X[:,1]))
 display(GLMakie.Screen(), fig)  # This creates a new window
 
 

@@ -1,6 +1,14 @@
 include("carExample.jl")
 include("carParams.jl")
 
+
+using Interpolations
+function interp1(X, V, Xq)
+    knots = (X,)
+    itp = interpolate(knots, V, Gridded(Linear()))
+    itp[Xq]
+end
+
 #Simple mass point model
 function createCTU25()
     mass = carParameter(280.0, "Mass", "kg")
@@ -34,8 +42,13 @@ function createCTU25()
     function mapping(carParams,track,trackCopy,controls,states,s)
         carParams.motorForce.value = controls[1]
         carParams.vx.value = states[1]
-        carParams.psi.value = track.theta[s]
-        trackCopy.curvature = track.curvature[s]
+
+        ## have to interpolate these makea function like in martinG laptimer
+        #interp1(track.samplingDistance,track.theta,s)
+        carParams.psi.value = interp1(track.samplingDistance,track.theta,s)
+        trackCopy.curvature = interp1(track.samplingDistance,track.curvature,s)
+        trackCopy.theta     = interp1(track.samplingDistance,track.theta,s)
+        ## interpolate these two
     end
 
     function stateMapping(input,states)

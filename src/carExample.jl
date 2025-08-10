@@ -31,8 +31,8 @@ function massPointCar(car, inputs, trackParameters, optiModel=nothing)
         FxPowerMax = maxPower/(vx)
 
         @constraint(optiModel,inputForce<=FxPowerMax)
-        #@constraint(optiModel, inputForce <= 1000)
-        #@constraint(optiModel, inputForce >= -1000)
+        #@constraint(optiModel, inputForce <= 4000)
+        #@constraint(optiModel, inputForce >= -10)
         #@constraint(optiModel, inputForce^2 <= FxMaxsquared) #Fx = min(inputForce, FxMax)
        # @constraint(optiModel, Fx <= inputForce) #Fx = min(inputForce, FxMax)
 
