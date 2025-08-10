@@ -1,3 +1,2 @@
-# SLapSim
-
-[![Build Status](https://github.com/ceserik/SLapSim.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/ceserik/SLapSim.jl/actions/workflows/CI.yml?query=branch%3Amain)
+# Scalable Laptime Simulator
+One simulator for multiple complexities of vehicle models
