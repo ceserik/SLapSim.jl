@@ -57,7 +57,7 @@ cas = 1000
 tfinal_0 = cas
 #determine sizes of inputs and states
 N = length(track.curvature)
-@variable(model,U[1:N-1])
+@variable(model,U[1:N-1],start = 10.0)
 @variable(model,X[1:N,1:6], start = 10.0)
 
 N = length(track.samplingDistance)

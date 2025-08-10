@@ -22,40 +22,25 @@ function massPointCar(car, inputs, trackParameters, optiModel=nothing)
     Fy = vx^2 * c*m
 
     maxMotorForce = 6507 #calculated for ctu25 should be added to inputs, vx torque characerisitic
-    
+    FxPowerMax = maxPower/(vx)
     #print(Fy)
     FxMaxsquared = max((Fz*μ + m*9.81*μ)^2 - Fy^2,0)
     # Add optimization constraints if model is provided
     if optiModel !== nothing
+        ## tu urobit funkciu do ktorej dam obmedzenie a ona mi o spravi aby som nemusel stale davat ify
+        ## aj ked to mozno je jedno lebo tento mass point bude mozno malo pouzivany?
         @constraint(optiModel, Fy^2 + inputForce^2 <= (Fz*μ + m*9.81*μ)^2)
-        FxPowerMax = maxPower/(vx)
-
         @constraint(optiModel,inputForce<=FxPowerMax)
-        #@constraint(optiModel, inputForce <= 4000)
-        #@constraint(optiModel, inputForce >= -10)
-        #@constraint(optiModel, inputForce^2 <= FxMaxsquared) #Fx = min(inputForce, FxMax)
-       # @constraint(optiModel, Fx <= inputForce) #Fx = min(inputForce, FxMax)
-
-       # Create return structure, these first 5 states are forced on all models
-       #[dvx dvy dpsi ddpsi dn]
-        dstates =  [inputForce/m 0  0  0 0]
     else
-        Fx = min(inputForce, sqrt(FxMaxsquared))
-        Fx = max(Fx, -sqrt(FxMaxsquared))
-        Fx = min(Fx,maxMotorForce)
-        #power limitation
-        FxPowerMax = maxPower/(vx+1)
-        Fx = min(Fx,FxPowerMax)
-        Fx -= 1/2 *rho*CD*vx^2
-#
-    #    # Create return structure, these first 5 states are forced on all models
-        dstates =  [Fx/m 0  0    0     0 0]
+        inputForce = min(inputForce, sqrt(FxMaxsquared))
+        inputForce = max(inputForce, -sqrt(FxMaxsquared))
+        inputForce = min(inputForce,maxMotorForce)
+        inputForce = min(inputForce,FxPowerMax)
+        
     end          # [dvx dvy dpsi ddpsi dn]
-    
-    
 
-    
-
+        #inputForce -= 1/2 *rho*CD*vx^2 #apply drag
+        dstates =  [(inputForce -(1/2 *rho*CD*vx^2))/m 0  0    0     0 0]
     return dstates
 
 end
