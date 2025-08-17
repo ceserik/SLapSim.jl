@@ -1,4 +1,5 @@
 using GLMakie
+using JuMP
 include("carCreate.jl")
 #include("trackDefinition.jl")
 include("trackProcessing.jl")
@@ -7,7 +8,9 @@ car = createCTU25()
 track = 0
 track = singleTurn()
 smooth_by_OCP(track,0.01,0.5)
-
+N = length(track.curvature)
+track.rho = fill(track.rho,N)
+track.μ   = fill(track.μ,N)
 
 function massPointSolver(car, track)
     Δs = diff(track.sampleDistances)
@@ -19,16 +22,16 @@ function massPointSolver(car, track)
 
     #maximum speed pass
     for i in eachindex(track.curvature)
-        numerator = car.carParameters.mass.value * 9.81 * track.μ
-        denominator = max(car.carParameters.mass.value * abs(track.curvature[i]) - 1 / 2 * track.rho * car.carParameters.CL.value, 0.000001)
+        numerator = car.carParameters.mass.value * 9.81 * track.μ[i]
+        denominator = max(car.carParameters.mass.value * abs(track.curvature[i]) - 1 / 2 * track.rho[i] * car.carParameters.CL.value, 0.000001)
         vxMax[i] = sqrt(numerator / denominator) 
         vxMax[i] = min(vxMax[i], 50)  # Speed limit
     end
 
     #forward pass
     for i = 1:length(track.curvature)-1
-        car.mapping(inputs,track,trackCopy,[99999],vForward[i],Δs[i])
-        dv = car.carFunction(car, inputs, trackCopy)[1]
+        car.mapping(car,[99999],vForward[i])
+        dv = car.carFunction(car,trackCopy,i)[1]
         dv = max(0, dv)
         v = sqrt(vForward[i]^2 + 2 * dv * Δs[i])
         vForward[i+1] = min(vxMax[i+1], v)
@@ -39,8 +42,8 @@ function massPointSolver(car, track)
     #backward pass
     vBackward = deepcopy(vxMax)
     for i = length(track.curvature)-1:-1:2
-        car.mapping(inputs,track,trackCopy,[-99999],vBackward[i],Δs[i])
-        dv = car.carFunction(car, inputs, trackCopy)[1]
+        car.mapping(car,[-99999],vBackward[i])
+        dv = car.carFunction(car,trackCopy,i)[1]
         v = sqrt(vBackward[i]^2 - 2 * dv * Δs[i])
 
         vBackward[i-1] = min(vxMax[i-1], v)
