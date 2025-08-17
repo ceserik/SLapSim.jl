@@ -2,13 +2,6 @@ using Interpolations
 using JuMP, Ipopt, Zygote
 using DSP
 include("trackDefinition.jl")
-#include("trackDefinition.jl")
-## Functions
-# sample track from X and Y data 
-# calculate vectors s, curvature, theta by OCP from the paper
-
-
-
 
 using Interpolations
 
@@ -38,7 +31,7 @@ function naiveProcessing(track)
 
     track.theta = theta
     track.curvature = curvature
-    track.samplingDistance = ds
+    track.sampleDistances = ds
     track.s = s
     
     return track
@@ -48,7 +41,7 @@ function interpolateTrack(instantTrack,track)
     th = [track.theta; track.theta[end]]
     curv = [track.curvature; track.curvature[end]]
 
-    s = [ 0.0 ;cumsum(track.samplingDistance)]
+    s = [ 0.0 ;cumsum(track.sampleDistances)]
     theta_itp = linear_interpolation(s,th)
     curv_itp  = linear_interpolation(s, curv)
 end
@@ -175,7 +168,7 @@ function smooth_by_OCP(track,r,ds)
     track.y = y_traj
     track.curvature = C_traj
     track.theta = th_traj
-    track.samplingDistance = s_traj
+    track.sampleDistances = s_traj
     lines(track.x,track.y, axis = (aspect = DataAspect(),))
     return (x_traj, y_traj, C_traj, th_traj)
 

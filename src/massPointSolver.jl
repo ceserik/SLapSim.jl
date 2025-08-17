@@ -1,16 +1,16 @@
 using GLMakie
 include("carCreate.jl")
-include("trackDefinition.jl")
+#include("trackDefinition.jl")
 include("trackProcessing.jl")
 # solver solves first forward pass, then bakcward pass and takes minimums of speeds
 car = createCTU25()
+track = 0
 track = singleTurn()
-smooth_by_OCP(track,1e1,0.5)
+smooth_by_OCP(track,0.01,0.5)
 
 
 function massPointSolver(car, track)
-    #budem sa tvarit ze disretizacia je kazdy meter
-    Δs = diff(track.samplingDistance)
+    Δs = diff(track.sampleDistances)
     vForward = zeros(length(track.curvature))
     vxMax = zeros(length(track.curvature))
     #create inputs for car model #create instance of track parameters
@@ -21,7 +21,7 @@ function massPointSolver(car, track)
     for i in eachindex(track.curvature)
         numerator = car.carParameters.mass.value * 9.81 * track.μ
         denominator = max(car.carParameters.mass.value * abs(track.curvature[i]) - 1 / 2 * track.rho * car.carParameters.CL.value, 0.000001)
-        vxMax[i] = sqrt(numerator / denominator)  # Added sqrt for physical correctness
+        vxMax[i] = sqrt(numerator / denominator) 
         vxMax[i] = min(vxMax[i], 50)  # Speed limit
     end
 

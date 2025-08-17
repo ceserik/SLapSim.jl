@@ -1,13 +1,55 @@
-include("carExample.jl")
 include("carParams.jl")
-
-
 using Interpolations
 function interp1(X, V, Xq)
     knots = (X,)
     itp = interpolate(knots, V, Gridded(Linear()))
     itp[Xq]
 end
+
+
+function massPointCar(car,track,k, optiModel=nothing)
+    # Simple  Mass point friction circle
+    # inputs is a struct of all posible inputs of vehicle, controls are not separated from inputs
+    
+    # Get inputs
+    m          = car.carParameters.mass.value
+    inputForce = car.carParameters.motorForce.value
+    CL         = car.carParameters.CL.value
+    CD         = car.carParameters.CD.value
+    maxPower   = car.carParameters.powerLimit.value
+    # Get state
+    vx         = car.carParameters.vx.value
+    car.carParameters.psi.value = track.theta[k]
+    # Get track inputs
+    c          = track.curvature[k]
+    rho        = track.rho[k]
+    μ          = track.μ[k]
+
+    # Calculate forces
+    Fz = 1/2 * rho * CL * vx^2
+    Fy = vx^2 * c*m
+
+    maxMotorForce = 6507 #calculated for ctu25 should be added to inputs, vx torque characerisitic
+    FxPowerMax = maxPower/(vx)
+    #print(Fy)
+    FxMaxsquared = max((Fz*μ + m*9.81*μ)^2 - Fy^2,0)
+    # Add optimization constraints if model is provided
+    if optiModel !== nothing
+        ## tu urobit funkciu do ktorej dam obmedzenie a ona mi o spravi aby som nemusel stale davat ify
+        ## aj ked to mozno je jedno lebo tento mass point bude mozno malo pouzivany?
+        ## ale radsej to spravit, nech netreba prepisovat model lebo sa z toho zblaznim ked tam bude nieco inak
+        @constraint(optiModel, Fy^2 + inputForce^2 <= (Fz*μ + m*9.81*μ)^2)
+        @constraint(optiModel,inputForce<=FxPowerMax)
+    else
+        inputForce = min(inputForce, sqrt(FxMaxsquared))
+        inputForce = max(inputForce, -sqrt(FxMaxsquared))
+        inputForce = min(inputForce,maxMotorForce)
+        inputForce = min(inputForce,FxPowerMax)
+    end         
+        dstates =  [(inputForce -(1/2 *rho*CD*vx^2))/m 0  0    0     0 0]
+    return dstates
+end
+
 
 #Simple mass point model
 function createCTU25()
@@ -39,16 +81,14 @@ function createCTU25()
         return input
     end
 
-    function mapping(carParams,track,trackCopy,controls,states,s)
-        carParams.motorForce.value = controls[1]
-        carParams.vx.value = states[1]
+    function mapping(car,u,x)
+        car.carParameters.motorForce.value = u[1]
+        car.carParameters.vx.value = x[1]
 
-        ## have to interpolate these makea function like in martinG laptimer
-        #interp1(track.samplingDistance,track.theta,s)
-        carParams.psi.value = interp1(track.samplingDistance,track.theta,s)
-        trackCopy.curvature = interp1(track.samplingDistance,track.curvature,s)
-        trackCopy.theta     = interp1(track.samplingDistance,track.theta,s)
-        ## interpolate these two
+        #carParams.psi.value = interp1(track.sampleDistances,track.theta,s)
+        #trackCopy.curvature = interp1(track.sampleDistances,track.curvature,s)
+        #trackCopy.theta     = interp1(track.sampleDistances,track.theta,s)
+        
     end
 
     function stateMapping(input,states)

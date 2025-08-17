@@ -5,7 +5,7 @@ mutable struct Track
     curvature::Any
     rho::Any
     μ::Any
-    samplingDistance::Any #rename to sample distances
+    sampleDistances::Any #rename to sample distances samplingDistance
     mapping::Any
     x::Any
     y::Any
@@ -18,11 +18,10 @@ mutable struct Track
     s::Any
 end
 
-# Define a function to sample track properties at a given index
+# interpolate track parameters at given distance s
 function trackMapping(track::Track,trackCopy::Track ,s)
-    #trackCopy.curvature = track.curvature[index]
-    trackCopy.curvature = interp1(track.samplingDistance,track.curvature,s)
-    trackCopy.theta = interp1(track.samplingDistance,track.theta,s)
+    trackCopy.curvature = interp1(track.sampleDistances,track.curvature,s)
+    trackCopy.theta = interp1(track.sampleDistances,track.theta,s)
 end
 
 # Constructor for a simple track with default parameters
@@ -33,7 +32,7 @@ function simpleTrack(;
     straight_length2::Int = 100,
     ρ::Real = 1.225,  # air density
     μ::Real = 0.5,     # friction coefficient
-    samplingDistance = 1.0
+    sampleDistances = 1.0
 )
     # Define track segments
     straight = fill(0.0001, straight_length)
@@ -49,7 +48,7 @@ function simpleTrack(;
         curvature,
         ρ,
         μ,
-        samplingDistance,
+        sampleDistances,
         trackMapping,
         0,
         0,
