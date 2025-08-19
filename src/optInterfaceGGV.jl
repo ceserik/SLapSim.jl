@@ -5,7 +5,7 @@ using ControlSystemsBase
 include("carCreate.jl")
 include("trackProcessing.jl")
 
-function f(k,u,x)
+function carF(k,u,x)
     car.mapping(car,u,x)
     dzds = time2path(car,track,k) #time2path(s,instantCarParams,track,car)
     return dzds
@@ -16,7 +16,7 @@ end
 ## here I need to define trnasofmation of ODE with respect to time to ODE with respect to path
 function time2path(car,track,k)
     #track.mapping(track,instantTrack,s)
-    dxdt = car.carFunction(car,track,k,model) ### what the fuck preco mam instant car params a car, ked to je to iste pouzivat konzistentne poradie vo volani funkcii
+    dxdt = car.carFunction(car,track,k,model)
     v_x = car.carParameters.vx.value
     v_y = car.carParameters.vy.value
     psi = car.carParameters.psi.value
@@ -50,14 +50,10 @@ track = singleTurn()
 smooth_by_OCP(track,1e1,0.5)
 N = length(track.curvature)
 #fill track parameters which are constant along track, should be automatized
-
 track.rho = fill(track.rho,N)
 track.μ   = fill(track.μ,N)
 
-
-#the track is assumed to be discretized before
-
-model = Model(Ipopt.Optimizer) 
+model = JuMP.Model(Ipopt.Optimizer) 
 #create inputs for car model #create instance of track parameters
 instantCarParams = deepcopy(car.carParameters)
 instantTrack = deepcopy(track)
@@ -75,7 +71,7 @@ t_final = X[end,6]
 
 
 for k = 1:N-2 # loop over control intervals
-    x_next = X[k,:] + (s[k+1]-s[k]) * f(k, U[k,:], X[k,:]);
+    x_next = X[k,:] + (s[k+1]-s[k]) * carF(k, U[k,:], X[k,:]);
     @constraint(model,X[k+1,:] .== x_next)
 end
 
@@ -98,12 +94,3 @@ fig = Figure(resolution = (800, 600))
 ax = Axis(fig[1, 1], xlabel = "Step", ylabel = "Velocity (vx)")
 lines!(ax, value.(X[:,1]))
 display(GLMakie.Screen(), fig)  # This creates a new window
-
-
-
-
-
-
-
-
-

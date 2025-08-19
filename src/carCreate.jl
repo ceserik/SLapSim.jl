@@ -24,7 +24,6 @@ function massPointCar(car,track,k, optiModel=nothing)
     c          = track.curvature[k]
     rho        = track.rho[k]
     μ          = track.μ[k]
-
     # Calculate forces
     Fz = 1/2 * rho * CL * vx^2
     Fy = vx^2 * c*m
