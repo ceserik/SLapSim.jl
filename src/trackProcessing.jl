@@ -143,12 +143,10 @@ end
 function kml2cart(path)
     file = read(path, KMLFile)
     coordinates = file.children[1].Features[1].Geometry.coordinates
-
     coords = hcat(ntuple(i -> getindex.(coordinates, i), 3)...)
     medLatitude = median(coords[:, 2])
     medLon = median(coords[:, 1])
     trans = Proj.Transformation("EPSG:4326", "+proj=merc +lat_ts=$(medLatitude) +lon_0=$(medLon)")
-
     A = zeros(Base.size(coords, 1), 3)
     for i = 1:(Base.size(coords, 1))
         points = trans(coords[i, 1], coords[i, 2])
@@ -156,7 +154,6 @@ function kml2cart(path)
         A[i, 2] = points[2]
 
     end
-
     center = trans(medLon, medLatitude)
     A[:, 1] .-= center[1]
     A[:, 2] .-= center[2]
@@ -169,45 +166,19 @@ function kml2track(path,closeTrack)
     if closeTrack
         A = [A[1:end,:]; A[1,:]']
     end
-    track = Track(
-        0,#curvature,
-        1.225,
-        1,
-        1,#this is very wrong, 1 just for compatiblity, should be calculated with curvature and theta
-        trackMapping,
-        A[:,1],
-        A[:,2],
-        0,0,0,0,0,0,0
-        )
-        fig = Figure()
-        ax = Axis(fig[1,1],aspect=DataAspect())
+    track = Track(0,1.225,1,1,trackMapping,A[:,1],A[:,2],0,0,0,0,0,0,0)
+        trackfig = Figure()
+        ax = Axis(trackfig[1,1],aspect=DataAspect())
         lines!(ax,track.y, track.x)
         #display(fig)
+
         smooth_by_OCP(track,1,0.1,closeTrack)
         lines!(ax,track.y, track.x)
-        display(fig)
+        display(GLMakie.Screen(),trackfig)
     return track
 
 
 end
 
-path = "tracks/FSCZ.kml"
-track = kml2track(path,true)
-
-#f,ax,plt = lines(A[:, 2], A[:, 1],
-#    axis=(
-      #  aspect=DataAspect(),
-       # backgroundcolor="#2E2E2E",
-       # xgridcolor=:white,
-       # ygridcolor=:white,
-       # xticklabelcolor=:white,
-       # yticklabelcolor=:white,
-       # xlabelcolor=:white,
-       # ylabelcolor=:white,
-#    ),
-   # figure=(backgroundcolor="#2E2E2E",)
-#)
-
-#for spine in ax.elements[:spines]
-#    spine.color[] = :white
-#end
+#path = "tracks/FSCZ.kml"
+#track = kml2track(path,true)

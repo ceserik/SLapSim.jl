@@ -7,7 +7,7 @@ include("trackProcessing.jl")
 car = createCTU25()
 track = 0
 track = singleTurn()
-path = "tracks/FSCZ.kml"
+path = "tracks/FSG.kml"
 track = kml2track(path,true)
 
 #smooth_by_OCP(track,0.01,0.5)
@@ -58,19 +58,19 @@ function massPointSolver(car, track)
 
 
     ## plotting
-    f = Figure(size=(800, 600))
-    ax = Axis(f[1, 1],
+    velocityfig = Figure(size=(800, 600))
+    ax1 = Axis(velocityfig[1, 1],
         xlabel="Distance [m]",
         ylabel="Velocity [m/s]",
         title="Velocity Profile"
     )
 
-    lines!(ax, 1:length(vxMax), vxMax, label="Max speed")
-    lines!(ax, 1:length(vForward), vForward, label="Forward")
-    lines!(ax, 1:length(vBackward), vBackward, label="Backward")
+    lines!(ax1, track.sampleDistances, vxMax, label="Max speed")
+    lines!(ax1, track.sampleDistances, vForward, label="Forward")
+    lines!(ax1, track.sampleDistances, vBackward, label="Backward")
 
-    axislegend(ax, position=:lt)
-    f
+    axislegend(ax1, position=:lt)
+    display(GLMakie.Screen(), velocityfig)  # Force new window
 
 end
 

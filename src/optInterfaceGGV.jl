@@ -47,7 +47,7 @@ end
 car = createCTU25()
 track = 0
 #track = singleTurn()
-path = "tracks/FSCZ.kml"
+path = "tracks/FSG.kml"
 track = kml2track(path,true)
 #smooth_by_OCP(track,1e1,0.5)
 N = length(track.curvature)
@@ -57,8 +57,6 @@ track.μ   = fill(track.μ,N)
 
 model = JuMP.Model(Ipopt.Optimizer) 
 #create inputs for car model #create instance of track parameters
-instantCarParams = deepcopy(car.carParameters)
-instantTrack = deepcopy(track)
 
 cas = 1000
 tfinal_0 = cas

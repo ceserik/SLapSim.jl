@@ -79,11 +79,6 @@ function createCTU25()
     function mapping(car,u,x)
         car.carParameters.motorForce.value = u[1]
         car.carParameters.vx.value = x[1]
-
-        #carParams.psi.value = interp1(track.sampleDistances,track.theta,s)
-        #trackCopy.curvature = interp1(track.sampleDistances,track.curvature,s)
-        #trackCopy.theta     = interp1(track.sampleDistances,track.theta,s)
-        
     end
 
     function stateMapping(input,states)
