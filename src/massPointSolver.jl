@@ -7,7 +7,10 @@ include("trackProcessing.jl")
 car = createCTU25()
 track = 0
 track = singleTurn()
-smooth_by_OCP(track,0.01,0.5)
+path = "tracks/FSCZ.kml"
+track = kml2track(path,true)
+
+#smooth_by_OCP(track,0.01,0.5)
 N = length(track.curvature)
 track.rho = fill(track.rho,N)
 track.μ   = fill(track.μ,N)
@@ -24,6 +27,10 @@ function massPointSolver(car, track)
     for i in eachindex(track.curvature)
         numerator = car.carParameters.mass.value * 9.81 * track.μ[i]
         denominator = max(car.carParameters.mass.value * abs(track.curvature[i]) - 1 / 2 * track.rho[i] * car.carParameters.CL.value, 0.000001)
+        #a = track.μ[i]/car.carParameters.mass.value/abs(track.curvature[i])
+
+        #numerator = car.carParameters.mass.value *9.81*a
+        #denominator = max(1 - a*0.5*track.rho[i]*car.carParameters.CL.value,0.00001)
         vxMax[i] = sqrt(numerator / denominator) 
         vxMax[i] = min(vxMax[i], 50)  # Speed limit
     end

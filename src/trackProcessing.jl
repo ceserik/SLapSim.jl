@@ -56,21 +56,6 @@ function naiveProcessing(track)
 end
 
 function smooth_by_OCP(track, r, ds,closedTrack)
-
-    #function [x_traj, y_traj, s_traj, th_traj, C_traj] = smoothTrackByOCP(x_smpl, y_smpl, r, closedTrack, ds)
-    #nargin = 4
-    #if nargin < 3
-    #    r = 1e6
-    #end
-
-    #if nargin < 4
-    #    closedTrack = false
-    #end
-
-    #if closedTrack
-    #    track.x = [track.x[2:end] ;track.x[1]]
-    #    track.y = [track.y[2:end] ;track.y[1]]
-    #end
     x_smpl = track.x
     y_smpl = track.y
 
@@ -101,31 +86,23 @@ function smooth_by_OCP(track, r, ds,closedTrack)
     model = JuMP.Model(Ipopt.Optimizer)
 
     # define decision variables
-
-    
     @variable(model, u[i=1:N-1, 1], start = (diff(C_init))[i])
     @variable(model, Z[i =1:N,j = 1:4],start = [C_init  th_init x_smpl y_smpl][i,j])
     z_C = Z[:, 1]
     z_th= Z[:, 2]
     z_x = Z[:, 3]
     z_y = Z[:, 4]
-    #u = opti.variable(N-1, 1);
 
     # Objective function (minimize the final time)
     x_dev = ((z_x[1:end-1] - x_smpl[1:end-1]).^2 + (z_x[2:end] - x_smpl[2:end]).^2) / 2
     y_dev = ((z_y[1:end-1] - y_smpl[1:end-1]).^2 + (z_y[2:end] - y_smpl[2:end]).^2) / 2
 
-
     @objective(model, Min, sum(ds .* (r .* u.^2 .+ x_dev .+ y_dev)))
-    #opti.minimize( sum(ds * ( r*u.^2 + x_dev + y_dev)) );
 
     # Dynamic constraints
-
     function f(z, u)
         return [u; z[1]; cos(z[2]); sin(z[2])]
     end
-    #f = @(z, u) [u;z(1);cos(z(2));sin(z(2))]';
-
     # ---- RK4 --------
     for k = 1:N-1 # loop over control intervals
         dsk = (s_traj[k+1] - s_traj[k])
@@ -146,33 +123,13 @@ function smooth_by_OCP(track, r, ds,closedTrack)
         @constraint(model, z_C[end] == z_C[1])
     end
 
-    #opti.set_initial(z_x, x_smpl);
-    #opti.set_initial(z_y, y_smpl);
-    #opti.set_initial(z_C, C_init);
-    #opti.set_initial(z_th, th_init);
-
-    #    opti.set_initial(u, diff(C_init))
-
-    #     opti.subject_to(-0.05 < u < 0.05)
-    #     Rmax = 5;
-    #     opti.subject_to(-1/Rmax < z_C < 1/Rmax)
-    #     
-    #     dev_max = 2;
-    #     opti.subject_to( x_dev < dev_max^2 )
-    #     opti.subject_to( y_dev < dev_max^2 )
-
-
-
     # Solve NLP
-    #opti.solver('ipopt'); % use IPOPT solver
     optimize!(model)
-    #%%
     # Extract solution values
     x_traj = value.(z_x)
     y_traj = value.(z_y)
     C_traj = value.(z_C)
     th_traj = value.(z_th)
-
 
     track.x = x_traj
     track.y = y_traj
@@ -235,9 +192,7 @@ function kml2track(path,closeTrack)
 end
 
 path = "tracks/FSCZ.kml"
-#A = kml2cart(path)
-
-B = kml2track(path,true)
+track = kml2track(path,true)
 
 #f,ax,plt = lines(A[:, 2], A[:, 1],
 #    axis=(
