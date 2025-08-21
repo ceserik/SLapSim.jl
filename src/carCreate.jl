@@ -1,10 +1,6 @@
 include("carParams.jl")
 using Interpolations
-function interp1(X, V, Xq)
-    knots = (X,)
-    itp = interpolate(knots, V, Gridded(Linear()))
-    itp[Xq]
-end
+
 
 
 function massPointCar(car,track,k, optiModel=nothing)

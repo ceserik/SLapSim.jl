@@ -4,10 +4,25 @@ using DSP
 using KML
 using Statistics
 using Proj
+using PCHIPInterpolation
 
 include("trackDefinition.jl")
 
 using Interpolations
+
+function interp1(X, V, Xq,type=nothing)
+    
+
+    if type == "PCHIP"
+        itp = Interpolator(X, V)
+        return itp.(Xq)
+    else
+        knots = (X,)
+        itp = interpolate(knots, V, Gridded(Linear()))
+        itp[Xq]
+    end
+end
+
 
 
 #interpolation of theta and curvature
@@ -40,25 +55,28 @@ function naiveProcessing(track)
     return track
 end
 
-function smooth_by_OCP(track, r, ds)
+function smooth_by_OCP(track, r, ds,closedTrack)
 
     #function [x_traj, y_traj, s_traj, th_traj, C_traj] = smoothTrackByOCP(x_smpl, y_smpl, r, closedTrack, ds)
-    nargin = 4
-    closedTrack = false
-    if nargin < 3
-        r = 1e6
-    end
+    #nargin = 4
+    #if nargin < 3
+    #    r = 1e6
+    #end
 
-    if nargin < 4
-        closedTrack = false
-    end
+    #if nargin < 4
+    #    closedTrack = false
+    #end
 
+    #if closedTrack
+    #    track.x = [track.x[2:end] ;track.x[1]]
+    #    track.y = [track.y[2:end] ;track.y[1]]
+    #end
     x_smpl = track.x
     y_smpl = track.y
 
     dx = diff(x_smpl)
     dy = diff(y_smpl)
-    ds_tmp = sqrt.(dx .^ 2 + dy .^ 2)
+    ds_tmp = sqrt.(dx.^2 + dy.^2)
 
     s_tmp = [0; cumsum(ds_tmp)]
 
@@ -66,8 +84,8 @@ function smooth_by_OCP(track, r, ds)
     N = Int(round((s_tmp[end] - s_tmp[1]) / ds))
     ds = (s_tmp[end] - s_tmp[1]) / N
     s_traj = collect(LinRange(s_tmp[1], s_tmp[end], Int(N)))
-    x_smpl = interp1(s_tmp, x_smpl, s_traj)
-    y_smpl = interp1(s_tmp, y_smpl, s_traj)
+    x_smpl = interp1(s_tmp, x_smpl, s_traj,"PCHIP")
+    y_smpl = interp1(s_tmp, y_smpl, s_traj,"PCHIP")
     ###
 
     dx = diff(x_smpl)
@@ -84,29 +102,27 @@ function smooth_by_OCP(track, r, ds)
 
     # define decision variables
 
-
-
+    
     @variable(model, u[i=1:N-1, 1], start = (diff(C_init))[i])
-    @variable(model, Z[1:N, 1:4])
+    @variable(model, Z[i =1:N,j = 1:4],start = [C_init  th_init x_smpl y_smpl][i,j])
     z_C = Z[:, 1]
-    z_th = Z[:, 2]
+    z_th= Z[:, 2]
     z_x = Z[:, 3]
     z_y = Z[:, 4]
-
     #u = opti.variable(N-1, 1);
 
     # Objective function (minimize the final time)
-    x_dev = ((z_x[1:end-1] - x_smpl[1:end-1]) .^ 2 + (z_x[2:end] - x_smpl[2:end]) .^ 2) / 2
-    y_dev = ((z_y[1:end-1] - y_smpl[1:end-1]) .^ 2 + (z_y[2:end] - y_smpl[2:end]) .^ 2) / 2
+    x_dev = ((z_x[1:end-1] - x_smpl[1:end-1]).^2 + (z_x[2:end] - x_smpl[2:end]).^2) / 2
+    y_dev = ((z_y[1:end-1] - y_smpl[1:end-1]).^2 + (z_y[2:end] - y_smpl[2:end]).^2) / 2
 
 
-    @objective(model, Min, sum(ds .* (r .* u .^ 2 .+ x_dev .+ y_dev)))
+    @objective(model, Min, sum(ds .* (r .* u.^2 .+ x_dev .+ y_dev)))
     #opti.minimize( sum(ds * ( r*u.^2 + x_dev + y_dev)) );
 
     # Dynamic constraints
 
     function f(z, u)
-        return [u; z[1]; cos(z[2]); sin(z[2])]'
+        return [u; z[1]; cos(z[2]); sin(z[2])]
     end
     #f = @(z, u) [u;z(1);cos(z(2));sin(z(2))]';
 
@@ -118,16 +134,16 @@ function smooth_by_OCP(track, r, ds)
         k2 = f(Z[k, :] + vec(dsk / 2 * k1), u[k, :])
         k3 = f(Z[k, :] + vec(dsk / 2 * k2), u[k, :])
         k4 = f(Z[k, :] + vec(dsk * k3), u[k, :])
-        x_next = Z[k, :] + vec(dsk / 6 * (k1 + 2 * k2 + 2 * k3 + k4))
+        x_next = Z[k, :] + vec(dsk/6*(k1 + 2*k2 + 2*k3 + k4))
         #opti.subject_to(Z[k+1, :]==x_next);# % close the gaps
         @constraint(model, Z[k+1, :] == x_next)
     end
 
     if closedTrack
-        @constraint(model, z_x[end] == z_x[1], start = x_smpl)
-        @constraint(model, z_y[end] == z_y[1], start = y_smpl)
-        @constraint(model, z_t[end] == z_th[1] + 2 * pi * round((th_init[end] - th_init[1]) / 2 / pi), start = th_init)
-        @constraint(model, z_C[end] == z_C[1], start = C_init)
+        @constraint(model, z_x[end] == z_x[1])
+        @constraint(model, z_y[end] == z_y[1])
+        @constraint(model, z_th[end] == z_th[1] + 2 * pi * round((th_init[end] - th_init[1]) / 2 / pi))
+        @constraint(model, z_C[end] == z_C[1])
     end
 
     #opti.set_initial(z_x, x_smpl);
@@ -162,19 +178,12 @@ function smooth_by_OCP(track, r, ds)
     track.y = y_traj
     track.curvature = C_traj
     track.theta = th_traj
-    track.sampleDistances = s_traj
-    lines(track.x, track.y, axis=(aspect=DataAspect(),))
+    track.sampleDistances = s_traj    
     return (x_traj, y_traj, C_traj, th_traj)
 
 end
 
-
-
-
 function kml2cart(path)
-
-
-
     file = read(path, KMLFile)
     coordinates = file.children[1].Features[1].Geometry.coordinates
 
@@ -182,8 +191,6 @@ function kml2cart(path)
     medLatitude = median(coords[:, 2])
     medLon = median(coords[:, 1])
     trans = Proj.Transformation("EPSG:4326", "+proj=merc +lat_ts=$(medLatitude) +lon_0=$(medLon)")
-
-
 
     A = zeros(Base.size(coords, 1), 3)
     for i = 1:(Base.size(coords, 1))
@@ -199,22 +206,52 @@ function kml2cart(path)
 
     return A
 end
+
+function kml2track(path,closeTrack)
+    A = kml2cart(path)
+    if closeTrack
+        A = [A[1:end,:]; A[1,:]']
+    end
+    track = Track(
+        0,#curvature,
+        1.225,
+        1,
+        1,#this is very wrong, 1 just for compatiblity, should be calculated with curvature and theta
+        trackMapping,
+        A[:,1],
+        A[:,2],
+        0,0,0,0,0,0,0
+        )
+        fig = Figure()
+        ax = Axis(fig[1,1],aspect=DataAspect())
+        lines!(ax,track.y, track.x)
+        #display(fig)
+        smooth_by_OCP(track,1,0.1,closeTrack)
+        lines!(ax,track.y, track.x)
+        display(fig)
+    return track
+
+
+end
+
 path = "tracks/FSCZ.kml"
-A = kml2cart(path)
-#lines(A[:,2],A[:,1])
-f,ax,plt = lines(A[:, 2], A[:, 1],
-    axis=(
-        aspect=DataAspect(),
-        backgroundcolor="#2E2E2E",
-        xgridcolor=:white,
-        ygridcolor=:white,
-        xticklabelcolor=:white,
-        yticklabelcolor=:white,
-        xlabelcolor=:white,
-        ylabelcolor=:white,
-    ),
-    figure=(backgroundcolor="#2E2E2E",)
-)
+#A = kml2cart(path)
+
+B = kml2track(path,true)
+
+#f,ax,plt = lines(A[:, 2], A[:, 1],
+#    axis=(
+      #  aspect=DataAspect(),
+       # backgroundcolor="#2E2E2E",
+       # xgridcolor=:white,
+       # ygridcolor=:white,
+       # xticklabelcolor=:white,
+       # yticklabelcolor=:white,
+       # xlabelcolor=:white,
+       # ylabelcolor=:white,
+#    ),
+   # figure=(backgroundcolor="#2E2E2E",)
+#)
 
 #for spine in ax.elements[:spines]
 #    spine.color[] = :white

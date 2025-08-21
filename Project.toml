@@ -10,6 +10,7 @@ GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 KML = "1284bf3a-1e3d-4f4e-a7a9-b9d235a28f35"
+PCHIPInterpolation = "afe20452-48d1-4729-9a8b-50fb251f06cd"
 Proj = "c94c279d-25a6-4763-9509-64d165bea63e"
 
 [compat]
@@ -19,6 +20,7 @@ GLMakie = "0.13.4"
 GMT = "1.31.1"
 Interpolations = "0.15.1"
 KML = "0.2.3"
+PCHIPInterpolation = "0.2.1"
 Proj = "1.9.0"
 julia = "1.11"
 

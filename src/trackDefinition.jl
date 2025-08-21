@@ -18,6 +18,7 @@ mutable struct Track
     s::Any
 end
 
+
 # interpolate track parameters at given distance s
 function trackMapping(track::Track,trackCopy::Track ,s)
     trackCopy.curvature = interp1(track.sampleDistances,track.curvature,s)
