@@ -4,7 +4,7 @@ include("carCreate.jl")
 #include("trackDefinition.jl")
 include("trackProcessing.jl")
 # solver solves first forward pass, then bakcward pass and takes minimums of speeds
-car = createCTU25()
+car = createCTU25_1D()
 track = 0
 track = singleTurn()
 path = "tracks/FSG.kml"
@@ -42,7 +42,7 @@ function massPointSolver(car, track)
         dv = max(0, dv)
         v = sqrt(vForward[i]^2 + 2 * dv * Δs[i])
         vForward[i+1] = min(vxMax[i+1], v)
-        print(vForward[i+1], "\n")
+        #print(vForward[i+1], "\n")
 
     end
 
@@ -65,6 +65,13 @@ function massPointSolver(car, track)
         title="Velocity Profile"
     )
 
+    
+    actualSpeed = zeros(length(track.curvature))
+    for i = 1:length(track.curvature)
+     actualSpeed[i] =  min(vxMax[i],vForward[i],vBackward[i])
+    end
+
+    times = cumsum(Δs./actualSpeed[2:end])
     lines!(ax1, track.sampleDistances, vxMax, label="Max speed")
     lines!(ax1, track.sampleDistances, vForward, label="Forward")
     lines!(ax1, track.sampleDistances, vBackward, label="Backward")

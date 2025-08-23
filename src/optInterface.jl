@@ -44,25 +44,25 @@ function time2path(car,track,k)
     return dzds
 end
 
-car = createCTU25()
+car = createCTU25_1D()
 track = 0
 #track = singleTurn()
 path = "tracks/FSG.kml"
 track = kml2track(path,true)
-#smooth_by_OCP(track,1e1,0.5)
-N = length(track.curvature)
+N = length(track.curvature)# pridat parameter trate ze kolko ma indexov a aka je dlha v metroch
+
 #fill track parameters which are constant along track, should be automatized
-track.rho = fill(track.rho,N)
-track.μ   = fill(track.μ,N)
+track.rho    = fill(track.rho,N)
+track.μ      = fill(track.μ,N)
+track.widthL = fill(1.5,N)
+track.widthR = fill(1.5,N)
 
 model = JuMP.Model(Ipopt.Optimizer) 
 #create inputs for car model #create instance of track parameters
 
-cas = 1000
-tfinal_0 = cas
 #determine sizes of inputs and states
-
-@variable(model,U[1:N-1],start = 0.0)
+nControls = Int(round(car.carParameters.nControls.value))
+@variable(model,U[1:N-1,1:nControls],start = 0.0)
 @variable(model,X[1:N,1:6], start = 5.0)
 
 N = length(track.sampleDistances)

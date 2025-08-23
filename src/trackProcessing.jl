@@ -172,7 +172,7 @@ function kml2track(path,closeTrack)
         lines!(ax,track.y, track.x)
         #display(fig)
 
-        smooth_by_OCP(track,1,0.1,closeTrack)
+        smooth_by_OCP(track,1,1.0,closeTrack)
         lines!(ax,track.y, track.x)
         display(GLMakie.Screen(),trackfig)
     return track

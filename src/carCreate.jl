@@ -1,7 +1,32 @@
 include("carParams.jl")
 using Interpolations
 
+function lessContraint(a,b,model=nothing)
+    if isnothing(model)
+        a = min(a,b)
+    else
+        @constraint(model,a<=b)
+    end
+    return a
+end
 
+function greaterContraint(a,b,model=nothing)
+    if isnothing(model)
+        a = max(a,b)
+    else
+        @constraint(model,a>=b)
+    end
+    return a
+end
+
+function equalConstraint(a,b)
+    if isnothing(model)
+        a = b
+    else
+        @constraint(model,a==b)
+    end    
+    return a
+end
 
 function massPointCar(car,track,k, optiModel=nothing)
     # Simple  Mass point friction circle
@@ -13,14 +38,17 @@ function massPointCar(car,track,k, optiModel=nothing)
     CL         = car.carParameters.CL.value
     CD         = car.carParameters.CD.value
     maxPower   = car.carParameters.powerLimit.value
+
     # Get state
     vx         = car.carParameters.vx.value
     car.carParameters.psi.value = track.theta[k]
+
     # Get track inputs
     c          = track.curvature[k]
     rho        = track.rho[k]
     μ          = track.μ[k]
     # Calculate forces
+
     Fz = 1/2 * rho * CL * vx^2
     Fy = m*vx^2*c
 
@@ -29,6 +57,8 @@ function massPointCar(car,track,k, optiModel=nothing)
     #print(Fy)
     FxMaxsquared = max((Fz*μ + m*9.81*μ)^2 - Fy^2,0)
     # Add optimization constraints if model is provided
+
+
     if optiModel !== nothing
         ## tu urobit funkciu do ktorej dam obmedzenie a ona mi o spravi aby som nemusel stale davat ify
         ## aj ked to mozno je jedno lebo tento mass point bude mozno malo pouzivany?
@@ -41,15 +71,27 @@ function massPointCar(car,track,k, optiModel=nothing)
         inputForce = min(inputForce,maxMotorForce)
         inputForce = min(inputForce,FxPowerMax)
     end         
+
+   # lessContraint((Fy/maxMotorForce)^2 + (inputForce/maxMotorForce)^2 ,((Fz*μ + m*9.81*μ)/maxMotorForce)^2,optiModel)
+   # lessContraint(inputForce/FxPowerMax , FxPowerMax/FxPowerMax,optiModel)
+
+
+
         dstates =  [(inputForce -(1/2 *rho*CD*vx^2))/m 0  0    0     0 0]
     return dstates
 end
 
 
+
+
+
+
+
 #Simple mass point model
-function createCTU25()
+function createCTU25_1D()
     mass = carParameter(280.0, "Mass", "kg")
     motorForce = carParameter(1000.0, "motorForce", "N")
+    lateralForce = carParameter(0.0, "lateral Force", "N")
     CL = carParameter(5.0, "Lift Coefficient", "-")
     CD = carParameter(2.0, "Drag Coefficient", "-")
     vx = carParameter(15.0,"Speed X","m/s")
@@ -57,6 +99,7 @@ function createCTU25()
     vy = carParameter(0.0,"Speed Y","m/s")
     psi = carParameter(0.0,"heading","rad")
     n = carParameter(0.0,"Distance from centerline","m")
+    nControls = carParameter(1.0,"number of controlled parameters","-")
 
     p = carParameters(
         mass,
@@ -67,7 +110,9 @@ function createCTU25()
         vy,
         psi,
         n,
-        powerLimit
+        powerLimit,
+        lateralForce,
+        nControls
     )
 
     function controlMapping(input, controls)
@@ -98,4 +143,10 @@ function createCTU25()
 end
 
 
+function simplestSingleTrack(car,track,k, optiModel=nothing)
+
     
+
+
+
+end
