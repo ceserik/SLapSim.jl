@@ -64,17 +64,20 @@ end
 mutable struct Motor
     torque::carParameter
     angularVelocity::carParameter
-    mass::carParameters
-    torqueSpeedFunction
+    mass::carParameter
+    loss::carParameter
+    torqueSpeedFunction #mapping speed to max torque
 end
 
-mutable struct gearbox
+mutable struct Gearbox
     ratio::carParameter
     torqueIn::carParameter
     angularVelocityIn::carParameter
     torqueOut::carParameter
     angularVelocityOut::carParameter
+    loss::carParameter
     gearboxFunction
+    
 end
 
 mutable struct Accumulator
@@ -91,6 +94,7 @@ end
 mutable struct Aero
     CL::carParameter
     CD::carParameter
+    CoP::carParameter
 end
 
 mutable struct Suspension
@@ -106,6 +110,7 @@ mutable struct Suspension
 
     stiffnessHeave::carParameter
     dampingHeave::carParameter
+    # da sa posuvat pitch center???
 end
 
 
@@ -141,6 +146,47 @@ mutable struct Car2
     aero
     suspension
     wheelAssemblies
+
+end
+
+
+
+function createDummySuspension()
+    tlong = carParameter(0.0,"longitudinal transfer time constant","s")
+    tlat = carParameter(0.0,"lateral transfer time constant","s")
+    theave = carParameter(0.0,"heave transfer time constant","s")
+
+    stiffnessLong = carParameter(0.0,"Long stifness","N/rad??")
+    stiffnessLat = carParameter(0.0,"Lat stifness","N/rad??")
+    stiffnessHeave = carParameter(0.0,"Long stifness","N/rad??")
+    
+    dampingLong = carParameter(0.0,"long dampnng","N/rad/s`")
+    dampingLat = carParameter(0.0,"long dampnng","N/rad/s`")
+    dampingHeave = carParameter(0.0,"long dampnng","N/rad/s`")
+
+    susp = Suspension(
+        tlong,
+        tlat,
+        theave,
+        stiffnessLong,
+        dampingLong,
+        stiffnessLat,
+        dampingLat,
+        stiffnessHeave,
+        dampingHeave    )
+    return susp
+end
+
+function createBasicAero()
+    CL = carParameter(-5.0,"Lift coeffcient","-")
+    CD = carParameter(2,"Drag coeffcient","-")
+    CoP = carParameter(0.5,"Cener of pressure on front","-")
+    aero = Aero(
+        CL,
+        CD,
+        CoP
+    )
+    return aero
 
 end
 
@@ -235,6 +281,45 @@ function createR20lin()
     )
 end
 
+function createFischerMotor()
+    torque = carParameter(0.0,"motor torque","Nm")
+    angularVelocity = carParameter(0.0,"angular velocity","rad/s")
+    loss = carParameter(0.0,"loss","W")
+    torqueSpeedFunction = f(angularVelocity) = 29
+    mass = carParameter(3.0,"mass??","kg")
+    motor = Motor(
+        torque,
+        angularVelocity,
+        mass,
+        loss,
+        torqueSpeedFunction
+    )
+    return motor
+end
+
+function createCTU25gearobx()
+    ratio = carParameter(11.46,"Gearbox ratio","-")
+    torqueIn = carParameter(0,"torque in","-")
+    speedIn = carParameter(0,"velocity in","rad/s")
+
+    torqueOut = carParameter(0,"torque out","-")
+    speedOut = carParameter(0,"velocity out","rad/s")
+    loss = carParameter(0,"loss","W")
+
+    function gearboxFunction(gearbox) 
+        gearbox.torqueOut = gearbox.torqueIn * 11.46
+        gearbox.speedOut = gearbox.speedOut / 11/46
+    end
+    gearbox = Gearbox(
+        ratio,
+        torqueIn,
+        speedIn,
+        torqueOut,
+        speedOut,
+        loss,
+        gearboxFunction
+    )
+end
 
 function createCTU25_2D()
     mass = carParameter(280.0, "Mass", "kg")
@@ -293,15 +378,33 @@ function createCTU25_2D()
     return car
 end
     
-function createMotor()
-    
-end
+
 
 function createSimplestSingleTrack()
     tireFront = createR20lin()
     tireRear = createR20lin()
+    gearboxFront = createCTU25gearobx()
+    gearboxRear = createCTU25gearobx()
+
+    motorFront = createFischerMotor()
+    motorRear = createFischerMotor()
+
+    drivetrain = Drivetrain(
+        [motorFront,motorRear],
+        [gearboxFront, gearboxRear],
+        [tireFront,tireRear],
+        createPepikCTU25())
+
+    aero = createBasicAero()
+    suspension = createDummySuspension()
     wheelAssemblyFront = createBasicWheelAssembly([1.520/2 0 0])
     wheelAssemblyRear = createBasicWheelAssembly([-1.520/2 0 0])
+    afto = Car2(
+        drivetrain,
+        aero,
+        suspension,
+        [wheelAssemblyFront,wheelAssemblyRear]
+    )
 
 end
 
