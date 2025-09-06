@@ -36,8 +36,13 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
-      - run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev xsettingsd x11-xserver-utils
-      - run: using Pkg; pkg"registry up"; Pkg.update(); pkg"dev ./Makie ./GLMakie ./ReferenceTests ./ComputePipeline"
+      - name: Install Julia dependencies
+        run: |
+          using Pkg;
+          # dev mono repo versions
+          pkg"registry up"
+          Pkg.update()
+          pkg"dev ./Makie ./GLMakie ./ReferenceTests ./ComputePipeline"
       - name: Run the tests
         id: referencetests
         continue-on-error: true
