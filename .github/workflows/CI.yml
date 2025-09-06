@@ -36,9 +36,14 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
-      - run: julia -e 'import Pkg; Pkg.add("TestEnv")'
-      - run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
-      - run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project -e 'using Pkg; Pkg.instantiate()'
-      - run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project -e "using TestEnv; TestEnv.activate(); include(\"test/runtests.jl\")"
+      - run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev xsettingsd x11-xserver-utils
+      - run: using Pkg; pkg"registry up"; Pkg.update(); pkg"dev ./Makie ./GLMakie ./ReferenceTests ./ComputePipeline"
+      - name: Run the tests
+        id: referencetests
+        continue-on-error: true
+        run: >
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=monorepo -e 'using Pkg; Pkg.test("GLMakie", coverage=true)'
+          && echo "TESTS_SUCCESSFUL=true" >> $GITHUB_ENV
+      
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
