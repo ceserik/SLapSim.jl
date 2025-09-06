@@ -1,7 +1,3 @@
-if !isdefined(Main, :MODULES_INITIALIZED)
-    using JuMP
-
-end
 
 mutable struct carParameter
     value::Any
@@ -24,6 +20,7 @@ mutable struct carParameter
         new(value, name, unit, size(value))
     end
 end
+
 
 mutable struct carParameters
     mass::carParameter
@@ -147,8 +144,8 @@ end
 
 
 function createSimplestSingleTrack()
-    tireFront = createR20lin()
-    tireRear = createR20lin()
+    tireFront = createR20lin(500)
+    tireRear = createR20lin(500)
     
     gearboxFront = createCTU25gearbox()
     gearboxRear = createCTU25gearbox()

@@ -6,6 +6,11 @@ const MODULES_INITIALIZED = true
 include("carCreate.jl")
 include("trackProcessing.jl")
 include("carParams.jl")
+include("aero.jl")
+include("accumulator.jl")
+include("gearbox.jl")
+include("motor.jl")
+include("tire.jl")
 print("Slapsim initilized\n")
 
-tire2= createR20lin()
+#tire2= createR20lin()

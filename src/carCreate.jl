@@ -142,13 +142,27 @@ end
 
 
 function simplestSingleTrack(car,track,k, optiModel=nothing)
-    car.drivetrain.motors[1].torque.value
-    car.drivetrain.motors[2].torque.value
     
-    velocity = car.chassis.velocity
-    angularVelocity = car.chassis.angularVelocity
-    frontSpeeds = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
-    rearSpeeds = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
+    
+    torqueFront = car.drivetrain.motors[1].torque.value
+    torqueRear = car.drivetrain.motors[2].torque.value
+    steeringAngle = car.wheelAssemblies[1].steeringAngle.value
+
+    gbFront = createCTU25gearbox()
+    gbRear = createCTU25gearbox()
+
+    gbFront.torqueIn
+    gbFront.gearboxFunction()
+
+
+    velocity = car.velocity.value
+    angularVelocity = car.angularVelocity.value
+
+
+    car.drivetrain.tires[1].velocity.value = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
+    car.drivetrain.tires[2].velocity.value = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
+
+    car.wheelAssemblies[1].rotZ(steeringAngle)
 
     tireFront.tireFunction(tireFront,frontSpeeds,1000)
     tireRear.tireFunction(tireFront,rearSpeeds,1000)

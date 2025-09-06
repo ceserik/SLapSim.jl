@@ -1,3 +1,7 @@
+if !@isdefined(MODULES_INITIALIZED)
+    include("initSlapSim.jl")
+end
+
 mutable struct Gearbox
     ratio::carParameter
     torqueIn::carParameter
@@ -5,8 +9,19 @@ mutable struct Gearbox
     torqueOut::carParameter
     angularFrequencyOut::carParameter
     loss::carParameter
-    gearboxFunction
-    
+    f
+end
+
+# Pretty printing for Gearbox
+import Base: show
+
+function Base.show(io::IO, ::MIME"text/plain", obj::Gearbox)
+    T = typeof(obj)
+    println(io, "$(T)(")
+    for field in fieldnames(T)
+        println(io, "  $field = ", getfield(obj, field))
+    end
+    print(io, ")")
 end
 
 
@@ -16,19 +31,19 @@ function createCTU25gearbox()
     speedIn = carParameter(0,"velocity in","rad/s")
 
     torqueOut = carParameter(0,"torque out","-")
-    speedOut = carParameter(0,"velocity out","rad/s")
-    loss = carParameter(0,"loss","W")
+    angularFrequencyOut = carParameter(0,"velocity out","rad/s")
+    loss = carParameter(0,"loss","Watt")
 
-    function gearboxFunction(gearbox) 
-        gearbox.torqueOut = gearbox.torqueIn * 11.46
-        gearbox.speedOut = gearbox.speedOut / 11/46
+    function gearboxFunction() 
+        gearbox.torqueOut.value = gearbox.torqueIn.value * 11.46
+        gearbox.angularFrequencyOut.value = gearbox.angularFrequencyOut.value / 11/46
     end
     gearbox = Gearbox(
         ratio,
         torqueIn,
         speedIn,
         torqueOut,
-        speedOut,
+        angularFrequencyOut,
         loss,
         gearboxFunction
     )

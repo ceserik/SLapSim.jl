@@ -15,7 +15,19 @@ mutable struct  Tire
     #ire(radius, width, inertia, mass, angularFrequency, vertForce, longForce, latForce, slipAngle, slipRatio, tireFunction)
 end
 
-function createR20lin()
+#Pretty printing for tire
+function Base.show(io::IO, ::MIME"text/plain", obj::Tire)
+    T = typeof(obj)
+    println(io, "$(T)(")
+    for field in fieldnames(T)
+        println(io, "  $field = ", getfield(obj, field))
+    end
+    print(io, ")")
+end
+
+
+
+function createR20lin(maxForce)
     radius = carParameter(0.205, "tire radius", "m")
     width = carParameter(0.3, "tire width, wrong", "m")
     inertia = carParameter(0.3, "tire width, wrong", "m")
@@ -37,7 +49,7 @@ function createR20lin()
             
 
         else
-            @constraint(optiModel, (tire.latForce/maxMotorForce)^2 + (inputForce/maxMotorForce)^2 <= ((Fz*μ + m*9.81*μ)/maxMotorForce)^2)
+            @constraint(optiModel, (tire.latForce/maxForce)^2 + (tire.longForce/maxForce)^2 <= (tire.vertForce/maxForce)^2)
 
         end
         #tire.slipRatio = tire.angularFrequency * tire.radius / velocity[1]
