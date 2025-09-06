@@ -1,9 +1,3 @@
-using GLMakie
-using LinearAlgebra
-using JuMP, Ipopt, Zygote
-using ControlSystemsBase
-include("carCreate.jl")
-include("trackProcessing.jl")
 
 function carF(k,u,x)
     car.mapping(car,u,x)
@@ -47,7 +41,7 @@ end
 car = createCTU25_1D()
 track = 0
 #track = singleTurn()
-path = "tracks/FSG.kml"
+path = "tracks/FSCZ.kml"
 track = kml2track(path,true)
 N = length(track.curvature)# pridat parameter trate ze kolko ma indexov a aka je dlha v metroch
 

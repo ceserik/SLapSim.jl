@@ -1,4 +1,4 @@
-include("carParams.jl")
+
 using Interpolations
 
 function lessContraint(a,b,model=nothing)
@@ -85,8 +85,6 @@ end
 
 
 
-
-
 #Simple mass point model
 function createCTU25_1D()
     mass = carParameter(280.0, "Mass", "kg")
@@ -144,8 +142,20 @@ end
 
 
 function simplestSingleTrack(car,track,k, optiModel=nothing)
-
+    car.drivetrain.motors[1].torque.value
+    car.drivetrain.motors[2].torque.value
     
+    velocity = car.chassis.velocity
+    angularVelocity = car.chassis.angularVelocity
+    frontSpeeds = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
+    rearSpeeds = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
+
+    tireFront.tireFunction(tireFront,frontSpeeds,1000)
+    tireRear.tireFunction(tireFront,rearSpeeds,1000)
+
+    cogforce1 = car.wheelAssemblies[1].wheel2CoG([tireFront.longForce tireFront.latForce tireFront.vertForce])
+    cogforce2 = car.wheelAssemblies[2].wheel2CoG([tireRear.longForce tireRear.latForce tireRear.vertForce])
+
 
 
 
