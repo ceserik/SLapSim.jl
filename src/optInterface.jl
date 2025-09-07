@@ -1,6 +1,8 @@
-
+include("initSlapSim.jl")
 function carF(k,u,x)
-    car.mapping(car,u,x)
+    #car.mapping(car,u,x)
+    car.controlMapping(car,u)
+    car.stateMapping(car,x)
     dzds = time2path(car,track,k) #time2path(s,instantCarParams,track,car)
     return dzds
 end
@@ -11,8 +13,8 @@ end
 function time2path(car,track,k)
     #track.mapping(track,instantTrack,s)
     dxdt = car.carFunction(car,track,k,model)
-    v_x = car.carParameters.vx.value
-    v_y = car.carParameters.vy.value
+    v_x = car.carParameters.velocity.value[1]
+    v_y = car.carParameters.velocity.value[2]
     psi = car.carParameters.psi.value
     n   = car.carParameters.n.value
 

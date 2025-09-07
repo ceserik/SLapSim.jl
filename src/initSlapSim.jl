@@ -2,6 +2,7 @@ using GLMakie
 using LinearAlgebra
 using JuMP, Ipopt, Zygote
 using ControlSystemsBase
+using Debugger
 const MODULES_INITIALIZED = true
 include("carCreate.jl")
 include("trackProcessing.jl")
@@ -15,4 +16,5 @@ include("suspension.jl")
 include("wheelAssembly.jl")
 print("Slapsim initilized\n")
 
-#tire2= createR20lin()
+car = createSimplestSingleTrack()
+simplestSingleTrack(car)

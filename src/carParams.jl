@@ -22,48 +22,6 @@ mutable struct carParameter
 end
 
 
-"""
-Generic pretty printing for car components.
-Usage: import this function and add:
-    Base.show(io::IO, ::MIME"text/plain", obj::YourType) = prettyPrintComponent(io, obj)
-"""
-function prettyPrintComponent(io::IO, obj)
-    # Handle simple types directly
-    if !isstructtype(typeof(obj))
-        print(io, obj)
-        return
-    end
-    
-    # Handle structs
-    T = typeof(obj)
-    println(io, "$(T)(")
-    
-    # Only try to calculate field width if the type has fields
-    if fieldcount(T) > 0
-        max_width = maximum(length(string(field)) for field in fieldnames(T))
-        for field in fieldnames(T)
-            field_str = rpad(string(field), max_width)
-            println(io, "  $(field_str) = ", getfield(obj, field))
-        end
-    end
-    
-    print(io, ")")
-end
-
-
-mutable struct carParameters
-    mass::carParameter
-    motorForce::carParameter
-    CL::carParameter
-    CD::carParameter
-    vx::carParameter
-    vy::carParameter
-    psi::carParameter
-    n::carParameter
-    powerLimit::carParameter
-    lateralForce::carParameter
-    nControls::carParameter
-end
 
 mutable struct Drivetrain
     motors
@@ -90,7 +48,6 @@ mutable struct Chassis
     mass::carParameter
 end
 
-
 mutable struct Car2
     velocity
     angularVelocity
@@ -111,15 +68,28 @@ function createCTU25chassis()
 
 end
 
+mutable struct carParameters
+    mass::carParameter
+    motorForce::carParameter
+    CL::carParameter
+    CD::carParameter
+    velocity::carParameter
+    psi::carParameter
+    n::carParameter
+    powerLimit::carParameter
+    lateralForce::carParameter
+    nControls::carParameter
+end
+
+
 function createCTU25_2D()
     mass = carParameter(280.0, "Mass", "kg")
     motorForce = carParameter(1000.0, "motorForce", "N")
     lateralForce = carParameter(0.0, "lateral Force", "N")
     CL = carParameter(5.0, "Lift Coefficient", "-")
     CD = carParameter(2.0, "Drag Coefficient", "-")
-    vx = carParameter(15.0,"Speed X","m/s")
+    velocity = carParameter([0,0,0],"Speed X","m/s")
     powerLimit = carParameter(80000.0,"PowerLimit","W")
-    vy = carParameter(0.0,"Speed Y","m/s")
     psi = carParameter(0.0,"heading","rad")
     n = carParameter(0.0,"Distance from centerline","m")
     nControls = carParameter(2.0,"number of controlled parameters","-")
@@ -128,8 +98,7 @@ function createCTU25_2D()
         motorForce,
         CL,
         CD,
-        vx,
-        vy,
+        velocity,
         psi,
         n,
         powerLimit,
@@ -168,11 +137,8 @@ function createCTU25_2D()
     return car
 end
     
-
-
 function createSimplestSingleTrack()
 
-    
     gearboxFront = createCTU25gearbox()
     gearboxRear = createCTU25gearbox()
 
@@ -213,4 +179,38 @@ function createSimplestSingleTrack()
     )
     return afto
 end
+
+
+"""
+Generic pretty printing for car components.
+Usage: import this function and add:
+    Base.show(io::IO, ::MIME"text/plain", obj::YourType) = prettyPrintComponent(io, obj)
+"""
+function prettyPrintComponent(io::IO, obj)
+    # List of types that should get pretty printing
+    pretty_print_types = [Tire, Motor, Gearbox, Chassis, Drivetrain, Car2]
+    
+    # Handle types that shouldn't get pretty printing
+    if !any(T -> obj isa T, pretty_print_types)
+        print(io, obj)
+        return
+    end
+    
+    # Handle car components with pretty printing
+    T = typeof(obj)
+    println(io, "$(T)(")
+    
+    if fieldcount(T) > 0
+        max_width = maximum(length(string(field)) for field in fieldnames(T))
+        for field in fieldnames(T)
+            field_str = rpad(string(field), max_width)
+            println(io, "  $(field_str) = ", getfield(obj, field))
+        end
+    end
+    
+    print(io, ")")
+end
+
+
 print("carParams.jl great success\n")
+

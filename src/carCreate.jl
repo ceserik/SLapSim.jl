@@ -41,7 +41,10 @@ function massPointCar(car,track,k, optiModel=nothing)
 
     # Get state
     vx         = car.carParameters.vx.value
+        # this simplificqation is necceseary so that  universal function time -> path can be used
+        #it means that car is always pointing the sma edirection as track and no sideways motion is possible
     car.carParameters.psi.value = track.theta[k]
+    
 
     # Get track inputs
     c          = track.curvature[k]
@@ -113,10 +116,10 @@ function createCTU25_1D()
         nControls
     )
 
-    function controlMapping(input, controls)
-        input.motorForce.value = controls[1]  
+    function controlMapping(car,u)
+        car.carParameters.motorForce.value = u[1]
         #paramcopy.CL.value = controls[2]
-        return input
+        
     end
 
     function mapping(car,u,x)
@@ -124,10 +127,8 @@ function createCTU25_1D()
         car.carParameters.vx.value = x[1]
     end
 
-    function stateMapping(input,states)
-        input.vx.value = states[1]
-        #map psi to track heading here, maybe input should be also track mapping should be unified
-        return input
+    function stateMapping(car,x)
+        car.carParameters.vx.value = x[1]
     end
     car = Car(
         massPointCar,
@@ -164,24 +165,27 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     #Steer the front wheels
     car.wheelAssemblies[1].rotZ(steeringAngle)
 
-
     #gearing of forces from motor to tire, would be nice o have this in a loop
     gbFront.torqueIn.value = torqueFront
     gbFront.f()
-    tireFront.longForce.value = gbFront.torqueOut
 
     gbRear.torqueIn.value = torqueRear
     gbRear.f()
-    tireRear.longForce.value = gbRear.torqueOut
 
-    tireFront.tireFunction(1000)
-    tireRear.tireFunction(1000)
+    #create constraints for motor
+    if !isnothing(optiModel)
+        car.drivetrain.motors[1].constrains(optiModel)
+        car.drivetrain.motors[2].constrains(optiModel)
+    end
+    #tire Function, cujrrently same as in bachelors thesis
+    tireFront.tireFunction(gbFront.torqueOut.value)
+    tireRear.tireFunction(gbRear.torqueOut.value)
 
 
-    cogforce1 = car.wheelAssemblies[1].wheel2CoG([tireFront.longForce.value, tireFront.latForce.value, tireFront.vertForce.value])
-    cogforce2 = car.wheelAssemblies[2].wheel2CoG([tireRear.longForce.value, tireRear.latForce.value, tireRear.vertForce.value])
+    cogforce1 = car.wheelAssemblies[1].wheel2CoG([tireFront.longForce.value, tireFront.latForce.value, 0]) # zero at the end is because vetial force would cause car to spn around y
+    cogforce2 = car.wheelAssemblies[2].wheel2CoG([tireRear.longForce.value, tireRear.latForce.value, 0])
 
-
+    return [cogforce1 ,cogforce2]
 
 
 end
