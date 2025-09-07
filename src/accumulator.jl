@@ -8,7 +8,7 @@ mutable struct Accumulator
     mass::carParameter
     resistance::carParameter
 end
-
+Base.show(io::IO, ::MIME"text/plain", obj::Accumulator) = prettyPrintComponent(io, obj)
 
 
 function createPepikCTU25()

@@ -11,6 +11,8 @@ include("accumulator.jl")
 include("gearbox.jl")
 include("motor.jl")
 include("tire.jl")
+include("suspension.jl")
+include("wheelAssembly.jl")
 print("Slapsim initilized\n")
 
 #tire2= createR20lin()

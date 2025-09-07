@@ -141,34 +141,45 @@ function createCTU25_1D()
 end
 
 
-function simplestSingleTrack(car,track,k, optiModel=nothing)
+function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     
-    
+    # assign names for easier reading
     torqueFront = car.drivetrain.motors[1].torque.value
     torqueRear = car.drivetrain.motors[2].torque.value
     steeringAngle = car.wheelAssemblies[1].steeringAngle.value
 
-    gbFront = createCTU25gearbox()
-    gbRear = createCTU25gearbox()
-
-    gbFront.torqueIn
-    gbFront.gearboxFunction()
-
+    gbFront = car.drivetrain.gearboxes[1]
+    gbRear = car.drivetrain.gearboxes[2]
 
     velocity = car.velocity.value
     angularVelocity = car.angularVelocity.value
 
+    tireFront = car.drivetrain.tires[1]
+    tireRear = car.drivetrain.tires[2]
 
-    car.drivetrain.tires[1].velocity.value = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
-    car.drivetrain.tires[2].velocity.value = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
+    # Transformation of velocities from cog to wheels
+    tireFront.velocity.value = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
+    tireRear.velocity.value = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
 
+    #Steer the front wheels
     car.wheelAssemblies[1].rotZ(steeringAngle)
 
-    tireFront.tireFunction(tireFront,frontSpeeds,1000)
-    tireRear.tireFunction(tireFront,rearSpeeds,1000)
 
-    cogforce1 = car.wheelAssemblies[1].wheel2CoG([tireFront.longForce tireFront.latForce tireFront.vertForce])
-    cogforce2 = car.wheelAssemblies[2].wheel2CoG([tireRear.longForce tireRear.latForce tireRear.vertForce])
+    #gearing of forces from motor to tire, would be nice o have this in a loop
+    gbFront.torqueIn.value = torqueFront
+    gbFront.f()
+    tireFront.longForce.value = gbFront.torqueOut
+
+    gbRear.torqueIn.value = torqueRear
+    gbRear.f()
+    tireRear.longForce.value = gbRear.torqueOut
+
+    tireFront.tireFunction(1000)
+    tireRear.tireFunction(1000)
+
+
+    cogforce1 = car.wheelAssemblies[1].wheel2CoG([tireFront.longForce.value, tireFront.latForce.value, tireFront.vertForce.value])
+    cogforce2 = car.wheelAssemblies[2].wheel2CoG([tireRear.longForce.value, tireRear.latForce.value, tireRear.vertForce.value])
 
 
 

@@ -14,7 +14,7 @@ mutable struct Suspension
     # da sa posuvat pitch center???
 end
 
-
+Base.show(io::IO, ::MIME"text/plain", obj::Suspension) = prettyPrintComponent(io, obj)
 
 function createDummySuspension()
     tlong = carParameter(0.0,"longitudinal transfer time constant","s")

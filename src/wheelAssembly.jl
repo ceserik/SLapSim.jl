@@ -24,7 +24,7 @@ function createBasicWheelAssembly(position)
         #returns speed at pivot point
         return velocity + cross(angularVelocity, position)
     end
-    function wheel2CoG(forces, position)
+    function wheel2CoG(forces)
         #returns moments on cog from wheel forces
         moments = cross(position, forces)
         return moments

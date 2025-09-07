@@ -22,6 +22,35 @@ mutable struct carParameter
 end
 
 
+"""
+Generic pretty printing for car components.
+Usage: import this function and add:
+    Base.show(io::IO, ::MIME"text/plain", obj::YourType) = prettyPrintComponent(io, obj)
+"""
+function prettyPrintComponent(io::IO, obj)
+    # Handle simple types directly
+    if !isstructtype(typeof(obj))
+        print(io, obj)
+        return
+    end
+    
+    # Handle structs
+    T = typeof(obj)
+    println(io, "$(T)(")
+    
+    # Only try to calculate field width if the type has fields
+    if fieldcount(T) > 0
+        max_width = maximum(length(string(field)) for field in fieldnames(T))
+        for field in fieldnames(T)
+            field_str = rpad(string(field), max_width)
+            println(io, "  $(field_str) = ", getfield(obj, field))
+        end
+    end
+    
+    print(io, ")")
+end
+
+
 mutable struct carParameters
     mass::carParameter
     motorForce::carParameter
@@ -42,8 +71,6 @@ mutable struct Drivetrain
     tires
     accumulators
 end
-
-
 
 # Define the Car struct with parameters
 mutable struct Car
@@ -144,14 +171,21 @@ end
 
 
 function createSimplestSingleTrack()
-    tireFront = createR20lin(500)
-    tireRear = createR20lin(500)
+
     
     gearboxFront = createCTU25gearbox()
     gearboxRear = createCTU25gearbox()
 
     motorFront = createFischerMotor()
     motorRear = createFischerMotor()
+
+    #get max motor torque for scaling
+    maxMotorTorqueFront = motorFront.torqueSpeedFunction(0) * gearboxFront.ratio.value
+    maxMotorTorqueRear = motorFront.torqueSpeedFunction(0) * gearboxRear.ratio.value
+
+    tireFront = createR20lin(maxMotorTorqueFront)
+    tireRear = createR20lin(maxMotorTorqueRear)
+
 
     drivetrain = Drivetrain(
         [motorFront,motorRear],
