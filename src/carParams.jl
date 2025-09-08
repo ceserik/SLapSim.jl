@@ -215,7 +215,7 @@ Usage: import this function and add:
 """
 function prettyPrintComponent(io::IO, obj)
     # List of types that should get pretty printing
-    pretty_print_types = [Tire, Motor, Gearbox, Chassis, Drivetrain, Car2]
+    pretty_print_types = [Tire, Motor, Gearbox, Chassis, Drivetrain, Car2,WheelAssembly]
     
     # Handle types that shouldn't get pretty printing
     if !any(T -> obj isa T, pretty_print_types)

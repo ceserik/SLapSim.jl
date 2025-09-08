@@ -5,32 +5,13 @@ mutable struct  Tire
     mass::carParameter
     velocity::carParameter
     angularFrequency::carParameter
-    vertForce::carParameter
-    longForce::carParameter
-    latForce::carParameter
+    forces::carParameter
     slipAngle::carParameter
     slipRatio::carParameter
     tireFunction
-    # where T
-    #ire(radius, width, inertia, mass, angularFrequency, vertForce, longForce, latForce, slipAngle, slipRatio, tireFunction)
+    
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
-
-
-#Pretty printing for tire
-#function Base.show(io::IO, ::MIME"text/plain", obj::Tire)
-#    T = typeof(obj)
-#    println(io, "$(T)(")
-#    # Calculate maximum field name length for alignment
-#    max_width = maximum(length(string(field)) for field in fieldnames(T))
-#    for field in fieldnames(T)
-#        # Pad field names with spaces for alignment
-#        field_str = rpad(string(field), max_width)
-#        println(io, "  $(field_str) = ", getfield(obj, field))
-#    end
-#    print(io, ")")
-#end
-
 
 
 
@@ -41,9 +22,7 @@ function createR20lin(maxTorque)
     mass = carParameter(1.0, "tire mass,wrong", "kg")
     velocity = carParameter([0.0, 0.0, 0.0], "velocity", "m/s");
     angularFrequency = carParameter(0.0, "angular velocity", "rad/s")
-    vertForce = carParameter(1000.0, "Vertical force on tire", "N")#palceholder value
-    longForce = carParameter(0.0, "Longitudinal force from tire", "N")
-    latForce = carParameter(0.0, "Lateral force from tire", "N")
+    forces = carParameter([0.0, 0.0, 0.0], "Forces from tire x y z", "N")
     slipAngle = carParameter(0.0, "slip angle", "rad")
     slipRatio = carParameter(0.0, "slip ratio", "-")
 
@@ -51,20 +30,22 @@ function createR20lin(maxTorque)
 
     function tireFunction(inTorque,optiModel=nothing)
         slipAngle.value = atan(velocity.value[1], velocity.value[2])
-        latForce.value = slipAngle.value * vertForce.value
-        longForce.value = inTorque
+        forces.value[2] = slipAngle.value * forces.value[3]
+        forces.value[1] = inTorque/radius.value
         if isnothing(optiModel)
-            
 
         else
-            @constraint(optiModel, (tire.latForce/maxForce)^2 + (tire.longForce/maxForce)^2 <= (tire.vertForce/maxForce)^2)
+            @constraint(optiModel, (tire.latForce/maxForce)^2 + (tire.longForce/maxForce)^2 <= (tire.force[3].value/maxForce)^2)
             @constraint(optiModel, slipAngle.value <=  5*0.08726646259971647)
             @constraint(optiModel, slipAngle.value >= -5*0.08726646259971647)
 
         end
         #tire.slipRatio = tire.angularFrequency * tire.radius / velocity[1]
-        #tire.longForce = tire.slipRatio * vertForce
+        #tire.longForce = tire.slipRatio * 
     end
+
+
+    
     tire = Tire(
         radius,
         width,
@@ -72,9 +53,7 @@ function createR20lin(maxTorque)
         mass,
         velocity,
         angularFrequency,
-        vertForce,
-        longForce,
-        latForce,
+        forces,
         slipAngle,
         slipRatio,
         tireFunction

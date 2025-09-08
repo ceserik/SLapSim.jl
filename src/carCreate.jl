@@ -31,7 +31,6 @@ end
 function massPointCar(car,track,k, optiModel=nothing)
     # Simple  Mass point friction circle
     # inputs is a struct of all posible inputs of vehicle, controls are not separated from inputs
-    
     # Get inputs
     m          = car.carParameters.mass.value
     inputForce = car.carParameters.motorForce.value
@@ -45,7 +44,6 @@ function massPointCar(car,track,k, optiModel=nothing)
         #it means that car is always pointing the sma edirection as track and no sideways motion is possible
     car.carParameters.psi.value = track.theta[k]
     
-
     # Get track inputs
     c          = track.curvature[k]
     rho        = track.rho[k]
@@ -60,7 +58,6 @@ function massPointCar(car,track,k, optiModel=nothing)
     #print(Fy)
     FxMaxsquared = max((Fz*μ + m*9.81*μ)^2 - Fy^2,0)
     # Add optimization constraints if model is provided
-
 
     if optiModel !== nothing
         ## tu urobit funkciu do ktorej dam obmedzenie a ona mi o spravi aby som nemusel stale davat ify
@@ -140,7 +137,6 @@ end
 
 
 function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
-    
     # assign names for easier reading
     torqueFront = car.drivetrain.motors[1].torque.value
     torqueRear = car.drivetrain.motors[2].torque.value
@@ -156,11 +152,15 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     tireRear = car.drivetrain.tires[2]
 
     # Transformation of velocities from cog to wheels
-    tireFront.velocity.value = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
-    tireRear.velocity.value = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
+    #tireFront.velocity.value = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
+    #tireRear.velocity.value = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
+    car.wheelAssemblies[1].setPivotVelocity(angularVelocity)
+    car.wheelAssemblies[2].setPivotVelocity(angularVelocity)
 
-    #Steer the front wheels
-    car.wheelAssemblies[1].rotZ(steeringAngle)
+    #Steer the wheels
+    car.wheelAssemblies[1].setTireSpeeds(FrontTire)
+    car.wheelAssemblies[2].setTireSpeeds(RearTire)
+
 
     #gearing of forces from motor to tire, would be nice o have this in a loop
     gbFront.torqueIn.value = torqueFront
@@ -178,11 +178,15 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     tireFront.tireFunction(gbFront.torqueOut.value)
     tireRear.tireFunction(gbRear.torqueOut.value)
 
+    #car.wheelAssemblies[1].pivotForces = car.wheelAssemblies[1].rotZ()
 
-    cogforce1 = car.wheelAssemblies[1].wheel2CoG([tireFront.longForce.value, tireFront.latForce.value, 0]) # zero at the end is because vetial force would cause car to spn around y
-    cogforce2 = car.wheelAssemblies[2].wheel2CoG([tireRear.longForce.value, tireRear.latForce.value, 0])
 
-    return [cogforce1 ,cogforce2]
+    cogMoment1 = car.wheelAssemblies[1].wheel2CoG(tireFront.forces.value) # zero at the end is because vertcial force would cause car to spn around y
+    cogMoment2 = car.wheelAssemblies[2].wheel2CoG(tireRear.forces.value)
+
+    #dv= (cogforce1+cogforce2)/car.carParameters.mass.value
+    #dvx = dv[1]
+    #dvy = dv[2]
 
 
 end
