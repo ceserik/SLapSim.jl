@@ -40,7 +40,7 @@ function massPointCar(car,track,k, optiModel=nothing)
     maxPower   = car.carParameters.powerLimit.value
 
     # Get state
-    vx         = car.carParameters.vx.value
+    vx         = car.carParameters.velocity.value[1]
         # this simplificqation is necceseary so that  universal function time -> path can be used
         #it means that car is always pointing the sma edirection as track and no sideways motion is possible
     car.carParameters.psi.value = track.theta[k]
@@ -78,13 +78,9 @@ function massPointCar(car,track,k, optiModel=nothing)
    # lessContraint((Fy/maxMotorForce)^2 + (inputForce/maxMotorForce)^2 ,((Fz*μ + m*9.81*μ)/maxMotorForce)^2,optiModel)
    # lessContraint(inputForce/FxPowerMax , FxPowerMax/FxPowerMax,optiModel)
 
-
-
         dstates =  [(inputForce -(1/2 *rho*CD*vx^2))/m 0  0    0     0 0]
     return dstates
 end
-
-
 
 
 
@@ -95,7 +91,8 @@ function createCTU25_1D()
     lateralForce = carParameter(0.0, "lateral Force", "N")
     CL = carParameter(5.0, "Lift Coefficient", "-")
     CD = carParameter(2.0, "Drag Coefficient", "-")
-    vx = carParameter(15.0,"Speed X","m/s")
+    velocity = carParameter([15.0,0,0],"Speed X","m/s")
+    angularVelocity = carParameter([0.0, 0.0, 0.0], "angular velocity", "rad/s");
     powerLimit = carParameter(80000.0,"PowerLimit","W")
     vy = carParameter(0.0,"Speed Y","m/s")
     psi = carParameter(0.0,"heading","rad")
@@ -107,8 +104,8 @@ function createCTU25_1D()
         motorForce,
         CL,
         CD,
-        vx,
-        vy,
+        velocity,
+        angularVelocity,
         psi,
         n,
         powerLimit,
@@ -128,7 +125,7 @@ function createCTU25_1D()
     end
 
     function stateMapping(car,x)
-        car.carParameters.vx.value = x[1]
+        car.carParameters.velocity.value = [x[1] 0 0]
     end
     car = Car(
         massPointCar,
@@ -152,8 +149,8 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     gbFront = car.drivetrain.gearboxes[1]
     gbRear = car.drivetrain.gearboxes[2]
 
-    velocity = car.velocity.value
-    angularVelocity = car.angularVelocity.value
+    velocity = car.carParameters.velocity.value
+    angularVelocity = car.carParameters.angularVelocity.value
 
     tireFront = car.drivetrain.tires[1]
     tireRear = car.drivetrain.tires[2]

@@ -48,16 +48,7 @@ mutable struct Chassis
     mass::carParameter
 end
 
-mutable struct Car2
-    velocity
-    angularVelocity
-    drivetrain
-    aero
-    suspension
-    chassis
-    wheelAssemblies
 
-end
 
 function createCTU25chassis()
     mass = carParameter(180,"mass","kg")
@@ -74,6 +65,7 @@ mutable struct carParameters
     CL::carParameter
     CD::carParameter
     velocity::carParameter
+    angularVelocity::carParameter
     psi::carParameter
     n::carParameter
     powerLimit::carParameter
@@ -99,6 +91,7 @@ function createCTU25_2D()
         CL,
         CD,
         velocity,
+        angularVelocity,
         psi,
         n,
         powerLimit,
@@ -136,6 +129,16 @@ function createCTU25_2D()
 
     return car
 end
+
+mutable struct Car2
+    drivetrain
+    aero
+    suspension
+    chassis
+    wheelAssemblies
+    carParameters
+end
+
     
 function createSimplestSingleTrack()
 
@@ -167,15 +170,39 @@ function createSimplestSingleTrack()
 
     velocity = carParameter([0.0, 0.0, 0.0], "translational velocity", "m/s");
     angularVelocity = carParameter([0.0, 0.0, 0.0], "angular velocity", "rad/s");
-
-    afto = Car2(
+    
+    mass = carParameter(280.0, "Mass", "kg")
+    motorForce = carParameter(1000.0, "motorForce", "N")
+    lateralForce = carParameter(0.0, "lateral Force", "N")
+    CL = carParameter(5.0, "Lift Coefficient", "-")
+    CD = carParameter(2.0, "Drag Coefficient", "-")
+    velocity = carParameter([0,0,0],"Speed X","m/s")
+    powerLimit = carParameter(80000.0,"PowerLimit","W")
+    psi = carParameter(0.0,"heading","rad")
+    n = carParameter(0.0,"Distance from centerline","m")
+    nControls = carParameter(2.0,"number of controlled parameters","-")
+    
+    p = carParameters(
+        mass,
+        motorForce,
+        CL,
+        CD,
         velocity,
         angularVelocity,
+        psi,
+        n,
+        powerLimit,
+        lateralForce,
+        nControls
+    )
+
+    afto = Car2(
         drivetrain,
         aero,
         suspension,
         chassis,
-        [wheelAssemblyFront,wheelAssemblyRear]
+        [wheelAssemblyFront,wheelAssemblyRear],
+        p
     )
     return afto
 end
