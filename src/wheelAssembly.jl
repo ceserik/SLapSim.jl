@@ -1,18 +1,21 @@
 mutable struct WheelAssembly
-    position
-    velocity
-    wheel2CoG
+    position::carParameter
+    velocity::carParameter
+    pivot2CoG
     steeringAngle::carParameter
-    pivotForces::carParameter
+    forces::carParameter
     setPivotVelocity
     rotZ
+    setTireSpeeds
+    setPivotForce
 end
 
 
 function createBasicWheelAssembly(position)
     steeringAngle = carParameter(0.0,"steering angle","rad")
-    pivotForces = carParameter([0.0,0.0,0.0],"Pivot forces","N N N")
-    velocity = carParameter([0.0,0.0,0.0],"Velocity at pivot","")
+    forces = carParameter([0.0,0.0,0.0],"Pivot forces","N N N")
+    velocity = carParameter([0.0,0.0,0.0],"Velocity at pivot","m/s")
+    position = carParameter(position,"Position from CoG","m m m")
     function rotZ()
         out = [
             cos(steeringAngle.value) -sin(steeringAngle.value) 0;
@@ -22,32 +25,34 @@ function createBasicWheelAssembly(position)
         return out
     end
 
-    function wheel2CoG(forces)
+    function pivot2CoG(forces)
         #returns moments on cog from wheel forces
-        moments = cross(position, forces)
+        moments = cross(position.value, forces)
         return moments
     end
 
     function setPivotForce(tire)
-        pivotForces.value = inv(rotZ()) * tire.forces
+        forces.value = inv(rotZ()) * tire.forces.value
     end
 
-    function setPivotVelocity(angularVelocity)
-        velocity.value = velocity.value + cross(angularVelocity, position) #CoG2wheelAssembly(velocity.value,angularVelocity)
+    function setPivotVelocity(angularVelocity,CoGvelocity)
+        velocity.value = CoGvelocity + cross(angularVelocity, position.value) #CoG2wheelAssembly(velocity.value,angularVelocity)
     end
 
     function setTireSpeeds(tire)
-        tire.velocity  = rotZ() * velocity
+        tire.velocity.value  = rotZ() * velocity.value
     end
 
     testWheelAssembly = WheelAssembly(
         position,
-        [0 0 0],
-        wheel2CoG,
+        velocity,
+        pivot2CoG,
         steeringAngle,
-        pivotForces,
+        forces,
         setPivotVelocity,
-        rotZ
+        rotZ,
+        setTireSpeeds,
+        setPivotForce
         
     )
     return testWheelAssembly

@@ -80,10 +80,10 @@ function massPointCar(car,track,k, optiModel=nothing)
 end
 
 
-
 #Simple mass point model
 function createCTU25_1D()
     mass = carParameter(280.0, "Mass", "kg")
+    inertia = carParameter(100.0, "Inertia", "kg*m^2")
     motorForce = carParameter(1000.0, "motorForce", "N")
     lateralForce = carParameter(0.0, "lateral Force", "N")
     CL = carParameter(5.0, "Lift Coefficient", "-")
@@ -98,6 +98,7 @@ function createCTU25_1D()
 
     p = carParameters(
         mass,
+        inertia,
         motorForce,
         CL,
         CD,
@@ -152,15 +153,12 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     tireRear = car.drivetrain.tires[2]
 
     # Transformation of velocities from cog to wheels
-    #tireFront.velocity.value = car.wheelAssemblies[1].CoG2wheelAssembly(velocity,angularVelocity)
-    #tireRear.velocity.value = car.wheelAssemblies[2].CoG2wheelAssembly(velocity,angularVelocity)
-    car.wheelAssemblies[1].setPivotVelocity(angularVelocity)
-    car.wheelAssemblies[2].setPivotVelocity(angularVelocity)
+    car.wheelAssemblies[1].setPivotVelocity(angularVelocity,velocity)
+    car.wheelAssemblies[2].setPivotVelocity(angularVelocity,velocity)
 
     #Steer the wheels
-    car.wheelAssemblies[1].setTireSpeeds(FrontTire)
-    car.wheelAssemblies[2].setTireSpeeds(RearTire)
-
+    car.wheelAssemblies[1].setTireSpeeds(tireFront)
+    car.wheelAssemblies[2].setTireSpeeds(tireRear)
 
     #gearing of forces from motor to tire, would be nice o have this in a loop
     gbFront.torqueIn.value = torqueFront
@@ -174,19 +172,33 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
         car.drivetrain.motors[1].constrains(optiModel)
         car.drivetrain.motors[2].constrains(optiModel)
     end
-    #tire Function, cujrrently same as in bachelors thesis
+    #tire Function, currently same as in bachelors thesis
+    # calculate Fz on tires
+    car.drivetrain.tires[1].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
+    car.drivetrain.tires[2].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
+
+
     tireFront.tireFunction(gbFront.torqueOut.value)
     tireRear.tireFunction(gbRear.torqueOut.value)
 
-    #car.wheelAssemblies[1].pivotForces = car.wheelAssemblies[1].rotZ()
+    car.wheelAssemblies[1].setPivotForce(tireFront)
+    car.wheelAssemblies[2].setPivotForce(tireRear)
 
 
-    cogMoment1 = car.wheelAssemblies[1].wheel2CoG(tireFront.forces.value) # zero at the end is because vertcial force would cause car to spn around y
-    cogMoment2 = car.wheelAssemblies[2].wheel2CoG(tireRear.forces.value)
+    cogMoment1 = car.wheelAssemblies[1].pivot2CoG(tireFront.forces.value) # zero at the end is because vertcial force would cause car to spn around y
+    cogMoment2 = car.wheelAssemblies[2].pivot2CoG(tireRear.forces.value)
 
-    #dv= (cogforce1+cogforce2)/car.carParameters.mass.value
-    #dvx = dv[1]
-    #dvy = dv[2]
+    cogForce = car.wheelAssemblies[1].forces.value .+ car.wheelAssemblies[2].forces.value
+    cogMoment = cogMoment1 + cogMoment2
 
+    #print cogMoment and cogForce
+    println("CoG Moment 1: ", cogMoment1)
+    println("CoG Moment 2: ", cogMoment2)
+    println("CoG Force: ", cogForce)
+
+    dv = cogForce/car.carParameters.mass.value + angularVelocity × velocity
+    dangularVelocity = cogMoment/car.carParameters.inertia.value
+    dx = [dv[1],dv[2],angularVelocity,dangularVelocity[3]]
+    return dx
 
 end

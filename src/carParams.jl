@@ -61,6 +61,7 @@ end
 
 mutable struct carParameters
     mass::carParameter
+    inertia::carParameter
     motorForce::carParameter
     CL::carParameter
     CD::carParameter
@@ -76,6 +77,7 @@ end
 
 function createCTU25_2D()
     mass = carParameter(280.0, "Mass", "kg")
+    inertia = carParameter(100.0, "Inertia", "kg*m^2")
     motorForce = carParameter(1000.0, "motorForce", "N")
     lateralForce = carParameter(0.0, "lateral Force", "N")
     CL = carParameter(5.0, "Lift Coefficient", "-")
@@ -87,6 +89,7 @@ function createCTU25_2D()
     nControls = carParameter(2.0,"number of controlled parameters","-")
     p = carParameters(
         mass,
+        inertia,
         motorForce,
         CL,
         CD,
@@ -137,6 +140,9 @@ mutable struct Car2
     chassis
     wheelAssemblies
     carParameters
+    carFunction
+    controlMapping::Function
+    stateMapping::Function
 end
 
     
@@ -168,22 +174,35 @@ function createSimplestSingleTrack()
     wheelAssemblyRear = createBasicWheelAssembly([-1.520/2, 0, 0])
     chassis = createCTU25chassis()
 
-    velocity = carParameter([0.0, 0.0, 0.0], "translational velocity", "m/s");
-    angularVelocity = carParameter([0.0, 0.0, 0.0], "angular velocity", "rad/s");
+    velocity = carParameter([10.0, 10.0, 0.0], "translational velocity", "m/s");
+    angularVelocity = carParameter([0.0, 0.0, 1.0], "angular velocity", "rad/s");
     
     mass = carParameter(280.0, "Mass", "kg")
     motorForce = carParameter(1000.0, "motorForce", "N")
     lateralForce = carParameter(0.0, "lateral Force", "N")
     CL = carParameter(5.0, "Lift Coefficient", "-")
     CD = carParameter(2.0, "Drag Coefficient", "-")
-    velocity = carParameter([0,0,0],"Speed X","m/s")
+    velocity = carParameter([15,0,0],"Speed X","m/s")
     powerLimit = carParameter(80000.0,"PowerLimit","W")
     psi = carParameter(0.0,"heading","rad")
     n = carParameter(0.0,"Distance from centerline","m")
     nControls = carParameter(2.0,"number of controlled parameters","-")
+    inertia = carParameter(100.0, "Inertia", "kg*m^2")
+
+
+    function controlMapping(input, controls)
+        input.motorForce.value = controls[1]  
+       
+        return input
+    end
+    function stateMapping(input,states)
+        input.vx.value = states[1]
+        return input
+    end
     
     p = carParameters(
         mass,
+        inertia,
         motorForce,
         CL,
         CD,
@@ -202,7 +221,10 @@ function createSimplestSingleTrack()
         suspension,
         chassis,
         [wheelAssemblyFront,wheelAssemblyRear],
-        p
+        p,
+        simplestSingleTrack,
+        controlMapping,
+        stateMapping
     )
     return afto
 end
@@ -215,7 +237,7 @@ Usage: import this function and add:
 """
 function prettyPrintComponent(io::IO, obj)
     # List of types that should get pretty printing
-    pretty_print_types = [Tire, Motor, Gearbox, Chassis, Drivetrain, Car2,WheelAssembly]
+    pretty_print_types = [Tire, Motor, Gearbox, Chassis, Drivetrain, Car2, WheelAssembly]
     
     # Handle types that shouldn't get pretty printing
     if !any(T -> obj isa T, pretty_print_types)

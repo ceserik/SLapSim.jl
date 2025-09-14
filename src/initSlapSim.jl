@@ -2,7 +2,8 @@ using GLMakie
 using LinearAlgebra
 using JuMP, Ipopt, Zygote
 using ControlSystemsBase
-using Debugger
+using DifferentialEquations
+#using Debugger 
 const MODULES_INITIALIZED = true
 include("carCreate.jl")
 include("trackProcessing.jl")
@@ -14,7 +15,8 @@ include("motor.jl")
 include("tire.jl")
 include("suspension.jl")
 include("wheelAssembly.jl")
-print("Slapsim initilized\n")
+print("Slapsim initialized\n")
 
 car = createSimplestSingleTrack()
-simplestSingleTrack(car)
+#@run car.carFunction(car)
+#simplestSingleTrack(car)
