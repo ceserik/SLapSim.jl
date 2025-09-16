@@ -29,7 +29,7 @@ function createR20lin(maxTorque)
     maxForce = maxTorque/radius.value
 
     function tireFunction(inTorque,optiModel=nothing)
-        slipAngle.value = atan(velocity.value[1], velocity.value[2])
+        slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = slipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
         if isnothing(optiModel)

@@ -192,9 +192,9 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     cogMoment = cogMoment1 + cogMoment2
 
     #print cogMoment and cogForce
-    println("CoG Moment 1: ", cogMoment1)
-    println("CoG Moment 2: ", cogMoment2)
-    println("CoG Force: ", cogForce)
+    #println("CoG Moment 1: ", cogMoment1)
+    #println("CoG Moment 2: ", cogMoment2)
+    #println("CoG Force: ", cogForce)
 
     dv = cogForce/car.carParameters.mass.value + angularVelocity × velocity
     dangularVelocity = cogMoment/car.carParameters.inertia.value
