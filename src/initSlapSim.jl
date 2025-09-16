@@ -2,7 +2,7 @@ using GLMakie
 using LinearAlgebra
 using JuMP, Ipopt, Zygote
 using ControlSystemsBase
-using DifferentialEquations
+using OrdinaryDiffEq
 #using Debugger 
 const MODULES_INITIALIZED = true
 include("carCreate.jl")

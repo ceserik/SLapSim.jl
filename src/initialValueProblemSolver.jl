@@ -10,7 +10,7 @@ function carF(car,u,x)
     return dxdt
 end
 
-using OrdinaryDiffEq, Plots
+#using OrdinaryDiffEq, Plots
 
 # Example constant control function (replace with your control logic)
 u_const(t) = [0.0]  # adjust length/type to match your car.controlMapping expectations
