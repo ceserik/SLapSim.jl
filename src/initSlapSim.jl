@@ -17,6 +17,6 @@ include("suspension.jl")
 include("wheelAssembly.jl")
 print("Slapsim initialized\n")
 
-car = createSimplestSingleTrack()
+
 #@run car.carFunction(car)
 #simplestSingleTrack(car)

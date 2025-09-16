@@ -190,14 +190,16 @@ function createSimplestSingleTrack()
     inertia = carParameter(100.0, "Inertia", "kg*m^2")
 
 
-    function controlMapping(input, controls)
-        input.motorForce.value = controls[1]  
-       
-        return input
+    function controlMapping(car, controls)
+        car.drivetrain.motors[1].torque.value = controls[1]  
+        car.drivetrain.motors[2].torque.value = controls[1]  
+        return car
     end
-    function stateMapping(input,states)
-        input.vx.value = states[1]
-        return input
+    function stateMapping(car,states)
+        car.carParameters.velocity.value = [states[1], states[2], 0.0]
+        car.carParameters.psi.value = states[3]
+        car.carParameters.angularVelocity.value = [0.0, 0.0, states[4]]
+        return car
     end
     
     p = carParameters(
