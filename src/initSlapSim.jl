@@ -5,6 +5,9 @@ using ControlSystemsBase
 using OrdinaryDiffEq
 #using Debugger 
 const MODULES_INITIALIZED = true
+include("carDefinition.jl")
+include("massPointCar.jl")
+include("simpleSingleTrack.jl")
 include("carCreate.jl")
 include("trackProcessing.jl")
 include("carParams.jl")
