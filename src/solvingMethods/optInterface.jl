@@ -1,4 +1,3 @@
-include("initSlapSim.jl")
 function carF(k,u,x)
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
@@ -40,12 +39,7 @@ function time2path(car,track,k)
     return dzds
 end
 
-car = createCTU25_1D()
-track = 0
-#track = singleTurn()
-path = "tracks/FSCZ.kml"
-track = kml2track(path,true)
-model = JuMP.Model(Ipopt.Optimizer)
+
 
 
 function findOptimalTrajectory(track,car,model)
@@ -97,4 +91,3 @@ function findOptimalTrajectory(track,car,model)
     display(GLMakie.Screen(), fig)  # This creates a new window
 end
 
-findOptimalTrajectory(track,car,model)
