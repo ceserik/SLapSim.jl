@@ -1,4 +1,4 @@
-function carF(k,u,x)
+function carF(k::Int64,u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}})
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)
@@ -9,7 +9,7 @@ end
 #poradie car,track,k,s,u,x
 
 ## here I need to define trnasofmation of ODE with respect to time to ODE with respect to path
-function time2path(car,track,k)
+function time2path(car::Car,track::Track,k::Int64)
     #track.mapping(track,instantTrack,s)
     dxdt = car.carFunction(car,track,k,model)
     v_x = car.carParameters.velocity.value[1]
@@ -42,14 +42,14 @@ end
 
 
 
-function findOptimalTrajectory(track,car,model)
+function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model)
     N = length(track.sampleDistances)
 
     #fill track parameters which are constant along track, should be automatized
-    track.rho    = fill(track.rho,N)
-    track.μ      = fill(track.μ,N)
-    track.widthL = fill(track.widthL,N)
-    track.widthR = fill(track.widthR,N)
+    track.rho    = fill(track.rho[1],N)
+    track.μ      = fill(track.μ[1],N)
+    track.widthL = fill(track.widthL[1],N)
+    track.widthR = fill(track.widthR[1],N)
 
     nStates =  Int(car.carParameters.nStates.value)
     #create inputs for car model #create instance of track parameters

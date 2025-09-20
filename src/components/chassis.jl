@@ -6,7 +6,7 @@ end
 function createCTU25chassis()
     mass = carParameter(180.0,"mass","kg")
 
-    function hitbox(car,track,model)
+    function hitbox(car::Car,track::Track,model::JuMP.Model)
         @constraint(model,car.n .>= -1.5)
         @constraint(model,car.n .<= 1.5)
     end

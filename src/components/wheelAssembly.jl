@@ -11,7 +11,7 @@ mutable struct WheelAssembly
 end
 
 
-function createBasicWheelAssembly(position)
+function createBasicWheelAssembly(position::Vector{Float64})
     steeringAngle = carParameter(0.0,"steering angle","rad")
     forces = carParameter([0.0,0.0,0.0],"Pivot forces","N N N")
     velocity = carParameter([0.0,0.0,0.0],"Velocity at pivot","m/s")
@@ -25,21 +25,21 @@ function createBasicWheelAssembly(position)
         return out
     end
 
-    function pivot2CoG(forces)
+    function pivot2CoG(forces::Vector{Float64})
         #returns moments on cog from wheel forces
         moments = cross(position.value, forces)
         return moments
     end
 
-    function setPivotForce(tire)
+    function setPivotForce(tire::Tire)
         forces.value = inv(rotZ()) * tire.forces.value
     end
 
-    function setPivotVelocity(angularVelocity,CoGvelocity)
+    function setPivotVelocity(angularVelocity::Vector{Float64},CoGvelocity::Vector{Float64})
         velocity.value = CoGvelocity + cross(angularVelocity, position.value) #CoG2wheelAssembly(velocity.value,angularVelocity)
     end
 
-    function setTireSpeeds(tire)
+    function setTireSpeeds(tire::Tire)
         tire.velocity.value  = rotZ() * velocity.value
     end
 

@@ -15,7 +15,7 @@ Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
 
 
 
-function createR20lin(maxTorque)
+function createR20lin(maxTorque::Float64)
     radius = carParameter(0.205, "tire radius", "m")
     width = carParameter(0.3, "tire width, wrong", "m")
     inertia = carParameter(0.3, "tire width, wrong", "m")
@@ -28,7 +28,7 @@ function createR20lin(maxTorque)
 
     maxForce = maxTorque/radius.value
 
-    function tireFunction(inTorque,optiModel=nothing)
+    function tireFunction(inTorque::Float64,optiModel::JuMP.Model=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = slipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value

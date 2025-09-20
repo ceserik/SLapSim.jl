@@ -8,4 +8,4 @@ track = singleTurn()
 model = JuMP.Model(Ipopt.Optimizer)
 
 
-@time findOptimalTrajectory(track,car,model)
+findOptimalTrajectory(track,car,model)

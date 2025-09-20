@@ -26,7 +26,7 @@ end
 #interpolation of theta and curvature
 #smart sampling by initilization from massPointSimulation
 
-function naiveProcessing(track)
+function naiveProcessing(track::Track)
     nOfSamples = length(track.x)
 
     dx = diff(track.x)
@@ -138,7 +138,7 @@ function smooth_by_OCP(track, r, ds,closedTrack)
 
 end
 
-function kml2cart(path)
+function kml2cart(path::String)
     file = read(path, KMLFile)
     coordinates = file.children[1].Features[1].Geometry.coordinates
     coords = hcat(ntuple(i -> getindex.(coordinates, i), 3)...)
@@ -159,33 +159,33 @@ function kml2cart(path)
     return A
 end
 
-function kml2track(path,closeTrack)
+function kml2track(path::String,closeTrack::Bool)
     A = kml2cart(path)
     if closeTrack
         A = [A[1:end,:]; A[1,:]']
     end
     track = Track(
-        0,
-        1.225,
-        1,
-        1,
+        [0.0],
+        [1.225],
+        [1.0],
+        [1.0],
         trackMapping,
         A[:,1],
         A[:,2],
-        0,
-        1.5,
-        1.5,
-        0,
-        0,
-        0,
-        0
+        [0.0],
+        [1.5],
+        [1.5],
+        [0.0],
+        [0.0],
+        (s) -> 0.0,
+        [0.0]
         )
         trackfig = Figure()
         ax = Axis(trackfig[1,1],aspect=DataAspect())
         #lines!(ax,track.y, track.x)
         #display(fig)
 
-        smooth_by_OCP(track,1,1.0,closeTrack)
+        smooth_by_OCP(track,1.0,1.0,closeTrack)
         track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
         #lines!(ax,track.y, track.x)
         #display(GLMakie.Screen(),trackfig)
@@ -196,7 +196,7 @@ function kml2track(path,closeTrack)
 end
 
 
-function plotTrack(track, s; b_plotStartEnd=false, ax::Union{Axis,Nothing}=nothing)
+function plotTrack(track::Track, s::Vector{Float64}; b_plotStartEnd::Bool=false, ax::Union{Axis,Nothing}=nothing)
     # create Figure/Axis if none provided
     created = false
     if ax === nothing
@@ -238,7 +238,7 @@ function plotTrack(track, s; b_plotStartEnd=false, ax::Union{Axis,Nothing}=nothi
 end
 
 
-function make_fcurve(s_traj, x_traj, y_traj, th_traj, C_traj)
+function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::Vector{Float64}, th_traj::Vector{Float64}, C_traj::Vector{Float64})
     return s -> (
         interp1(s_traj, x_traj, s),
         interp1(s_traj, y_traj, s),

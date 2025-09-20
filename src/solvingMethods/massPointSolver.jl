@@ -12,12 +12,12 @@ function massPointSolver(car, track)
         numerator = car.carParameters.mass.value * 9.81 * track.μ[i]
         denominator = max(car.carParameters.mass.value * abs(track.curvature[i]) - 1 / 2 * track.rho[i] * car.carParameters.CL.value, 0.000001)
         vxMax[i] = sqrt(numerator / denominator) 
-        vxMax[i] = min(vxMax[i], 50)  # Speed limit
+        vxMax[i] = min(vxMax[i], 50.0)  # Speed limit
     end
 
     #forward pass
     for i = 1:length(track.curvature)-1
-        car.controlMapping(car,[99999])
+        car.controlMapping(car,[99999.0])
         car.stateMapping(car,vForward[i])
         dv = car.carFunction(car,trackCopy,i)[1]
         dv = max(0, dv)
@@ -28,7 +28,7 @@ function massPointSolver(car, track)
     #backward pass
     vBackward = deepcopy(vxMax)
     for i = length(track.curvature)-1:-1:2
-        car.controlMapping(car,[-99999])
+        car.controlMapping(car,[-99999.0])
         car.stateMapping(car,vBackward[i])
         dv = car.carFunction(car,trackCopy,i)[1]
         v = sqrt(vBackward[i]^2 - 2 * dv * Δs[i])

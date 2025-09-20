@@ -15,7 +15,7 @@ function createFischerMotor()
     torqueSpeedFunction = f(angularFrequency) = 29.0
     mass = carParameter(3.0,"mass??","kg")
 
-    function constraints(u,optiModel)
+    function constraints(u::Union{VariableRef,Float64},optiModel)
         @constraint(optiModel, u <=  29)
         @constraint(optiModel, u >= -29)
     end

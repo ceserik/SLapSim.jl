@@ -1,5 +1,5 @@
 
-function massPointCar(car,track,k, optiModel=nothing)
+function massPointCar(car::Car,track::Track,k::Int64, optiModel::Union{Nothing, JuMP.Model} = nothing)
     # Simple  Mass point friction circle
     # inputs is a struct of all posible inputs of vehicle, controls are not separated from inputs
     # Get inputs
@@ -85,7 +85,7 @@ function createCTU25_1D()
     )
 
     
-    function controlMapping(car,u)
+    function controlMapping(car::Car,u::Union{Vector{VariableRef},Vector{Float64}})
         v = u[1]
         if isa(v, Number)
             # update existing numeric parameter value in-place
@@ -97,12 +97,12 @@ function createCTU25_1D()
         # other mappings if needed...
     end
 
-    function mapping(car,u,x)
+    function mapping(car::Car,u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}})
         car.carParameters.motorForce.value = u[1]
         car.carParameters.vx.value = x[1]
     end
 
-    function stateMapping(car,x)
+    function stateMapping(car::Car,x::Union{Vector{VariableRef},Vector{Float64}})
         # Build a 3-element vector of state components (pad with 0.0 if missing)
         vals = (
             length(x) >= 1 ? x[1] : 0.0,

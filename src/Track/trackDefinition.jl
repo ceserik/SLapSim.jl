@@ -2,20 +2,20 @@ using GLMakie
 #include("trackProcessing.jl")
 # Define the basic track structure with proper type annotations
 mutable struct Track
-    curvature::Union{Float64, Vector{Float64}}
-    rho::Union{Float64, Vector{Float64}}
-    μ::Union{Float64, Vector{Float64}}
-    sampleDistances::Any #rename to sample distances samplingDistance
-    mapping::Any
-    x::Any
-    y::Any
-    theta::Any
-    widthR::Any
-    widthL::Any
-    inclination::Any
-    slope::Any
-    fcurve::Any
-    s::Any
+    curvature::Vector{Float64}
+    rho::Vector{Float64}
+    μ::Vector{Float64}
+    sampleDistances::Vector{Float64} #rename to sample distances samplingDistance
+    mapping::Function
+    x::Vector{Float64}
+    y::Vector{Float64}
+    theta::Vector{Float64}
+    widthR::Vector{Float64}
+    widthL::Vector{Float64}
+    inclination::Vector{Float64}
+    slope::Vector{Float64}
+    fcurve::Function
+    s::Vector{Float64}
 end
 
 
@@ -51,15 +51,15 @@ function simpleTrack(;
         μ,
         sampleDistances,
         trackMapping,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        s->(0.0),
+        [0.0]
     )
 end
 
@@ -107,20 +107,20 @@ function singleTurn()
 
 
     track = Track(
-        0.0,#curvature,
-        1.225,
-        1.0,
-        1.0,#this is very wrong, 1 just for compatiblity, should be calculated with curvature and theta
+        [0.0],#curvature,
+        [1.225],
+        [1.0],
+        [1.0],#this is very wrong, 1 just for compatiblity, should be calculated with curvature and theta
         trackMapping,
         X,
         Y,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        s->(0.0),
+        [0.0]
         )
 
     smooth_by_OCP(track,1,1.0,false)
