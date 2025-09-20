@@ -11,15 +11,13 @@ include("trackDefinition.jl")
 using Interpolations
 
 function interp1(X, V, Xq,type=nothing)
-    
-
     if type == "PCHIP"
         itp = Interpolator(X, V)
         return itp.(Xq)
     else
         knots = (X,)
         itp = interpolate(knots, V, Gridded(Linear()))
-        itp[Xq]
+        itp.(Xq)
     end
 end
 
@@ -166,19 +164,85 @@ function kml2track(path,closeTrack)
     if closeTrack
         A = [A[1:end,:]; A[1,:]']
     end
-    track = Track(0,1.225,1,1,trackMapping,A[:,1],A[:,2],0,0,0,0,0,0,0)
+    track = Track(
+        0,
+        1.225,
+        1,
+        1,
+        trackMapping,
+        A[:,1],
+        A[:,2],
+        0,
+        1.5,
+        1.5,
+        0,
+        0,
+        0,
+        0
+        )
         trackfig = Figure()
         ax = Axis(trackfig[1,1],aspect=DataAspect())
-        lines!(ax,track.y, track.x)
+        #lines!(ax,track.y, track.x)
         #display(fig)
 
         smooth_by_OCP(track,1,1.0,closeTrack)
-        lines!(ax,track.y, track.x)
-        display(GLMakie.Screen(),trackfig)
+        track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
+        #lines!(ax,track.y, track.x)
+        #display(GLMakie.Screen(),trackfig)
     return track
 
 
 end
 
-#path = "tracks/FSCZ.kml"
-#track = kml2track(path,true)
+
+function plotTrack(track, s; b_plotStartEnd=false, ax::Union{Axis,Nothing}=nothing)
+    # create Figure/Axis if none provided
+    created = false
+    if ax === nothing
+        fig = Figure(resolution = (800,600))
+        ax = Axis(fig[1,1], aspect = DataAspect())
+        created = true
+    end
+
+    # get centerline and heading from track
+    xc, yc, thc, _ = track.fcurve(s)
+    xc = collect(xc)
+    yc = collect(yc)
+    thc = collect(thc)
+
+    # lane limits (broadcast to match shapes)
+    xc_lim1 = - track.widthL .* sin.(thc)
+    xc_lim2 = - track.widthR .* sin.(thc)
+
+    yc_lim1 =  track.widthL .* cos.(thc)
+    yc_lim2 =  track.widthR .* cos.(thc)
+
+    ## centerline (dashed gray) and boundaries (black)
+    lines!(ax, xc, yc; linestyle = :dash, linewidth = 1)
+    lines!(ax, xc .+ xc_lim1, yc .+ yc_lim1; color = :black, linewidth = 1)
+    lines!(ax, xc .- xc_lim2, yc .- yc_lim2; color = :black, linewidth = 1)
+
+    ## optional start / end markers
+    if b_plotStartEnd
+        scatter!(ax, [xc[1]], [yc[1]]; color = :red, marker = :circle, markersize = 8)
+        scatter!(ax, [xc[end]], [yc[end]]; color = :red, marker = :x, markersize = 10)
+    end
+
+    if created
+        display(GLMakie.Screen(), fig)
+        return fig, ax
+    else
+        return ax
+    end
+end
+
+
+function make_fcurve(s_traj, x_traj, y_traj, th_traj, C_traj)
+    return s -> (
+        interp1(s_traj, x_traj, s),
+        interp1(s_traj, y_traj, s),
+        interp1(s_traj, th_traj, s),
+        interp1(s_traj, C_traj,  s)
+    )
+end
+
