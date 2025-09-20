@@ -136,7 +136,7 @@ function createSimplestSingleTrack()
         return car
     end
     
-    p = carParameters(
+    p = CarParameters(
         mass,
         inertia,
         motorForce,

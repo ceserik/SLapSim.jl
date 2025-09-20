@@ -68,7 +68,7 @@ function createCTU25_1D()
     nControls = carParameter(1.0,"number of controlled parameters","-")
     nStates = carParameter(1.0,"number of car states","-")
 
-    p = carParameters(
+    p = CarParameters(
         mass,
         inertia,
         motorForce,
@@ -132,7 +132,12 @@ function createCTU25_1D()
         p,
         controlMapping,
         stateMapping,
-        mapping
+        mapping,
+        Drivetrain(Motor[], Gearbox[], Tire[], createPepikCTU25()),  # Empty drivetrain
+        createBasicAero(),                                                  # Empty aero
+        createDummySuspension(),                                           # Empty suspension  
+        createCTU25chassis(),                                              # Empty chassis
+        WheelAssembly[]
     )
 
     return car

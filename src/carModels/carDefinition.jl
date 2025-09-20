@@ -68,7 +68,7 @@ carParameter(value::T, name::String, unit::String) where {T} =
     end
 
 
-mutable struct carParameters
+mutable struct CarParameters
     mass::carParameter{T} where T
     inertia::carParameter{T} where T
     motorForce::carParameter{T} where T
@@ -97,24 +97,29 @@ mutable struct Car2
 end
 
 mutable struct Drivetrain
-    motors
-    gearboxes
-    tires
-    accumulators
+    motors::Vector{Motor}
+    gearboxes::Vector{Gearbox}
+    tires::Vector{Tire}
+    accumulators::Accumulator
 end
 
 # Define the Car struct with parameters
 mutable struct Car
-    carFunction
-    carParameters
-    controlMapping
-    stateMapping
-    mapping
+    carFunction::Function
+    carParameters::CarParameters
+    controlMapping::Function
+    stateMapping::Function
+    mapping::Function
+    drivetrain::Drivetrain
+    aero::Aero
+    suspension::Suspension
+    chassis::Chassis
+    wheelAssemblies::Vector{WheelAssembly}
 
     # Inner constructor
-    function Car(carFunction, carParameters, controlMapping=nothing, stateMapping=nothing, mapping=nothing)
-        new(carFunction, carParameters, controlMapping, stateMapping, mapping)
-    end
+   # function Car(carFunction, carParameters, controlMapping=nothing, stateMapping=nothing, mapping=nothing)
+   #     new(carFunction, carParameters, controlMapping, stateMapping, mapping)
+   # end
 end
 
 

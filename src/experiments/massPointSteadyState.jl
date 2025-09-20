@@ -1,5 +1,3 @@
-include("../initSlapSim.jl")
-include("../solvingMethods/massPointSolver.jl")
 
 
 
@@ -12,8 +10,8 @@ track = kml2track(path,true)
 
 #smooth_by_OCP(track,0.01,0.5)
 N = length(track.curvature)
-track.rho = fill(track.rho,N)
-track.μ   = fill(track.μ,N)
+track.rho = fill(track.rho[1],N)
+track.μ   = fill(track.μ[1],N)
 
 
 massPointSolver(car,track)

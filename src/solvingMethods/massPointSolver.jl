@@ -1,5 +1,5 @@
 
-function massPointSolver(car, track)
+function massPointSolver(car::Car, track::Track)
     Δs = diff(track.sampleDistances)
     vForward = zeros(length(track.curvature))
     vxMax = zeros(length(track.curvature))
@@ -18,7 +18,7 @@ function massPointSolver(car, track)
     #forward pass
     for i = 1:length(track.curvature)-1
         car.controlMapping(car,[99999.0])
-        car.stateMapping(car,vForward[i])
+        car.stateMapping(car,[vForward[i]])
         dv = car.carFunction(car,trackCopy,i)[1]
         dv = max(0, dv)
         v = sqrt(vForward[i]^2 + 2 * dv * Δs[i])
@@ -29,7 +29,7 @@ function massPointSolver(car, track)
     vBackward = deepcopy(vxMax)
     for i = length(track.curvature)-1:-1:2
         car.controlMapping(car,[-99999.0])
-        car.stateMapping(car,vBackward[i])
+        car.stateMapping(car,[vBackward[i]])
         dv = car.carFunction(car,trackCopy,i)[1]
         v = sqrt(vBackward[i]^2 - 2 * dv * Δs[i])
         vBackward[i-1] = min(vxMax[i-1], v)

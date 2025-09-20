@@ -1,5 +1,4 @@
-include("../initSlapSim.jl")
-include("../solvingMethods/optInterface.jl")
+using SLapSim
 car = createCTU25_1D()
 track = 0
 track = singleTurn()
@@ -8,4 +7,4 @@ track = singleTurn()
 model = JuMP.Model(Ipopt.Optimizer)
 
 
-findOptimalTrajectory(track,car,model)
+@time findOptimalTrajectory(track,car,model)
