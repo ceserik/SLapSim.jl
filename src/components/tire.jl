@@ -1,14 +1,14 @@
 mutable struct  Tire
-    radius::carParameter
-    width::carParameter
-    inertia::carParameter
-    mass::carParameter
-    velocity::carParameter
-    angularFrequency::carParameter
-    forces::carParameter
-    slipAngle::carParameter
-    slipRatio::carParameter
-    tireFunction
+    radius::carParameter{Float64}
+    width::carParameter{Float64}
+    inertia::carParameter{Float64}
+    mass::carParameter{Float64}
+    velocity::carParameter{Vector{Float64}}
+    angularFrequency::carParameter{Float64}
+    forces::carParameter{Vector{Float64}}
+    slipAngle::carParameter{Float64}
+    slipRatio::carParameter{Float64}
+    tireFunction::Function
     
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)

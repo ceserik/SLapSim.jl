@@ -84,10 +84,17 @@ function createCTU25_1D()
         nStates
     )
 
+    
     function controlMapping(car,u)
-        car.carParameters.motorForce.value = u[1]
-        #paramcopy.CL.value = controls[2]
-        
+        v = u[1]
+        if isa(v, Number)
+            # update existing numeric parameter value in-place
+            car.carParameters.motorForce.value = float(v)
+        else
+            # replace parameter with one that stores the JuMP variable/expression
+            car.carParameters.motorForce = carParameter(v, "motorForce", "N")
+        end
+        # other mappings if needed...
     end
 
     function mapping(car,u,x)
@@ -96,7 +103,29 @@ function createCTU25_1D()
     end
 
     function stateMapping(car,x)
-        car.carParameters.velocity.value = [x[1] 0 0]
+        # Build a 3-element vector of state components (pad with 0.0 if missing)
+        vals = (
+            length(x) >= 1 ? x[1] : 0.0,
+            length(x) >= 2 ? x[2] : 0.0,
+            length(x) >= 3 ? x[3] : 0.0
+        )
+
+        curp = car.carParameters.velocity
+
+        # If all state entries are numeric and current storage is a numeric vector, update in-place
+        if all(isa.(Tuple(vals), Number)) && isa(curp.value, AbstractVector)
+            @inbounds begin
+                n = min(length(curp.value), 3)
+                for i in 1:n
+                    curp.value[i] = float(vals[i])
+                end
+            end
+        else
+            # Otherwise replace the carParameter with one that holds the (possibly non-numeric) vector
+            # Use a 1D vector constructor with commas so we don't create a 1×3 Matrix
+            newvec = [vals[1], vals[2], vals[3]]
+            car.carParameters.velocity = carParameter(newvec, curp.name, curp.unit)
+        end
     end
     car = Car(
         massPointCar,

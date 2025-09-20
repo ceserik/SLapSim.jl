@@ -1,10 +1,10 @@
 mutable struct Motor
-    torque::carParameter
-    angularFrequency::carParameter
-    mass::carParameter
-    loss::carParameter
-    torqueSpeedFunction #mapping speed to max torque
-    constraints
+    torque::carParameter{Float64}
+    angularFrequency::carParameter{Float64}
+    mass::carParameter{Float64}
+    loss::carParameter{Float64}
+    torqueSpeedFunction::Function #mapping speed to max torque
+    constraints::Function
 end
 
 
@@ -12,10 +12,10 @@ function createFischerMotor()
     torque = carParameter(0.0,"motor torque","Nm")
     angularFrequency = carParameter(0.0,"angular frequency","rad/s")
     loss = carParameter(0.0,"loss","W")
-    torqueSpeedFunction = f(angularFrequency) = 29
+    torqueSpeedFunction = f(angularFrequency) = 29.0
     mass = carParameter(3.0,"mass??","kg")
 
-    function constrains(u,optiModel)
+    function constraints(u,optiModel)
         @constraint(optiModel, u <=  29)
         @constraint(optiModel, u >= -29)
     end
@@ -27,7 +27,7 @@ function createFischerMotor()
         mass,
         loss,
         torqueSpeedFunction,
-        constrains
+        constraints
     )
     return motor
 end

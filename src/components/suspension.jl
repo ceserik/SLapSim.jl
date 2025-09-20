@@ -1,16 +1,16 @@
 mutable struct Suspension
-    tlong::carParameter
-    tlat::carParameter
-    theave::carParameter
+    tlong::carParameter{Float64}
+    tlat::carParameter{Float64}
+    theave::carParameter{Float64}
 
-    stiffnessLong::carParameter
-    dampingLong::carParameter
+    stiffnessLong::carParameter{Float64}
+    dampingLong::carParameter{Float64}
 
-    stiffnessLat::carParameter
-    dampingLat::carParameter
+    stiffnessLat::carParameter{Float64}
+    dampingLat::carParameter{Float64}
 
-    stiffnessHeave::carParameter
-    dampingHeave::carParameter
+    stiffnessHeave::carParameter{Float64}
+    dampingHeave::carParameter{Float64}
     # da sa posuvat pitch center???
 end
 

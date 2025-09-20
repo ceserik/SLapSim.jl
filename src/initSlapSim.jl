@@ -3,7 +3,7 @@ using LinearAlgebra
 using JuMP, Ipopt, Zygote
 using ControlSystemsBase
 using OrdinaryDiffEq
-#using Debugger 
+using Debugger 
 const MODULES_INITIALIZED = true
 include("carModels/carDefinition.jl")
 include("carModels/massPointCar.jl")

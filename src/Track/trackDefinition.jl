@@ -2,9 +2,9 @@ using GLMakie
 #include("trackProcessing.jl")
 # Define the basic track structure with proper type annotations
 mutable struct Track
-    curvature::Any
-    rho::Any
-    μ::Any
+    curvature::Union{Float64, Vector{Float64}}
+    rho::Union{Float64, Vector{Float64}}
+    μ::Union{Float64, Vector{Float64}}
     sampleDistances::Any #rename to sample distances samplingDistance
     mapping::Any
     x::Any
@@ -107,21 +107,25 @@ function singleTurn()
 
 
     track = Track(
-        0,#curvature,
+        0.0,#curvature,
         1.225,
-        1,
-        1,#this is very wrong, 1 just for compatiblity, should be calculated with curvature and theta
+        1.0,
+        1.0,#this is very wrong, 1 just for compatiblity, should be calculated with curvature and theta
         trackMapping,
         X,
         Y,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
         )
+
+    smooth_by_OCP(track,1,1.0,false)
+    track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
+    plotTrack(track,track.sampleDistances)
     return track
 end
 

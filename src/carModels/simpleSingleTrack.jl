@@ -30,8 +30,8 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
 
     #create constraints for motor
     if !isnothing(optiModel)
-        car.drivetrain.motors[1].constrains(optiModel)
-        car.drivetrain.motors[2].constrains(optiModel)
+        car.drivetrain.motors[1].constraints(torqueFront,optiModel)
+        car.drivetrain.motors[2].constraints(torqueRear,optiModel)
     end
     #tire Function, currently same as in bachelors thesis
     # calculate Fz on tires
@@ -104,7 +104,7 @@ function createSimplestSingleTrack()
     lateralForce = carParameter(0.0, "lateral Force", "N")
     CL = carParameter(5.0, "Lift Coefficient", "-")
     CD = carParameter(2.0, "Drag Coefficient", "-")
-    velocity = carParameter([15,0,0],"Speed X","m/s")
+    velocity = carParameter([15.0,0.0,0.0],"Speed X","m/s")
     powerLimit = carParameter(80000.0,"PowerLimit","W")
     psi = carParameter(0.0,"heading","rad")
     n = carParameter(0.0,"Distance from centerline","m")
@@ -114,8 +114,19 @@ function createSimplestSingleTrack()
 
 
     function controlMapping(car, controls)
-        car.drivetrain.motors[1].torque.value = controls[1]  
-        car.drivetrain.motors[2].torque.value = controls[1]  
+        #car.drivetrain.motors[1].torque.value = controls[1]  
+        #car.drivetrain.motors[2].torque.value = controls[1]   causes writing variableRef to Float64
+
+        #hotfix to test if it will work this way
+        v = u[1]
+        if isa(v, Number)
+            # update existing numeric parameter value in-place
+            car.carParameters.motorForce.value = float(v)
+        else
+            # replace parameter with one that stores the JuMP variable/expression
+            car.carParameters.motorForce = carParameter(v, "motorForce", "N")
+        end
+        
         return car
     end
     function stateMapping(car,states)

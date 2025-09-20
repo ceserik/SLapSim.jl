@@ -1,13 +1,13 @@
 mutable struct WheelAssembly
-    position::carParameter
-    velocity::carParameter
-    pivot2CoG
-    steeringAngle::carParameter
-    forces::carParameter
-    setPivotVelocity
-    rotZ
-    setTireSpeeds
-    setPivotForce
+    position::carParameter{Vector{Float64}}
+    velocity::carParameter{Vector{Float64}}
+    pivot2CoG::Function
+    steeringAngle::carParameter{Float64}
+    forces::carParameter{Vector{Float64}}
+    setPivotVelocity::Function
+    rotZ::Function
+    setTireSpeeds::Function
+    setPivotForce::Function
 end
 
 

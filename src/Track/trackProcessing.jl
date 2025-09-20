@@ -189,6 +189,7 @@ function kml2track(path,closeTrack)
         track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
         #lines!(ax,track.y, track.x)
         #display(GLMakie.Screen(),trackfig)
+        plotTrack(track,track.sampleDistances)
     return track
 
 
