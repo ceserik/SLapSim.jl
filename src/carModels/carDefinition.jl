@@ -62,6 +62,7 @@ mutable struct carParameters
     powerLimit::carParameter
     lateralForce::carParameter
     nControls::carParameter
+    nStates::carParameter
 end
 
 mutable struct Car2
@@ -97,20 +98,10 @@ mutable struct Car
     end
 end
 
-mutable struct Chassis
-    mass::carParameter
-end
 
 
 
-function createCTU25chassis()
-    mass = carParameter(180,"mass","kg")
-    chassis = Chassis(
-        mass
-    )
-    return chassis
 
-end
 
 """
 Generic pretty printing for car components.

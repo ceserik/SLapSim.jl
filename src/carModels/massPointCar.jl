@@ -66,6 +66,7 @@ function createCTU25_1D()
     psi = carParameter(0.0,"heading","rad")
     n = carParameter(0.0,"Distance from centerline","m")
     nControls = carParameter(1.0,"number of controlled parameters","-")
+    nStates = carParameter(1.0,"number of car states","-")
 
     p = carParameters(
         mass,
@@ -79,7 +80,8 @@ function createCTU25_1D()
         n,
         powerLimit,
         lateralForce,
-        nControls
+        nControls,
+        nStates
     )
 
     function controlMapping(car,u)

@@ -52,6 +52,9 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     cogForce = car.wheelAssemblies[1].forces.value .+ car.wheelAssemblies[2].forces.value
     cogMoment = cogMoment1 + cogMoment2
 
+
+    #enforce hitbox
+    car.chassis.hitbox(car,track,model)
     #print cogMoment and cogForce
     #println("CoG Moment 1: ", cogMoment1)
     #println("CoG Moment 2: ", cogMoment2)
@@ -107,6 +110,7 @@ function createSimplestSingleTrack()
     n = carParameter(0.0,"Distance from centerline","m")
     nControls = carParameter(2.0,"number of controlled parameters","-")
     inertia = carParameter(100.0, "Inertia", "kg*m^2")
+    nStates = carParameter(1.0,"number of car states","-")
 
 
     function controlMapping(car, controls)
@@ -133,7 +137,8 @@ function createSimplestSingleTrack()
         n,
         powerLimit,
         lateralForce,
-        nControls
+        nControls,
+        nStates
     )
 
     afto = Car2(

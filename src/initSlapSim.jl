@@ -18,6 +18,7 @@ include("components/motor.jl")
 include("components/tire.jl")
 include("components/suspension.jl")
 include("components/wheelAssembly.jl")
+include("components/chassis.jl")
 print("Slapsim initialized\n")
 
 

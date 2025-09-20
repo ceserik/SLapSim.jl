@@ -51,7 +51,7 @@ function findOptimalTrajectory(track,car,model)
     track.widthL = fill(track.widthL,N)
     track.widthR = fill(track.widthR,N)
 
-     
+    nStates =  Int(car.carParameters.nStates.value)
     #create inputs for car model #create instance of track parameters
 
     #determine sizes of inputs and states
@@ -61,7 +61,7 @@ function findOptimalTrajectory(track,car,model)
 
     
     s = track.sampleDistances#1:length(track.curvature)
-    t_final = X[end,6]
+    #t_final = X[end,6]
 
 
     for k = 1:N-1 # loop over control intervals
@@ -75,10 +75,10 @@ function findOptimalTrajectory(track,car,model)
     #set initial states
     #@constraint(model,X[1,:] .== initial)
 
-    @constraint(model,X[1:end,1] .>= 0)
-    @constraint(model,X[1,1] .== 5)
-    @constraint(model,X[1,6] .>= 0)
-    @constraint(model,diff(X[:,6]) .>=0)
+    @constraint(model,X[1:end,1] .>= 0) #vx
+    @constraint(model,X[1,1] .== 5) # intial vx
+    @constraint(model,X[1,6] .>= 0) # final time
+    @constraint(model,diff(X[:,6]) .>=0) #time goes forward
 
 
     @objective(model,Min,X[end,6])
