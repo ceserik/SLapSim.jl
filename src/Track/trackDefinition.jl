@@ -131,3 +131,7 @@ end
 
 # Example extension: add method to get track length
 Base.length(track::Track) = length(track.curvature)
+
+
+
+

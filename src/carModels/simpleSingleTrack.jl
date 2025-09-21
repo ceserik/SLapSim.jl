@@ -1,5 +1,7 @@
 using SLapSim
-function simplestSingleTrack(car::Car,track::Track=nothing,k::Int64=nothing, optiModel::JuMP.Model=nothing)
+
+
+function simplestSingleTrack(car::Car, track::Union{Track,Nothing}=nothing, k::Union{Int64,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
     # assign names for easier reading
     torqueFront = car.drivetrain.motors[1].torque.value
     torqueRear = car.drivetrain.motors[2].torque.value

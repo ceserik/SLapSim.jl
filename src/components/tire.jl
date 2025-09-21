@@ -28,7 +28,7 @@ function createR20lin(maxTorque::Float64)
 
     maxForce = maxTorque/radius.value
 
-    function tireFunction(inTorque::carVar,optiModel::JuMP.Model=nothing)
+    function tireFunction(inTorque::carVar,optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = slipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
