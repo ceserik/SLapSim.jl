@@ -36,7 +36,7 @@ sol = solve(prob, Tsit5(), saveat=0.01)
 
 mat = hcat(sol.u...)  # size = (n_states, n_times)
 
-fig = Figure(resolution = (900, 450))
+fig = Figure()
 ax = Axis(fig[1, 1], xlabel = "t", ylabel = "state")
 for i in 1:size(mat, 1)
     lines!(ax, sol.t, vec(mat[i, :]), label = "x$(i)")

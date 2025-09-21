@@ -1,10 +1,10 @@
 
-
+using SLapSim
 
 # solver solves first forward pass, then bakcward pass and takes minimums of speeds
 car = createCTU25_1D()
 track = 0
-track = singleTurn()
+#track = singleTurn()
 path = "tracks/FSCZ.kml"
 track = kml2track(path,true)
 

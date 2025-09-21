@@ -123,7 +123,7 @@ function singleTurn()
         [0.0]
         )
 
-    smooth_by_OCP(track,1,1.0,false)
+    smooth_by_OCP(track,1.0,1.0,false)
     track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
     plotTrack(track,track.sampleDistances)
     return track

@@ -8,10 +8,11 @@ using OrdinaryDiffEq
 using Debugger
 
 # Include files in dependency order
-include("Track/trackProcessing.jl")
 include("Track/trackDefinition.jl")
+include("Track/trackProcessing.jl")
 
 # Components (no dependencies between them)
+include("carModels/carParameters.jl")
 include("components/gearbox.jl")
 include("components/motor.jl")
 include("components/tire.jl")
@@ -26,9 +27,13 @@ include("carModels/carDefinition.jl")
 include("carModels/massPointCar.jl")
 include("carModels/simpleSingleTrack.jl")
 
-# Export public functions
-export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory
+#solving solvingMethods
+include("solvingMethods/massPointSolver.jl")
+include("solvingMethods/optInterface.jl")
 
-println("SLapSim module loaded")
+# Export public functions
+export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver
+export JuMP, Ipopt  # Re-export for convenience
+#println("SLapSim module loaded")
 
 end # module

@@ -6,7 +6,6 @@ using Statistics
 using Proj
 using PCHIPInterpolation
 
-include("trackDefinition.jl")
 
 using Interpolations
 
@@ -53,7 +52,7 @@ function naiveProcessing(track::Track)
     return track
 end
 
-function smooth_by_OCP(track, r, ds,closedTrack)
+function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     x_smpl = track.x
     y_smpl = track.y
 
@@ -200,7 +199,7 @@ function plotTrack(track::Track, s::Vector{Float64}; b_plotStartEnd::Bool=false,
     # create Figure/Axis if none provided
     created = false
     if ax === nothing
-        fig = Figure(resolution = (800,600))
+        fig = Figure()
         ax = Axis(fig[1,1], aspect = DataAspect())
         created = true
     end

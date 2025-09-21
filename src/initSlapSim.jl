@@ -5,8 +5,9 @@ using ControlSystemsBase
 using OrdinaryDiffEq
 using Debugger 
 const MODULES_INITIALIZED = true
-include("Track/trackProcessing.jl")
 include("Track/trackDefinition.jl")
+include("Track/trackProcessing.jl")
+
 include("components/gearbox.jl")
 include("components/motor.jl")
 include("components/tire.jl")

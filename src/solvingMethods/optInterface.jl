@@ -1,15 +1,15 @@
-function carF(k::Int64,u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}})
+function carF(car::Car,track::Track,k::Int64,u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}},model::JuMP.Model)
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)
-    dzds = time2path(car,track,k) #time2path(s,instantCarParams,track,car)
+    dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
     return dzds
 end
 
 #poradie car,track,k,s,u,x
 
 ## here I need to define trnasofmation of ODE with respect to time to ODE with respect to path
-function time2path(car::Car,track::Track,k::Int64)
+function time2path(car::Car,track::Track,k::Int64,model::JuMP.Model)
     #track.mapping(track,instantTrack,s)
     dxdt = car.carFunction(car,track,k,model)
     v_x = car.carParameters.velocity.value[1]
@@ -65,7 +65,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model)
 
 
     for k = 1:N-1 # loop over control intervals
-        x_next = X[k,:] + (s[k+1]-s[k]) * carF(k, U[k,:], X[k,:]);
+        x_next = X[k,:] + (s[k+1]-s[k]) * carF(car,track,k, U[k,:], X[k,:],model);
         @constraint(model,X[k+1,:] .== x_next)
     end
 
@@ -85,7 +85,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model)
     optimize!(model)
 
     # Plotting the results
-    fig = Figure(resolution = (800, 600))
+    fig = Figure()
     ax = Axis(fig[1, 1], xlabel = "Step", ylabel = "Velocity (vx)")
     lines!(ax, value.(X[:,1]))
     display(GLMakie.Screen(), fig)  # This creates a new window

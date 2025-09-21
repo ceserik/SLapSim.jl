@@ -1,10 +1,10 @@
 using SLapSim
 car = createCTU25_1D()
 track = 0
-track = singleTurn()
-#path = "tracks/FSCZ.kml"
-#track = kml2track(path,true)
+#track = singleTurn()
+path = "tracks/FSCZ.kml"
+track = kml2track(path,true)
 model = JuMP.Model(Ipopt.Optimizer)
 
 
-@time findOptimalTrajectory(track,car,model)
+findOptimalTrajectory(track,car,model)

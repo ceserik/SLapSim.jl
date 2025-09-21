@@ -3,7 +3,7 @@ mutable struct Aero
     CD::carParameter{Float64}
     CoP::carParameter{Float64}
 end
-Base.show(io::IO, ::MIME"text/plain", obj) = prettyPrintComponent(io, obj)
+#Base.show(io::IO, ::MIME"text/plain", obj) = prettyPrintComponent(io, obj)
 
 function createBasicAero()
     CL = carParameter(-5.0,"Lift coeffcient","-")
