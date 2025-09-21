@@ -4,40 +4,23 @@ mutable struct carParameter{T}
     unit::String
     size::Tuple{Int,Int}  # To store dimensions of the value (1,1) for scalar, (n,1) for vector, (n,m) for matrix
     
-#    # Constructor for scalar values
-#    function carParameter(value::Number, name::String, unit::String)
-#        new(value, name, unit, (1,1))
-#    end
-#    
-#    # Constructor for vector values
-#    function carParameter(value::AbstractVector, name::String, unit::String)
-#        new(value, name, unit, (length(value),1))
-#    end
-#    
-#    # Constructor for matrix values
-#    function carParameter(value::AbstractMatrix, name::String, unit::String)
-#        new(value, name, unit, size(value))
-#    end
+end
+function carParameter{T}(value::T, name::String, unit::String) where T
+    if isa(value, AbstractArray)
+        size_tuple = (length(value), 1)  # For vectors, treat as (n,1)
+        if ndims(value) == 2
+            size_tuple = size(value)  # For matrices, use actual dimensions
+        end
+    else
+        size_tuple = (1, 1)  # For scalars
+    end
+    
+    return carParameter{T}(value, name, unit, size_tuple)
 end
 
-
-# outer constructors that produce concrete parameter types
-carParameter(value::Number, name::String, unit::String) = carParameter{Float64}(float(value), name, unit, (1,1))
-carParameter(value::AbstractVector{<:Number}, name::String, unit::String) = carParameter{Vector{Float64}}(Float64.(collect(value)), name, unit, (length(value),1))
-carParameter(value::AbstractMatrix{<:Number}, name::String, unit::String) = carParameter{Array{Float64,2}}(Array{Float64,2}(value), name, unit, size(value))
-
-# keep constructor for JuMP NonlinearExpr if you need it explicitly
-# carParameter(value::NonlinearExpr, name::String, unit::String) = carParameter{NonlinearExpr}(value, name, unit, (1,1))
-
-# Generic fallback constructor: accepts other types (VariableRef, AffExpr, custom exprs)
-carParameter(value::T, name::String, unit::String) where {T} =
-    begin
-        sz = isa(value, AbstractVector) ? (length(value),1) :
-             isa(value, AbstractMatrix) ? size(value) :
-             (1,1)
-        carParameter{T}(value, name, unit, sz)
-    end
-
+# Convenience constructor for vector carParameters
+carParameter{Vector{T}}(v::Vector{<:Real}, name::String, unit::String) where T = 
+    carParameter{Vector{T}}(Vector{T}(v), name, unit)
 
 mutable struct CarParameters
     mass::carParameter{T} where T

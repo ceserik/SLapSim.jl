@@ -6,6 +6,10 @@ using JuMP, Ipopt, Zygote
 using ControlSystemsBase
 using OrdinaryDiffEq
 using Debugger
+using Revise
+using Infiltrator
+
+const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
 
 # Include files in dependency order
 include("Track/trackDefinition.jl")
@@ -31,8 +35,9 @@ include("carModels/simpleSingleTrack.jl")
 include("solvingMethods/massPointSolver.jl")
 include("solvingMethods/optInterface.jl")
 
+
 # Export public functions
-export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver
+export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack
 export JuMP, Ipopt  # Re-export for convenience
 #println("SLapSim module loaded")
 

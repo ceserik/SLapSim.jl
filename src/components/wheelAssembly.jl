@@ -1,9 +1,10 @@
+
 mutable struct WheelAssembly
-    position::carParameter{Vector{Float64}}
-    velocity::carParameter{Vector{Float64}}
+    position::carParameter{Vector{carVar}}
+    velocity::carParameter{Vector{carVar}}
     pivot2CoG::Function
-    steeringAngle::carParameter{Float64}
-    forces::carParameter{Vector{Float64}}
+    steeringAngle::carParameter{carVar}
+    forces::carParameter{Vector{carVar}}
     setPivotVelocity::Function
     rotZ::Function
     setTireSpeeds::Function
@@ -11,11 +12,11 @@ mutable struct WheelAssembly
 end
 
 
-function createBasicWheelAssembly(position::Vector{Float64})
-    steeringAngle = carParameter(0.0,"steering angle","rad")
-    forces = carParameter([0.0,0.0,0.0],"Pivot forces","N N N")
-    velocity = carParameter([0.0,0.0,0.0],"Velocity at pivot","m/s")
-    position = carParameter(position,"Position from CoG","m m m")
+function createBasicWheelAssembly(position::Vector{carVar})
+    steeringAngle = carParameter{carVar}(0.0,"steering angle","rad")
+    forces = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Pivot forces","N N N")
+    velocity = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Velocity at pivot","m/s")
+    position = carParameter{Vector{carVar}}(position,"Position from CoG","m m m")
     function rotZ()
         out = [
             cos(steeringAngle.value) -sin(steeringAngle.value) 0;
@@ -25,7 +26,7 @@ function createBasicWheelAssembly(position::Vector{Float64})
         return out
     end
 
-    function pivot2CoG(forces::Vector{Float64})
+    function pivot2CoG(forces)
         #returns moments on cog from wheel forces
         moments = cross(position.value, forces)
         return moments
@@ -35,7 +36,7 @@ function createBasicWheelAssembly(position::Vector{Float64})
         forces.value = inv(rotZ()) * tire.forces.value
     end
 
-    function setPivotVelocity(angularVelocity::Vector{Float64},CoGvelocity::Vector{Float64})
+    function setPivotVelocity(angularVelocity,CoGvelocity)
         velocity.value = CoGvelocity + cross(angularVelocity, position.value) #CoG2wheelAssembly(velocity.value,angularVelocity)
     end
 

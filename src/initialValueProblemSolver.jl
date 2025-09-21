@@ -1,4 +1,4 @@
-include("initSlapSim.jl")
+
 
 
 car = createSimplestSingleTrack()

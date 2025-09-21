@@ -1,4 +1,5 @@
-function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
+using SLapSim
+function simplestSingleTrack(car::Car,track::Track=nothing,k::Int64=nothing, optiModel::JuMP.Model=nothing)
     # assign names for easier reading
     torqueFront = car.drivetrain.motors[1].torque.value
     torqueRear = car.drivetrain.motors[2].torque.value
@@ -39,8 +40,8 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
     car.drivetrain.tires[2].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
 
 
-    tireFront.tireFunction(gbFront.torqueOut.value)
-    tireRear.tireFunction(gbRear.torqueOut.value)
+    tireFront.tireFunction(gbFront.torqueOut.value,optiModel)
+    tireRear.tireFunction(gbRear.torqueOut.value,optiModel)
 
     car.wheelAssemblies[1].setPivotForce(tireFront)
     car.wheelAssemblies[2].setPivotForce(tireRear)
@@ -54,7 +55,7 @@ function simplestSingleTrack(car,track=nothing,k=nothing, optiModel=nothing)
 
 
     #enforce hitbox
-    car.chassis.hitbox(car,track,model)
+    car.chassis.hitbox(car.carParameters.n.value,track,optiModel)
     #print cogMoment and cogForce
     #println("CoG Moment 1: ", cogMoment1)
     #println("CoG Moment 2: ", cogMoment2)
@@ -69,6 +70,8 @@ end
 
 
 function createSimplestSingleTrack()
+
+    
 
     gearboxFront = createCTU25gearbox()
     gearboxRear = createCTU25gearbox()
@@ -92,49 +95,50 @@ function createSimplestSingleTrack()
 
     aero = createBasicAero()
     suspension = createDummySuspension()
-    wheelAssemblyFront = createBasicWheelAssembly([1.520/2, 0, 0]) # wheelbase musi byt parameter!!!!
-    wheelAssemblyRear = createBasicWheelAssembly([-1.520/2, 0, 0])
+    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520/2, 0, 0])) # wheelbase musi byt parameter!!!!
+    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520/2, 0, 0]))
     chassis = createCTU25chassis()
 
-    velocity = carParameter([10.0, 10.0, 0.0], "translational velocity", "m/s");
-    angularVelocity = carParameter([0.0, 0.0, 1.0], "angular velocity", "rad/s");
+    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s");
+    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s");
     
-    mass = carParameter(280.0, "Mass", "kg")
-    motorForce = carParameter(1000.0, "motorForce", "N")
-    lateralForce = carParameter(0.0, "lateral Force", "N")
-    CL = carParameter(5.0, "Lift Coefficient", "-")
-    CD = carParameter(2.0, "Drag Coefficient", "-")
-    velocity = carParameter([15.0,0.0,0.0],"Speed X","m/s")
-    powerLimit = carParameter(80000.0,"PowerLimit","W")
-    psi = carParameter(0.0,"heading","rad")
-    n = carParameter(0.0,"Distance from centerline","m")
-    nControls = carParameter(2.0,"number of controlled parameters","-")
-    inertia = carParameter(100.0, "Inertia", "kg*m^2")
-    nStates = carParameter(1.0,"number of car states","-")
+    mass = carParameter{carVar}(280.0, "Mass", "kg")
+    motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
+    lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
+    CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
+    CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
+    velocity = carParameter{Vector{carVar}}([15.0,0.0,0.0],"Speed X","m/s")
+    powerLimit = carParameter{carVar}(80000.0,"PowerLimit","W")
+    psi = carParameter{carVar}(0.0,"heading","rad")
+    n = carParameter{carVar}(0.0,"Distance from centerline","m")
+    nControls = carParameter{carVar}(2.0,"number of controlled parameters","-")
+    inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2")
+    nStates = carParameter{carVar}(1.0,"number of car states","-")
 
 
     function controlMapping(car, controls)
-        #car.drivetrain.motors[1].torque.value = controls[1]  
-        #car.drivetrain.motors[2].torque.value = controls[1]   causes writing variableRef to Float64
+        car.drivetrain.motors[1].torque.value = controls[1]  
+        car.drivetrain.motors[2].torque.value = controls[1]#   causes writing variableRef to Float64
 
-        #hotfix to test if it will work this way
-        v = u[1]
-        if isa(v, Number)
-            # update existing numeric parameter value in-place
-            car.carParameters.motorForce.value = float(v)
-        else
-            # replace parameter with one that stores the JuMP variable/expression
-            car.carParameters.motorForce = carParameter(v, "motorForce", "N")
-        end
-        
-        return car
+        ##hotfix to test if it will work this way
+        #v = controls[1]
+        #if isa(v, Number)
+        #    # update existing numeric parameter value in-place
+        #    car.carParameters.motorForce.value = float(v)
+        #else
+        #    # replace parameter with one that stores the JuMP variable/expression
+        #    car.carParameters.motorForce = carParameter(v, "motorForce", "N")
+        #end
+        #
+        #return car
     end
-    function stateMapping(car,states)
+    function stateMapping(car, states)
         car.carParameters.velocity.value = [states[1], states[2], 0.0]
         car.carParameters.psi.value = states[3]
         car.carParameters.angularVelocity.value = [0.0, 0.0, states[4]]
         return car
-    end
+    return car
+end
     
     p = CarParameters(
         mass,
@@ -152,16 +156,17 @@ function createSimplestSingleTrack()
         nStates
     )
 
-    afto = Car2(
+    afto = Car(
+        simplestSingleTrack,
+        p,
+        controlMapping,
+        stateMapping,
+        s->(0.0),
         drivetrain,
         aero,
         suspension,
         chassis,
         [wheelAssemblyFront,wheelAssemblyRear],
-        p,
-        simplestSingleTrack,
-        controlMapping,
-        stateMapping
     )
     return afto
 end

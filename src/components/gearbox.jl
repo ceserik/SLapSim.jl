@@ -1,11 +1,11 @@
 
 mutable struct Gearbox
-    ratio::carParameter{Float64}
-    torqueIn::carParameter{Float64}
-    angularFrequencyIn::carParameter{Float64}
-    torqueOut::carParameter{Float64}
-    angularFrequencyOut::carParameter{Float64}
-    loss::carParameter{Float64}
+    ratio::carParameter{carVar}
+    torqueIn::carParameter{carVar}
+    angularFrequencyIn::carParameter{carVar}
+    torqueOut::carParameter{carVar}
+    angularFrequencyOut::carParameter{carVar}
+    loss::carParameter{carVar}
     f::Function
 end
 
@@ -25,13 +25,13 @@ Base.show(io::IO, ::MIME"text/plain", obj::Gearbox) = prettyPrintComponent(io, o
 #end
 #
 function createCTU25gearbox()
-    ratio = carParameter(11.46,"Gearbox ratio","-")
-    torqueIn = carParameter(0.0,"torque in","-")
-    speedIn = carParameter(0.0,"velocity in","rad/s")
+    ratio = carParameter{carVar}(11.46,"Gearbox ratio","-")
+    torqueIn = carParameter{carVar}(0.0,"torque in","-")
+    speedIn = carParameter{carVar}(0.0,"velocity in","rad/s")
 
-    torqueOut = carParameter(0.0,"torque out","-")
-    angularFrequencyOut = carParameter(0.0,"velocity out","rad/s")
-    loss = carParameter(0.0,"loss","Watt")
+    torqueOut = carParameter{carVar}(0.0,"torque out","-")
+    angularFrequencyOut = carParameter{carVar}(0.0,"velocity out","rad/s")
+    loss = carParameter{carVar}(0.0,"loss","Watt")
 
     function gearboxFunction() 
         gearbox.torqueOut.value = gearbox.torqueIn.value * 11.46
