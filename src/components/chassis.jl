@@ -8,8 +8,8 @@ function createCTU25chassis()
 
     function hitbox(n::carVar,track::Union{Track,Nothing},model::Union{JuMP.Model,Nothing})
         if !isnothing(model)
-            @constraint(model,n .>= -1.5)
-            @constraint(model,n .<= 1.5)
+            #@constraint(model,n .>= -1.5)
+            #@constraint(model,n .<= 1.5)
         end
     end
 

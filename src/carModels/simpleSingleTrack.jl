@@ -82,8 +82,8 @@ function createSimplestSingleTrack()
     motorRear = createFischerMotor()
 
     #get max motor torque for scaling
-    maxMotorTorqueFront = motorFront.torqueSpeedFunction(0) * gearboxFront.ratio.value
-    maxMotorTorqueRear = motorFront.torqueSpeedFunction(0) * gearboxRear.ratio.value
+    maxMotorTorqueFront = motorFront.torqueSpeedFunction(0.0) * gearboxFront.ratio.value
+    maxMotorTorqueRear = motorFront.torqueSpeedFunction(0.0) * gearboxRear.ratio.value
 
     tireFront = createR20lin(maxMotorTorqueFront)
     tireRear = createR20lin(maxMotorTorqueRear)

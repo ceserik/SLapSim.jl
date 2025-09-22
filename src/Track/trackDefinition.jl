@@ -63,19 +63,20 @@ function simpleTrack(;
     )
 end
 
-function singleTurn()
+function singleTurn(straightLength::Float64)
     # X is East
     # Y is North
     # Z is Up
     # 0 degree around Z axis is X axis
     # ENU
 
-    straightLength = 70
-    circleRadius = 15
+    #straightLength = 5
+    straightLength = Int(straightLength)
+    circleRadius = 10
     straightX = zeros(straightLength)
     straightY = LinRange(0,straightLength,straightLength)
 
-    clothoidLength = 70
+    clothoidLength = 0
     clothoidAngle = LinRange(pi/2, 0, clothoidLength)
     clothoidX = zeros(clothoidLength)
     clothoidY = zeros(clothoidLength)
@@ -115,15 +116,15 @@ function singleTurn()
         X,
         Y,
         [0.0],
-        [0.0],
-        [0.0],
+        [2.0],
+        [2.0],
         [0.0],
         [0.0],
         s->(0.0),
         [0.0]
         )
 
-    smooth_by_OCP(track,1.0,1.0,false)
+    smooth_by_OCP(track,1.0,0.2,false)
     track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
     plotTrack(track,track.sampleDistances)
     return track

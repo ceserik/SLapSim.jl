@@ -24,16 +24,16 @@ function f!(du, x, p, t)
     du .= dx
 end
 
-# Example initial state vector: set to match what carF expects/returns
-x0 = zeros(4)   # replace 6 with proper state dimension
-x0[1] = 10.0    # example: initial forward speed
-x0[4] = 3.0    # example: initial lateral speed
-#carF(car, 4, [1 ,0, 0, 0])
 
+x0 = zeros(4)   # replace 6 with proper state dimension
+x0[1] = 5    # example: initial forward speed
 
 tspan = (0.0, 7.0)
 prob = ODEProblem(f!, x0, tspan)
 sol = solve(prob, Tsit5(), saveat=0.01)
+
+
+
 
 mat = hcat(sol.u...)  # size = (n_states, n_times)
 

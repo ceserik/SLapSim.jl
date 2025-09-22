@@ -57,7 +57,19 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model)
     #determine sizes of inputs and states
     nControls = Int(round(car.carParameters.nControls.value))
     @variable(model,U[1:N-1,1:nControls],start = 0.0)
-    @variable(model,X[1:N,1:6], start = 5.0)
+
+    #stateInit = [fill(5,N),zeros(N),zeros(N),zeros(N),zeros(N),range(0,4,N)]'
+    @variable(model,X[1:N,1:6])
+
+    for i = 1:N
+        set_start_value(X[i,1], 5.0)  # vx = 5
+        set_start_value(X[i,2], 0.0)  # vy = 0
+        set_start_value(X[i,3], pi/2)  # psi = 0
+        set_start_value(X[i,4], 0.0)  # dpsi = 0
+        set_start_value(X[i,5], 0.0)  # n = 0
+        set_start_value(X[i,6], 4*(i-1)/(N-1))  # t = linspace(0,4,N)
+        println(4*(i-1)/(N-1))
+    end
 
     
     s = track.sampleDistances#1:length(track.curvature)

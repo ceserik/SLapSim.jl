@@ -37,7 +37,7 @@ include("solvingMethods/optInterface.jl")
 
 
 # Export public functions
-export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack
+export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path
 export JuMP, Ipopt  # Re-export for convenience
 #println("SLapSim module loaded")
 

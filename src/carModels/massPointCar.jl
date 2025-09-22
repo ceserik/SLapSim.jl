@@ -35,7 +35,7 @@ function massPointCar(car::Car,track::Track,k::Int64, optiModel::Union{Nothing, 
         ## aj ked to mozno je jedno lebo tento mass point bude mozno malo pouzivany?
         ## ale radsej to spravit, nech netreba prepisovat model lebo sa z toho zblaznim ked tam bude nieco inak
         @constraint(optiModel, (Fy/maxMotorForce)^2 + (inputForce/maxMotorForce)^2 <= ((Fz*μ + m*9.81*μ)/maxMotorForce)^2)
-        @constraint(optiModel,inputForce/FxPowerMax <= FxPowerMax/FxPowerMax)
+        #@constraint(optiModel,inputForce/FxPowerMax <= FxPowerMax/FxPowerMax)
     else
         inputForce = min(inputForce, sqrt(FxMaxsquared))
         inputForce = max(inputForce, -sqrt(FxMaxsquared))

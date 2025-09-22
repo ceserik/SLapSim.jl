@@ -36,7 +36,7 @@ mutable struct Car2
     chassis
     wheelAssemblies
     carParameters
-    carFunction
+    carODE
     controlMapping::Function
     stateMapping::Function
 end

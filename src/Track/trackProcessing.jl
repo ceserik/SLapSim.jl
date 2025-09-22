@@ -184,7 +184,7 @@ function kml2track(path::String,closeTrack::Bool)
         #lines!(ax,track.y, track.x)
         #display(fig)
 
-        smooth_by_OCP(track,1.0,1.0,closeTrack)
+        smooth_by_OCP(track,1.0,0.2,closeTrack)
         track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
         #lines!(ax,track.y, track.x)
         #display(GLMakie.Screen(),trackfig)
