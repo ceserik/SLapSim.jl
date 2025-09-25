@@ -36,4 +36,5 @@ mutable struct CarParameters
     lateralForce::carParameter{T} where T
     nControls::carParameter{T} where T
     nStates::carParameter{T} where T
+    s::carParameter{T} where T
 end

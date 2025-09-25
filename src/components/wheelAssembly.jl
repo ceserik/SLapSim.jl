@@ -17,14 +17,24 @@ function createBasicWheelAssembly(position::Vector{carVar})
     forces = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Pivot forces","N N N")
     velocity = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Velocity at pivot","m/s")
     position = carParameter{Vector{carVar}}(position,"Position from CoG","m m m")
-    function rotZ()
+    function rotZ(steering::carVar)
         out = [
-            cos(steeringAngle.value) -sin(steeringAngle.value) 0;
-            sin(steeringAngle.value)  cos(steeringAngle.value) 0;
+            cos(steering) -sin(steering) 0;
+            sin(steering)  cos(steering) 0;
             0           0          1
         ]
         return out
     end
+
+    function rotZinv(steering::carVar)
+        out = [
+            cos(steering)  sin(steering) 0;
+           -sin(steering)  cos(steering) 0;
+            0              0             1
+        ]
+        return out
+    end
+
 
     function pivot2CoG(forces)
         #returns moments on cog from wheel forces
@@ -33,7 +43,7 @@ function createBasicWheelAssembly(position::Vector{carVar})
     end
 
     function setPivotForce(tire::Tire)
-        forces.value = inv(rotZ()) * tire.forces.value
+        forces.value = rotZinv(steeringAngle.value) * tire.forces.value
     end
 
     function setPivotVelocity(angularVelocity,CoGvelocity)
@@ -41,7 +51,7 @@ function createBasicWheelAssembly(position::Vector{carVar})
     end
 
     function setTireSpeeds(tire::Tire)
-        tire.velocity.value  = rotZ() * velocity.value
+        tire.velocity.value  = rotZ(steeringAngle.value) * velocity.value
     end
 
     testWheelAssembly = WheelAssembly(

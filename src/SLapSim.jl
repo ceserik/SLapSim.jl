@@ -10,6 +10,7 @@ using Revise
 using Infiltrator
 
 const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
+#const carVar = Union{JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
 
 # Include files in dependency order
 include("Track/trackDefinition.jl")
@@ -37,7 +38,7 @@ include("solvingMethods/optInterface.jl")
 
 
 # Export public functions
-export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path
+export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution
 export JuMP, Ipopt  # Re-export for convenience
 #println("SLapSim module loaded")
 

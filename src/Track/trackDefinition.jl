@@ -63,7 +63,7 @@ function simpleTrack(;
     )
 end
 
-function singleTurn(straightLength::Float64)
+function singleTurn(straightLength::Float64,circleLength::Float64)
     # X is East
     # Y is North
     # Z is Up
@@ -76,8 +76,8 @@ function singleTurn(straightLength::Float64)
     straightX = zeros(straightLength)
     straightY = LinRange(0,straightLength,straightLength)
 
-    clothoidLength = 0
-    clothoidAngle = LinRange(pi/2, 0, clothoidLength)
+    clothoidLength = Int(circleLength)
+    clothoidAngle = LinRange(pi/2, pi/4, clothoidLength)
     clothoidX = zeros(clothoidLength)
     clothoidY = zeros(clothoidLength)
 

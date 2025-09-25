@@ -113,14 +113,16 @@ function createSimplestSingleTrack()
     powerLimit = carParameter{carVar}(80000.0,"PowerLimit","W")
     psi = carParameter{carVar}(0.0,"heading","rad")
     n = carParameter{carVar}(0.0,"Distance from centerline","m")
-    nControls = carParameter{carVar}(2.0,"number of controlled parameters","-")
+    nControls = carParameter{carVar}(3.0,"number of controlled parameters","-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2")
-    nStates = carParameter{carVar}(1.0,"number of car states","-")
+    nStates = carParameter{carVar}(6.0,"number of car states","-")
+    s = carParameter{carVar}(1.0,"longitudinal position on track","-")
 
 
     function controlMapping(car, controls)
         car.drivetrain.motors[1].torque.value = controls[1]  
-        car.drivetrain.motors[2].torque.value = controls[1]#   causes writing variableRef to Float64
+        car.drivetrain.motors[2].torque.value = controls[2]#   causes writing variableRef to Float64
+        car.wheelAssemblies[1].steeringAngle.value = controls[3]
 
         ##hotfix to test if it will work this way
         #v = controls[1]
@@ -138,7 +140,10 @@ function createSimplestSingleTrack()
         car.carParameters.velocity.value = [states[1], states[2], 0.0]
         car.carParameters.psi.value = states[3]
         car.carParameters.angularVelocity.value = [0.0, 0.0, states[4]]
-        return car
+        if length(states) ==6
+            car.carParameters.n.value = states[5]
+            car.carParameters.s.value = states[6]
+        end
     return car
 end
     
@@ -155,7 +160,8 @@ end
         powerLimit,
         lateralForce,
         nControls,
-        nStates
+        nStates,
+        s
     )
 
     afto = Car(
@@ -163,7 +169,7 @@ end
         p,
         controlMapping,
         stateMapping,
-        s->(0.0),
+        f->(0.0),
         drivetrain,
         aero,
         suspension,
