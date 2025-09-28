@@ -4,11 +4,18 @@ using SLapSim
 using JuMP
 
 
+struct Initialization
+    states::Matrix{Float64}
+    controls::Matrix{Float64}
+    path::Vector{Float64}
+end
+
+
 function carODE_path(car::Car,track::Track,k::Union{Int64,Float64},u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)
-    @infiltrate
+    #@infiltrate
     dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
     return dzds
 end;
@@ -20,21 +27,41 @@ end;
 function initializeSolution(car::Car,track::Track)
     span2 = [track.sampleDistances[1],track.sampleDistances[end]]
     x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
-    prob = ODEProblem(carODEPath, x0, span2,[car,track,0]);
+    steeringP = 10
+    velocityP = 3
+    vref = 2
+
+    prob = ODEProblem(carODEPath, x0, span2,[car,track,steeringP,velocityP,vref]);
     sol = solve(prob, Tsit5(),saveat=track.sampleDistances);
-    return sol
+
+    #@infiltrate
+    x = hcat(sol.u...)'
+    s = sol.t
+    steering = x[:,5] .* steeringP
+    torque = (vref .- x[:,1]) * velocityP
+
+    u = zeros(length(track.sampleDistances),Int64(car.carParameters.nControls.value))
+    u[:,1] = torque
+    u[:,3] = steering
+    initialization = Initialization(
+        x,
+        u,
+        s
+    )
+    return initialization
 end;
 
 
 function carODEPath(du, x, p, s)
     car = p[1];
     track = p[2]
-    #k = x[5]
+    steeringP = p[3]
+    velocityP = p[4]
+    vref = p[5]
     
-    
-    control = [(2 - car.carParameters.velocity.value[1])*3, 0.0, x[5]*10]#u_const(t);
+    control = [(vref - car.carParameters.velocity.value[1])*velocityP, 0.0, x[5]*steeringP]
+
     dx = carODE_path(car,track,s, control, x,nothing)  ; # carF must return a vector matching length(x)
-    #print(dx, "\n")
     du .= dx;
 end;
 
@@ -73,15 +100,15 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
     Sf;               #dt/ds 
     # this should be capable of accepting more states
     ]
-    @infiltrate
-    Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
+    #@infiltrate
+    #Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
     return dzds
 end
 
 
 
 
-function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model)
+function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initialization=nothing)
     N = length(track.sampleDistances)
 
     #fill track parameters which are constant along track, should be automatized
@@ -100,16 +127,35 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model)
     #stateInit = [fill(5,N),zeros(N),zeros(N),zeros(N),zeros(N),range(0,4,N)]'
     @variable(model,X[1:N,1:6])
 
-    for i = 1:N
-        set_start_value(X[i,1], 5.0)  # vx = 5
-        set_start_value(X[i,2], 0.0)  # vy = 0
-        set_start_value(X[i,3], pi/2)  # psi = 0
-        set_start_value(X[i,4], 0.0)  # dpsi = 0
-        set_start_value(X[i,5], 0.0)  # n = 0
-        set_start_value(X[i,6], 4*(i-1)/(N-1))  # t = linspace(0,4,N)
-        #println(4*(i-1)/(N-1))
-    end
 
+    if isnothing(initialization)
+        for i = 1:N
+            set_start_value(X[i,1], 5.0)  # vx = 5
+            set_start_value(X[i,2], 0.0)  # vy = 0
+            set_start_value(X[i,3], pi/2)  # psi = 0
+            set_start_value(X[i,4], 0.0)  # dpsi = 0
+            set_start_value(X[i,5], 0.0)  # n = 0
+            set_start_value(X[i,6], 4*(i-1)/(N-1))  # t = linspace(0,4,N)
+            #println(4*(i-1)/(N-1))
+        end
+    else
+        x = initialization.states
+        u = initialization.controls
+        s = initialization.path
+        for i = 1:N
+            set_start_value(X[i,1], x[i,1])  # vx from initialization
+            set_start_value(X[i,2], x[i,2])  # vy from initialization
+            set_start_value(X[i,3], x[i,3])  # psi from initialization
+            set_start_value(X[i,4], x[i,4])  # dpsi from initialization
+            set_start_value(X[i,5], x[i,5])  # n from initialization
+            set_start_value(X[i,6], x[i,6])  # t from initialization
+        end
+        for i = 1:N-1
+            for j = 1:nControls
+                set_start_value(U[i,j], u[i,j])  # controls from initialization
+            end
+        end
+    end
     
     s = track.sampleDistances#1:length(track.curvature)
     #t_final = X[end,6]

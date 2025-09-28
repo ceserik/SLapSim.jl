@@ -124,7 +124,7 @@ function singleTurn(straightLength::Float64,circleLength::Float64,vis::Bool = fa
         [0.0]
         )
 
-    smooth_by_OCP(track,1.0,0.1,false)
+    smooth_by_OCP(track,1.0,0.5,false)
     track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
     if vis ==1
         plotTrack(track,track.sampleDistances)
