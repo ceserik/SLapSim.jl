@@ -5,13 +5,13 @@ using SLapSim
 using GLMakie
 #Infiltrator.clear_disabled!()
 
-#set_theme!(default_theme())
+set_theme!(theme_dark())
 
 car = createSimplestSingleTrack()
 
-#track = singleTurn(50.0,10.0,false)
+track = singleTurn(50.0,10.0,false)
 path = "tracks/FSCZ.kml"
-track = kml2track(path,true)
+#track = kml2track(path,true)
 
 
 #@infiltrate
@@ -30,16 +30,28 @@ function myPlot(initialization)
     labels = ["Vx", "Vy", "ψ", "ψ̇", "n", "t"] 
     #@infiltrate
     for index = 1:length(x[1,:])
-        #@infiltrate
         state = x[:,index]
-        #
         lines!(ax,s,state,label = labels[index], linewidth = 5)
     end
-    fig[1, 2] = Legend(fig, ax, "State Variables", framevisible = false)
-    
+    axislegend(ax, "State Variables", position = :rt)
     fig
+    fig2 = Figure()
+    ax2 = fig2[1, 1] = Axis(fig2)
+    controls = ["MomentFront", "MomentRear", "Steering"] 
+    for index = 1:length(u[1,:])
+        control = u[:,index]
+        #@infiltrate
+        lines!(ax2,s[1:end-1],control,label = controls[index], linewidth = 5)
+    end
+    axislegend(ax2, "State Variables", position = :rt)
+    fig2
+
+
+
 end
 myPlot(initialization)
 
 model = JuMP.Model(Ipopt.Optimizer)
-X,U = findOptimalTrajectory(track,car,model,initialization)
+out = findOptimalTrajectory(track,car,model,initialization)
+
+myPlot(out)

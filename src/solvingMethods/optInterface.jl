@@ -43,9 +43,10 @@ function initializeSolution(car::Car,track::Track)
     u = zeros(length(track.sampleDistances),Int64(car.carParameters.nControls.value))
     u[:,1] = torque
     u[:,3] = steering
+    #@infiltrate
     initialization = Initialization(
         x,
-        u,
+        u[1:end-1,:],
         s
     )
     return initialization
@@ -192,6 +193,8 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
         lines!(ax, value.(X[:,i]), label=label)
     end
     display(GLMakie.Screen(), fig)  # This creates a new window
-    return X, U
+
+    out = Initialization(value.(X),value.(U),track.sampleDistances)
+    return out
 end
 
