@@ -3,7 +3,6 @@ using LinearAlgebra
 using JuMP, Ipopt, Zygote
 using ControlSystemsBase
 using OrdinaryDiffEq
-using Debugger 
 const MODULES_INITIALIZED = true
 include("Track/trackDefinition.jl")
 include("Track/trackProcessing.jl")

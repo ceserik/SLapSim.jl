@@ -1,10 +1,14 @@
+using Revise
+using Infiltrator
 using SLapSim
 using JuMP
-using Infiltrator
-function carODE_path(car::Car,track::Track,k::Int64,u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
+
+
+function carODE_path(car::Car,track::Track,k::Union{Int64,Float64},u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)
+    @infiltrate
     dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
     return dzds
 end;
@@ -14,20 +18,22 @@ end;
 
 
 function initializeSolution(car::Car,track::Track)
-    span = [track.sampleDistances[1],track.sampleDistances[end]]
-
-    prob = ODEProblem(f!, x0, tspan,car);
-    sol = solve(prob, Tsit5(), saveat=0.01);
-    return span
+    span2 = [track.sampleDistances[1],track.sampleDistances[end]]
+    x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
+    prob = ODEProblem(carODEPath, x0, span2,[car,track,0]);
+    sol = solve(prob, Tsit5(),saveat=track.sampleDistances);
+    return sol
 end;
 
 
-function f!(du, x, p, t)
+function carODEPath(du, x, p, s)
     car = p[1];
     track = p[2]
-    k = p[3]
-    control = u_const(t);
-    dx = carODE_path(car,track,k, control, x,nothing)  ; # carF must return a vector matching length(x)
+    #k = x[5]
+    
+    
+    control = [(2 - car.carParameters.velocity.value[1])*3, 0.0, x[5]*10]#u_const(t);
+    dx = carODE_path(car,track,s, control, x,nothing)  ; # carF must return a vector matching length(x)
     #print(dx, "\n")
     du .= dx;
 end;
@@ -35,16 +41,21 @@ end;
 
 #initializeSolution(1,2)
 ## here I need to define trnasofmation of ODE with respect to time to ODE with respect to path
-function time2path(car::Car,track::Track,k::Int64,model::Union{Nothing,JuMP.Model})
+function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{Nothing,JuMP.Model})
     #track.mapping(track,instantTrack,s)
     dxdt = car.carFunction(car,track,k,model)
     v_x = car.carParameters.velocity.value[1]
     v_y = car.carParameters.velocity.value[2]
     psi = car.carParameters.psi.value
     n   = car.carParameters.n.value
-
-    th = track.theta[k]
-    C = track.curvature[k]
+    
+    if typeof(k) == Float64
+        th = interp1(track.sampleDistances, track.theta, k)
+        C  = interp1(track.sampleDistances, track.curvature, k)
+    else
+        th = track.theta[k]
+        C = track.curvature[k]
+    end
     # until better track model is added epsilon = 0
     #epsilon = psi-th #where psi is heading of car realtive to intertial frame, th is heading of track
 
@@ -54,14 +65,16 @@ function time2path(car::Car,track::Track,k::Int64,model::Union{Nothing,JuMP.Mode
     dndt = v_x.*sin(epsilon) + v_y.*cos(epsilon);
 
     dzds = [
-    Sf .* dxdt[1];    #dvxds
-    Sf .* dxdt[2];    #dvyds
-    Sf .* dxdt[3];    #dpsids
-    Sf .* dxdt[4];    #ddpsids
-    Sf .* dndt;       #dnds
-    Sf;               #ds
+    Sf .* dxdt[1];    #dvx/ds
+    Sf .* dxdt[2];    #dvy/ds
+    Sf .* dxdt[3];    #dpsi/ds
+    Sf .* dxdt[4];    #ddpsi/ds
+    Sf .* dndt;       #dn/ds
+    Sf;               #dt/ds 
     # this should be capable of accepting more states
     ]
+    @infiltrate
+    Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
     return dzds
 end
 
