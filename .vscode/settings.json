@@ -1,0 +1,24 @@
+{
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
+    },
+    "workbench.editor.enablePreview": false,
+    "workbench.settings.applyToAllProfiles": [
+        "workbench.editor.enablePreview",
+        "editor.minimap.enabled"
+    ],
+    "terminal.integrated.commandsToSkipShell": [
+        "language-julia.interrupt"
+    ],
+    "julia.symbolCacheDownload": true,
+    "editor.minimap.enabled": false,
+    "window.newWindowProfile": "Default",
+    "julia.execution.inlineResultsForCellEvaluation": true,
+    "julia.execution.resultType": "inline, errors in REPL",
+    "julia.debuggerDefaultCompiled": [    
+        "ALL_MODULES_EXCEPT_MAIN",      
+    ]
+}
