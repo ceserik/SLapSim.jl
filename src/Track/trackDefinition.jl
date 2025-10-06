@@ -1,4 +1,6 @@
+using Revise
 using GLMakie
+using SLapSim
 #include("trackProcessing.jl")
 # Define the basic track structure with proper type annotations
 mutable struct Track
@@ -77,7 +79,7 @@ function singleTurn(straightLength::Float64,circleLength::Float64,vis::Bool = fa
     straightY = LinRange(0,straightLength,straightLength)
 
     clothoidLength = Int(circleLength)
-    clothoidAngle = LinRange(pi/2, -pi/2, clothoidLength)
+    clothoidAngle = LinRange(pi/2, -pi/2*0, clothoidLength)
     clothoidX = zeros(clothoidLength)
     clothoidY = zeros(clothoidLength)
 
@@ -90,23 +92,6 @@ function singleTurn(straightLength::Float64,circleLength::Float64,vis::Bool = fa
 
     X = [straightX; clothoidX]
     Y = [straightY; clothoidY]
-
-    #angle = LinRange(pi,0,30)
-    #circleX = cos.(angle) .* circleRadius .+ circleRadius
-    #circleY = sin.(angle) .* circleRadius .+ straightLength 
-
-    #X = [straightX; circleX[1:end]]
-    #Y = [straightY.-1; circleY[1:end]]
-    #lines(X,Y)
-
-    #track should be smoothed and curvature should be calculated properly
-    #for now curvature is hardcoded
-
-    #curvature = [zeros(straightLength);fill(1/circleRadius,30)]
-    #theta = [fill(pi/2,straightLength);collect(angle)]
-    ## will be done automatically for future tracks
-
-
     track = Track(
         [0.0],#curvature,
         [1.225],
@@ -127,8 +112,68 @@ function singleTurn(straightLength::Float64,circleLength::Float64,vis::Bool = fa
     smooth_by_OCP(track,1.0,0.5,false)
     track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
     if vis ==1
-        plotTrack(track,track.sampleDistances)
+        plotTrack(track)
     end
+    return track
+end
+
+function doubleTurn(vis::Bool = false)
+    # Track parameters
+    w_l = 3.0  # Width of the track [m]
+    w_r = 3.0  # Width of the track [m]
+    
+    R1 = 6.0   # radius of the first turn [m]
+    R2 = 5.0   # radius of the second turn [m]
+    l_straight = 20.0  # length of the straight at the beginning of the track [m]
+    
+    # First turn (semicircle from pi to 0)
+    t1 = LinRange(π, 0, 100)
+    x_smpl_R1 = R1 * cos.(t1) .- R1
+    y_smpl_R1 = R1 * sin.(t1)
+    
+    # Second turn (semicircle from pi to 2*pi, excluding first point)
+    t2 = LinRange(π, 2π, 100)
+    x_smpl_R2 = R2 * cos.(t2[2:end]) .+ R2
+    y_smpl_R2 = R2 * sin.(t2[2:end])
+    
+    # Straight section
+    y_smpl_straight1 = collect(-l_straight:-1)
+    x_smpl_straight1 = fill(-2*R1, length(y_smpl_straight1))
+    
+    # Combine all segments
+    X = [x_smpl_straight1; x_smpl_R1; x_smpl_R2]
+    Y = [y_smpl_straight1; y_smpl_R1; y_smpl_R2]
+    
+    track = Track(
+        [0.0],      # curvature - to be calculated
+        [1.225],    # rho
+        [1.0],      # μ
+        [1.0],      # sampleDistances - to be calculated properly
+        trackMapping,
+        X,
+        Y,
+        [0.0],      # theta
+        fill(w_r, length(X)),  # widthR
+        fill(w_l, length(X)),  # widthL
+        [0.0],      # inclination
+        [0.0],      # slope
+        s->(0.0),   # fcurve
+        [0.0]       # s
+    )
+    
+    smooth_factor = 1e1
+    smooth_by_OCP(track, 1.0, 1.0, false)
+    
+    # Update the width arrays to match the new track length after smoothing
+    track.widthR = fill(w_r, length(track.x))
+    track.widthL = fill(w_l, length(track.x))
+    
+    track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
+    
+    if vis == 1
+        plotTrack(track)
+    end
+    
     return track
 end
 

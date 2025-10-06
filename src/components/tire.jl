@@ -36,8 +36,8 @@ function createR20lin(maxTorque::Float64)
 
         else
             @constraint(optiModel, (tire.forces.value[2]/maxForce)^2 + (tire.forces.value[1]/maxForce)^2 <= (tire.forces.value[3]/maxForce)^2)
-            @constraint(optiModel, slipAngle.value <=  5*0.08726646259971647)
-            @constraint(optiModel, slipAngle.value >= -5*0.08726646259971647)
+            @constraint(optiModel, slipAngle.value <=  5/180*pi)
+            @constraint(optiModel, slipAngle.value >= -5/180*pi)
 
         end
         #tire.slipRatio = tire.angularFrequency * tire.radius / velocity[1]

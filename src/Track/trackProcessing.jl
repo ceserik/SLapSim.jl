@@ -1,3 +1,5 @@
+using Revise
+using SLapSim
 using Interpolations
 using JuMP, Ipopt, Zygote
 using DSP
@@ -184,19 +186,20 @@ function kml2track(path::String,closeTrack::Bool)
         #lines!(ax,track.y, track.x)
         #display(fig)
 
-        smooth_by_OCP(track,1.0,0.9,closeTrack)
+        smooth_by_OCP(track,1.0,1.0,closeTrack)
         track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
         #lines!(ax,track.y, track.x)
         #display(GLMakie.Screen(),trackfig)
-        plotTrack(track,track.sampleDistances)
+        plotTrack(track)
     return track
 
 
 end
 
 
-function plotTrack(track::Track, s::Vector{Float64}; b_plotStartEnd::Bool=false, ax::Union{Axis,Nothing}=nothing)
+function plotTrack(track::Track; b_plotStartEnd::Bool=false, ax::Union{Axis,Nothing}=nothing)
     # create Figure/Axis if none provided
+    s = track.sampleDistances
     created = false
     if ax === nothing
         fig = Figure()
@@ -246,3 +249,22 @@ function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::V
     )
 end
 
+
+
+function plotCarPath(track::Track,result)
+#takes heading and vx vy speeds to calculate position, integrate (probably bad)
+# take car.s and car.n and match it to track. and then add track.n
+vx = result.states[:,1]
+vy = result.states[:,2]
+
+n = result.states[:,5]
+carS = result.path
+
+carX = track.x .- n.*sin.(track.theta)
+carY = track.y .+ n.*cos.(track.theta)
+
+fig3 = Figure()
+
+plotTrack(track)
+lines!(carX,carY)
+end

@@ -1,10 +1,11 @@
+
 using Revise
 using Infiltrator
 using SLapSim
 using JuMP
 
 
-struct Initialization
+struct Result
     states::Matrix{Float64}
     controls::Matrix{Float64}
     path::Vector{Float64}
@@ -44,7 +45,7 @@ function initializeSolution(car::Car,track::Track)
     u[:,1] = torque
     u[:,3] = steering
     #@infiltrate
-    initialization = Initialization(
+    initialization = Result(
         x,
         u[1:end-1,:],
         s
@@ -174,8 +175,11 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
     #@constraint(model,X[1,:] .== initial)
 
     @constraint(model,X[1:end,1] .>= 0) #vx
-    @constraint(model,X[1,1] .== 5) # intial vx
-    @constraint(model,X[1,2] .== 0) # intial vx
+    #@constraint(model,X[1,1] .== 5) # intial vx
+    @constraint(model,X[1,2] .== 0) # intial vy
+    @constraint(model,X[1,3] .== track.theta[1]) # intial heading
+    #@constraint(model,X[end,3].== track.theta[end])
+    #@constraint(model,X[end,5].== 0)
     @constraint(model,X[1,6] .>= 0) # final time
     @constraint(model,diff(X[:,6]) .>=0) #time goes forward
 
@@ -194,7 +198,14 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
     end
     display(GLMakie.Screen(), fig)  # This creates a new window
 
-    out = Initialization(value.(X),value.(U),track.sampleDistances)
+    out = Result(value.(X),value.(U),track.sampleDistances)
     return out
 end
 
+function simulateInTime(car::Car,track::Track,result::Result)
+
+
+
+
+
+end

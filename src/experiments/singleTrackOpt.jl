@@ -5,26 +5,25 @@ using SLapSim
 using GLMakie
 #Infiltrator.clear_disabled!()
 
-set_theme!(theme_dark())
-
+#set_theme!(theme_light())
+GLMakie.closeall()
 car = createSimplestSingleTrack()
 
-track = singleTurn(50.0,10.0,false)
+#track = singleTurn(50.0,5.0,true)
+track = doubleTurn(true)
 path = "tracks/FSCZ.kml"
 #track = kml2track(path,true)
-
-
 #@infiltrate
-initialization = initializeSolution(car,track)
+result = initializeSolution(car,track)
 
 #lines(sol)
 
 
 
-function myPlot(initialization)
-    x = initialization.states
-    u = initialization.controls
-    s = initialization.path
+function myPlot(result)
+    x = result.states
+    u = result.controls
+    s = result.path
     fig = Figure()
     ax = fig[1, 1] = Axis(fig)
     labels = ["Vx", "Vy", "ψ", "ψ̇", "n", "t"] 
@@ -37,21 +36,24 @@ function myPlot(initialization)
     fig
     fig2 = Figure()
     ax2 = fig2[1, 1] = Axis(fig2)
+    ax2 = [Axis(fig2[i, 1]) for i in 1:3]
     controls = ["MomentFront", "MomentRear", "Steering"] 
     for index = 1:length(u[1,:])
         control = u[:,index]
-        #@infiltrate
-        lines!(ax2,s[1:end-1],control,label = controls[index], linewidth = 5)
+        lines!(ax2[index], s[1:end-1], control, label = controls[index], linewidth = 5)
+        axislegend(ax2[index], position = :rt)
     end
-    axislegend(ax2, "State Variables", position = :rt)
     fig2
-
+ 
 
 
 end
-myPlot(initialization)
+#myPlot(result)
 
 model = JuMP.Model(Ipopt.Optimizer)
-out = findOptimalTrajectory(track,car,model,initialization)
+result = findOptimalTrajectory(track,car,model,result)
 
-myPlot(out)
+myPlot(result)
+plotCarPath(track,result)
+
+myPlot(result)

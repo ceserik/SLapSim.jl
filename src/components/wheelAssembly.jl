@@ -9,6 +9,7 @@ mutable struct WheelAssembly
     rotZ::Function
     setTireSpeeds::Function
     setPivotForce::Function
+    constraints::Function
 end
 
 
@@ -34,7 +35,10 @@ function createBasicWheelAssembly(position::Vector{carVar})
         ]
         return out
     end
-
+    function constraints(optiModel::JuMP.Model)
+        @constraint(optiModel, steeringAngle.value <= 20/180*pi) 
+        @constraint(optiModel, steeringAngle.value >= -20/180*pi) 
+    end
 
     function pivot2CoG(forces)
         #returns moments on cog from wheel forces
@@ -63,7 +67,8 @@ function createBasicWheelAssembly(position::Vector{carVar})
         setPivotVelocity,
         rotZ,
         setTireSpeeds,
-        setPivotForce
+        setPivotForce,
+        constraints
         
     )
     return testWheelAssembly

@@ -35,6 +35,8 @@ function simplestSingleTrack(car::Car, track::Union{Track,Nothing}=nothing, k::U
     if !isnothing(optiModel)
         car.drivetrain.motors[1].constraints(torqueFront,optiModel)
         car.drivetrain.motors[2].constraints(torqueRear,optiModel)
+        car.wheelAssemblies[1].constraints(optiModel)
+        car.wheelAssemblies[2].constraints(optiModel)
     end
     #tire Function, currently same as in bachelors thesis
     # calculate Fz on tires

@@ -17,7 +17,7 @@ function createFischerMotor()
 
     function constraints(u,optiModel::JuMP.Model)
         @constraint(optiModel, u <= 29)
-        @constraint(optiModel, u >= -29)
+        #@constraint(optiModel, u >= -29)
     end
 
 
