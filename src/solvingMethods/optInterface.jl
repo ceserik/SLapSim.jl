@@ -187,16 +187,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
     @objective(model,Min,X[end,6])
     optimize!(model)
 
-    # Plotting the results
-    fig = Figure(layout = GridLayout(6, 1))
-    
-    # Create subplots for each variable
-    labels = ["vx", "vy", "psi", "dpsi", "n", "t"]
-    for (i, label) in enumerate(labels)
-        ax = Axis(fig[i, 1], ylabel = label)
-        lines!(ax, value.(X[:,i]), label=label)
-    end
-    display(GLMakie.Screen(), fig)  # This creates a new window
+
 
     out = Result(value.(X),value.(U),track.sampleDistances)
     return out

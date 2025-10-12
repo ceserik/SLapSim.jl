@@ -14,43 +14,26 @@ track = doubleTurn(true)
 path = "tracks/FSCZ.kml"
 #track = kml2track(path,true)
 #@infiltrate
-result = initializeSolution(car,track)
+initialization = initializeSolution(car,track)
 
-
-function myPlot(result)
-    x = result.states
-    u = result.controls
-    s = result.path
-    fig = Figure()
-    ax = fig[1, 1] = Axis(fig)
-    labels = ["Vx", "Vy", "ψ", "ψ̇", "n", "t"] 
-    #@infiltrate
-    for index = 1:length(x[1,:])
-        state = x[:,index]
-        lines!(ax,s,state,label = labels[index], linewidth = 5)
-    end
-    axislegend(ax, "State Variables", position = :rt)
-    fig
-    fig2 = Figure()
-    ax2 = fig2[1, 1] = Axis(fig2)
-    ax2 = [Axis(fig2[i, 1]) for i in 1:3]
-    controls = ["MomentFront", "MomentRear", "Steering"] 
-    for index = 1:length(u[1,:])
-        control = u[:,index]
-        lines!(ax2[index], s[1:end-1], control, label = controls[index], linewidth = 5)
-        axislegend(ax2[index], position = :rt)
-    end
-    fig2
- 
-
-
-end
-#myPlot(result)
 
 model = JuMP.Model(Ipopt.Optimizer)
-result = findOptimalTrajectory(track,car,model,result)
 
-myPlot(result)
-plotCarPath(track,result)
+optiResult = findOptimalTrajectory(track,car,model,initialization)
 
-myPlot(result)
+
+fig = Figure()
+ax = Axis(fig[1,1], aspect = DataAspect())
+plotCarPath(track,optiResult,ax)
+println(ax)
+display(fig)
+# simulate in time feed forward using optimal controls
+sol = timeSimulation(car, optiResult, track)
+lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6))
+
+display(fig)
+
+fig = nothing
+ax = nothing
+SLapSim.plotCarStates(optiResult)
+SLapSim.plotCarStates2(optiResult)

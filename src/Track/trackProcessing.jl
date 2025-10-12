@@ -197,7 +197,7 @@ function kml2track(path::String,closeTrack::Bool)
 end
 
 
-function plotTrack(track::Track; b_plotStartEnd::Bool=false, ax::Union{Axis,Nothing}=nothing)
+function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,Nothing} = nothing)
     # create Figure/Axis if none provided
     s = track.sampleDistances
     created = false
@@ -230,7 +230,7 @@ function plotTrack(track::Track; b_plotStartEnd::Bool=false, ax::Union{Axis,Noth
         scatter!(ax, [xc[1]], [yc[1]]; color = :red, marker = :circle, markersize = 8)
         scatter!(ax, [xc[end]], [yc[end]]; color = :red, marker = :x, markersize = 10)
     end
-
+    @infiltrate
     if created
         display(GLMakie.Screen(), fig)
         return fig, ax
@@ -238,7 +238,6 @@ function plotTrack(track::Track; b_plotStartEnd::Bool=false, ax::Union{Axis,Noth
         return ax
     end
 end
-
 
 function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::Vector{Float64}, th_traj::Vector{Float64}, C_traj::Vector{Float64})
     return s -> (
@@ -249,22 +248,3 @@ function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::V
     )
 end
 
-
-
-function plotCarPath(track::Track,result)
-#takes heading and vx vy speeds to calculate position, integrate (probably bad)
-# take car.s and car.n and match it to track. and then add track.n
-vx = result.states[:,1]
-vy = result.states[:,2]
-
-n = result.states[:,5]
-carS = result.path
-
-carX = track.x .- n.*sin.(track.theta)
-carY = track.y .+ n.*cos.(track.theta)
-
-fig3 = Figure()
-
-plotTrack(track)
-lines!(carX,carY)
-end
