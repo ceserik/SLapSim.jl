@@ -23,6 +23,7 @@ include("carModels/massPointCar.jl")
 include("carModels/simpleSingleTrack.jl")
 include("carModels/massPointCar.jl")
 
+include("solvingMethods/optInterface.jl")
 #include("carParams.jl")
 print("Slapsim initialized\n")
 

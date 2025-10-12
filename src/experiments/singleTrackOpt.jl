@@ -16,9 +16,6 @@ path = "tracks/FSCZ.kml"
 #@infiltrate
 result = initializeSolution(car,track)
 
-#lines(sol)
-
-
 
 function myPlot(result)
     x = result.states
