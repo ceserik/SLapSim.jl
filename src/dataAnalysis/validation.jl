@@ -6,9 +6,15 @@ using Interpolations
 using OrdinaryDiffEq
 
 function timeSimulation(car::Car, result::SLapSim.Result, track)
-    timeVector = result.states[1:end-1, 6] #this has to be compatible with different car models
+    timeVector = result.states[1:end-1, 6] #this has to be compatible with different car models will cause issues in future
     x0 = result.states[1, 1:4]
-    x0 = [x0; -11; -20]
+    n = result.states[1,5]
+    carX = track.x[1] .- n .* sin.(track.theta[1])
+    carY = track.y[1] .+ n .* cos.(track.theta[1])
+
+    initialPosition =[0.0,0.0]
+    #@infiltrate
+    x0 = [x0; carX; carY]
     tspan = [timeVector[1], timeVector[end]]
     p = Vector{Any}(undef, 4)
 
@@ -19,7 +25,7 @@ function timeSimulation(car::Car, result::SLapSim.Result, track)
     p[4] = timeVector
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-    sol = solve(prob, Tsit5())
+    sol = solve(prob, Euler(),tstops=timeVector)
     return sol
 end
 
@@ -30,7 +36,7 @@ function carODE_globalFrame(du, x, p, t)
     timeVector = p[4]
     interp_linear = linear_interpolation((timeVector, 1:3), U)
     u = interp_linear(t, 1:3)
-    @infiltrate
+    #@infiltrate
     car.controlMapping(car, u)
     car.stateMapping(car, x)
 

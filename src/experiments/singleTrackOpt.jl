@@ -5,14 +5,34 @@ using SLapSim
 using GLMakie
 #Infiltrator.clear_disabled!()
 
-#set_theme!(theme_light())
+
+
+#dark theme detector for linux KDE with kde-cli-tools installed
+detect = true
+if detect
+    x = "kreadconfig6"
+    option1 = "--key"
+    option2 = "LookAndFeelPackage"
+    xd = read(`$x $option1 $option2`,String) # remember the backticks ``
+    is_dark = occursin("dark", lowercase(xd))
+    println("Is dark theme: ", is_dark)
+    if is_dark
+        set_theme!(theme_dark())
+    else
+        set_theme!(Makie.current_default_theme())
+    end
+end
+
+
 GLMakie.closeall()
 car = createSimplestSingleTrack()
 
 #track = singleTurn(50.0,5.0,true)
-track = doubleTurn(true)
+track = doubleTurn(true,0.4)
 path = "tracks/FSCZ.kml"
-#track = kml2track(path,true)
+#track = kml2track(path,true,true)
+track.widthL = [0.5]
+track.widthR = [0.5]
 #@infiltrate
 initialization = initializeSolution(car,track)
 

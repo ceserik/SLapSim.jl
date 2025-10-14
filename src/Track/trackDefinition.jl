@@ -117,7 +117,7 @@ function singleTurn(straightLength::Float64,circleLength::Float64,vis::Bool = fa
     return track
 end
 
-function doubleTurn(vis::Bool = false)
+function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     # Track parameters
     w_l = 3.0  # Width of the track [m]
     w_r = 3.0  # Width of the track [m]
@@ -162,7 +162,7 @@ function doubleTurn(vis::Bool = false)
     )
     
     smooth_factor = 1e1
-    smooth_by_OCP(track, 1.0, 1.0, false)
+    smooth_by_OCP(track, 1.0,ds, false)
     
     # Update the width arrays to match the new track length after smoothing
     track.widthR = fill(w_r, length(track.x))

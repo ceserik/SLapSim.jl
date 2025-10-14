@@ -160,8 +160,14 @@ function kml2cart(path::String)
     return A
 end
 
-function kml2track(path::String,closeTrack::Bool)
+function kml2track(path::String,closeTrack::Bool,flip    )
     A = kml2cart(path)
+    @infiltrate
+    if flip == true
+        A = A[:,[2, 1, 3]]
+    end
+
+    @infiltrate
     if closeTrack
         A = [A[1:end,:]; A[1,:]']
     end
@@ -230,7 +236,7 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
         scatter!(ax, [xc[1]], [yc[1]]; color = :red, marker = :circle, markersize = 8)
         scatter!(ax, [xc[end]], [yc[end]]; color = :red, marker = :x, markersize = 10)
     end
-    @infiltrate
+    #@infiltrate
     if created
         display(GLMakie.Screen(), fig)
         return fig, ax
