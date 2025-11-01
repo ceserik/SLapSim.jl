@@ -118,13 +118,39 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
     track.widthR = fill(track.widthR[1],N)
 
     nStates =  Int(car.carParameters.nStates.value)
+    s = track.sampleDistances
     #create inputs for car model #create instance of track parameters
 
     #determine sizes of inputs and states
     nControls = Int(round(car.carParameters.nControls.value))
-    @variable(model,U[1:N-1,1:nControls])
 
-    #stateInit = [fill(5,N),zeros(N),zeros(N),zeros(N),zeros(N),range(0,4,N)]'
+    @variable(model, A[1:N-1, 1:nControls, 1:3])  # [interval, control_idx, coeff_idx]
+    
+    U = Array{VariableRef}(undef, N-1, nControls)
+    for i = 1:N-1
+        for j = 1:nControls
+            U[i,j] = A[i,j,1]
+        end
+    end
+
+    # Zero-order continuity
+    for i = 1:N-2
+        h_i = s[i+1] - s[i]
+        for j = 1:nControls
+            @constraint(model, A[i,j,1] + A[i,j,2]*h_i + A[i,j,3]*h_i^2== A[i+1,j,1])
+        end
+    end
+    
+    # First-derivative continuity>
+    s = track.sampleDistances
+    for i = 1:N-2
+        h_i = s[i+1] - s[i]
+        #h_ip1 = s[i+2] - s[i+1]
+        for j = 1:nControls
+            @constraint(model, A[i,j,2] + 2*A[i,j,3]*h_i == A[i+1,j,2])
+        end
+    end
+
     @variable(model,X[1:N,1:6])
 
 
@@ -157,9 +183,9 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
         end
     end
     
-    s = track.sampleDistances
+    
     #t_final = X[end,6]
-    method = "fEuler"
+    method = "hermite-simpson"
 
     if method == "fEuler"
         for k = 1:N-1 # loop over control intervals

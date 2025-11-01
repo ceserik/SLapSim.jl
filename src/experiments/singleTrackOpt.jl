@@ -28,7 +28,7 @@ GLMakie.closeall()
 car = createSimplestSingleTrack()
 
 #track = singleTurn(50.0,5.0,true)
-track = doubleTurn(true,0.4)
+track = doubleTurn(true,2.0)
 path = "tracks/FSCZ.kml"
 #track = kml2track(path,true,true)
 track.widthL = [0.5]

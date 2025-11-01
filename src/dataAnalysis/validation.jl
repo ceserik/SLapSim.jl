@@ -25,7 +25,7 @@ function timeSimulation(car::Car, result::Result, track)
     p[4] = timeVector
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-    sol = solve(prob, Euler(),tstops=timeVector)
+    sol = solve(prob, Tsit5(),tstops=timeVector)
     return sol
 end
 

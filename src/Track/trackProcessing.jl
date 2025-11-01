@@ -7,14 +7,15 @@ using KML:KMLFile,read
 using Statistics
 using Proj
 using PCHIPInterpolation
+using Dierckx
 
 
 using Interpolations
 
 function interp1(X, V, Xq,type=nothing)
     if type == "PCHIP"
-        itp = Interpolator(X, V)
-        return itp.(Xq)
+        spl = Spline1D(X, V)
+        return spl(Xq)
     else
         knots = (X,)
         itp = interpolate(knots, V, Gridded(Linear()))
@@ -68,8 +69,8 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     N = Int(round((s_tmp[end] - s_tmp[1]) / ds))
     ds = (s_tmp[end] - s_tmp[1]) / N
     s_traj = collect(LinRange(s_tmp[1], s_tmp[end], Int(N)))
-    x_smpl = interp1(s_tmp, x_smpl, s_traj,"PCHIP")
-    y_smpl = interp1(s_tmp, y_smpl, s_traj,"PCHIP")
+    x_smpl = interp1(s_tmp, x_smpl, s_traj,"PCHIP") 
+    y_smpl = interp1(s_tmp, y_smpl, s_traj,"PCHIP") 
     ###
 
     dx = diff(x_smpl)
@@ -247,10 +248,10 @@ end
 
 function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::Vector{Float64}, th_traj::Vector{Float64}, C_traj::Vector{Float64})
     return s -> (
-        interp1(s_traj, x_traj, s), # x position of a point
-        interp1(s_traj, y_traj, s), # y position of a point
-        interp1(s_traj, th_traj, s),# track heading at point
-        interp1(s_traj, C_traj,  s) # curvate of track at a point
+        interp1(s_traj, x_traj, s,"PCHIP"), # x position of a point
+        interp1(s_traj, y_traj, s,"PCHIP"), # y position of a point
+        interp1(s_traj, th_traj, s,"PCHIP"),# track heading at point
+        interp1(s_traj, C_traj,  s,"PCHIP") # curvate of track at a point
     )
 end
 
