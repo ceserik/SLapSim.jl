@@ -247,10 +247,10 @@ end
 
 function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::Vector{Float64}, th_traj::Vector{Float64}, C_traj::Vector{Float64})
     return s -> (
-        interp1(s_traj, x_traj, s),
-        interp1(s_traj, y_traj, s),
-        interp1(s_traj, th_traj, s),
-        interp1(s_traj, C_traj,  s)
+        interp1(s_traj, x_traj, s), # x position of a point
+        interp1(s_traj, y_traj, s), # y position of a point
+        interp1(s_traj, th_traj, s),# track heading at point
+        interp1(s_traj, C_traj,  s) # curvate of track at a point
     )
 end
 

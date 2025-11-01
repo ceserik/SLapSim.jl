@@ -20,5 +20,6 @@
     "julia.execution.resultType": "inline, errors in REPL",
     "julia.debuggerDefaultCompiled": [    
         "ALL_MODULES_EXCEPT_MAIN",      
-    ]
+    ],
+     "window.autoDetectColorScheme": true
 }

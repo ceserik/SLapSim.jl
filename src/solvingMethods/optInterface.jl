@@ -3,7 +3,7 @@ using Revise
 using Infiltrator
 using SLapSim
 using JuMP
-
+using OrdinaryDiffEq
 
 struct Result
     states::Matrix{Float64}
@@ -77,7 +77,7 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
     v_y = car.carParameters.velocity.value[2]
     psi = car.carParameters.psi.value
     n   = car.carParameters.n.value
-    
+    #@infiltrate
     if typeof(k) == Float64
         th = interp1(track.sampleDistances, track.theta, k)
         C  = interp1(track.sampleDistances, track.curvature, k)
@@ -85,9 +85,7 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
         th = track.theta[k]
         C = track.curvature[k]
     end
-    # until better track model is added epsilon = 0
-    #epsilon = psi-th #where psi is heading of car realtive to intertial frame, th is heading of track
-
+    
     epsilon = psi - th
 
     Sf = (1 - n*C) ./ (v_x.*cos(epsilon) - v_y.*sin(epsilon));
@@ -159,13 +157,45 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
         end
     end
     
-    s = track.sampleDistances#1:length(track.curvature)
+    s = track.sampleDistances
     #t_final = X[end,6]
+    method = "fEuler"
 
+    if method == "fEuler"
+        for k = 1:N-1 # loop over control intervals
+            x_next = X[k,:] .+ (s[k+1]-s[k]) .* carODE_path(car,track,k, U[k,:], X[k,:],model);
+            @constraint(model,X[k+1,:] .== x_next)
+        end
+    end
 
-    for k = 1:N-1 # loop over control intervals
-        x_next = X[k,:] .+ (s[k+1]-s[k]) .* carODE_path(car,track,k, U[k,:], X[k,:],model);
-        @constraint(model,X[k+1,:] .== x_next)
+    if method == "bEuler"
+        for k = 1:N-1 # loop over control intervals
+            h = (s[k+1]-s[k])
+            x_next = X[k,:] .+ h .* carODE_path(car,track,k, U[k,:], X[k+1,:],model);
+            @constraint(model,X[k+1,:] .== x_next)
+        end
+    end
+
+    if method == "hermite-simpson"
+        @variable(model,Xk05[1:N,1:6])
+        for i = 1:N
+            set_start_value(Xk05[i,1], x[i,1])  # vx from initialization
+            set_start_value(Xk05[i,2], x[i,2])  # vy from initialization
+            set_start_value(Xk05[i,3], x[i,3])  # psi from initialization
+            set_start_value(Xk05[i,4], x[i,4])  # dpsi from initialization
+            set_start_value(Xk05[i,5], x[i,5])  # n from initialization
+            set_start_value(Xk05[i,6], x[i,6])  # t from initialization
+        end
+        for k = 1:N-2 # loop over control intervals
+            h = (s[k+1]-s[k])
+            h05 = h/2
+            fk0 = carODE_path(car,track,k, U[k,:], X[k,:],model)
+            fk05 = carODE_path(car,track,s[k]+h05, U[k,:], Xk05[k,:],model)
+            fk1 = carODE_path(car,track,k, U[k+1,:], X[k+1,:],model)
+
+            @constraint(model,X[k+1,:]  .== X[k,:] + h*(1/6*fk0 + 2/3*fk05 + 1/6*fk1))
+            @constraint(model,Xk05[k,:] .== X[k,:] + h*(5/24*fk0 + 1/3*fk05 - 1/24*fk1))
+        end
     end
 
     #initial states
