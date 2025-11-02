@@ -219,8 +219,9 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
             fk05 = carODE_path(car,track,s[k]+h05, U[k,:], Xk05[k,:],model)
             fk1 = carODE_path(car,track,k, U[k+1,:], X[k+1,:],model)
 
-            @constraint(model,X[k+1,:]  .== X[k,:] + h*(1/6*fk0 + 2/3*fk05 + 1/6*fk1))
             @constraint(model,Xk05[k,:] .== X[k,:] + h*(5/24*fk0 + 1/3*fk05 - 1/24*fk1))
+            @constraint(model,X[k+1,:]  .== X[k,:] + h*(1/6*fk0 + 2/3*fk05 + 1/6*fk1))
+            
         end
     end
 

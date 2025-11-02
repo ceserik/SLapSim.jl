@@ -37,11 +37,12 @@ include("solvingMethods/massPointSolver.jl")
 include("solvingMethods/optInterface.jl")
 
 include("dataAnalysis/validation.jl")
+include("solvingMethods/myCollocation.jl")
 
 
 # Export public functions
 export Car, Track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution
-export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1  # Re-export for convenience
+export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA  # Re-export for convenience
 #println("SLapSim module loaded")
 
 end # module
