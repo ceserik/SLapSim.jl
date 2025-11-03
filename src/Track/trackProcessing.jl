@@ -8,7 +8,7 @@ using Statistics
 using Proj
 using PCHIPInterpolation
 using Dierckx
-
+#using LobattoInterpolation
 
 using Interpolations
 
@@ -89,32 +89,21 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
         end
 
 
-    # define decision variables
-    #@variable(model, u[i=1:N-1, 1], start = (diff(C_init))[i])
-    #@variable(model, Z[i =1:N,j = 1:4],start = [C_init  th_init x_smpl y_smpl][i,j])
-#
-#
-#
-#    # ---- RK4 --------
-#    for k = 1:N-1 # loop over control intervals
-#        dsk = (s_traj[k+1] - s_traj[k])
-#        # Runge-Kutta 4 integration
-#        k1 = f(Z[k, :], u[k, :])
-#        k2 = f(Z[k, :] + vec(dsk / 2 * k1), u[k, :])
-#        k3 = f(Z[k, :] + vec(dsk / 2 * k2), u[k, :])
-#        k4 = f(Z[k, :] + vec(dsk * k3), u[k, :])
-#        x_next = Z[k, :] + vec(dsk/6*(k1 + 2*k2 + 2*k3 + k4))
-#        #opti.subject_to(Z[k+1, :]==x_next);# % close the gaps
-#        @constraint(model, Z[k+1, :] == x_next)
-#    end
-#
-    lobotom = createLobattoIIIA(3)
 
-    xd = lobotom.createConstraints(f,4,1,0,s_traj,model,[C_init  th_init x_smpl y_smpl],0)
+    lobotom = createLobattoIIIA(7)
+    
+    samplingPoints = length(s_traj)
+    #@infiltrate
+    spl = Spline1D(1:samplingPoints, s_traj)
+    
+
+    xd = lobotom.createConstraints(f,4,1,spl,1:samplingPoints,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
+    Xall = xd[2]
+    Uall = xd[3]
     Z = xd[4]
     u = xd[5]
     
-    #@infiltrate
+    
     z_C = Z[:, 1]
     z_th= Z[:, 2]
     z_x = Z[:, 3]
@@ -123,7 +112,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     # Objective function (minimize the final time)
     x_dev = ((z_x[1:end-1] - x_smpl[1:end-1]).^2 + (z_x[2:end] - x_smpl[2:end]).^2) / 2
     y_dev = ((z_y[1:end-1] - y_smpl[1:end-1]).^2 + (z_y[2:end] - y_smpl[2:end]).^2) / 2
-   # @infiltrate
+    #@infiltrate
     @objective(model, Min, sum(ds .* (r .* u.^2 .+ x_dev .+ y_dev)))
 
     # Dynamic constraints
@@ -139,16 +128,21 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     # Solve NLP
     optimize!(model)
     # Extract solution values
+    
+
     x_traj = value.(z_x)
     y_traj = value.(z_y)
     C_traj = value.(z_C)
     th_traj = value.(z_th)
-
+    #@infiltrate
+    lobotom.interpolate(x_traj,s_traj)
     track.x = x_traj
     track.y = y_traj
     track.curvature = C_traj
     track.theta = th_traj
     track.sampleDistances = s_traj    
+    #@infiltrate
+    
     return (x_traj, y_traj, C_traj, th_traj)
 
 end

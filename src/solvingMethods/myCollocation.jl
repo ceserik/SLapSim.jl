@@ -6,17 +6,24 @@ using Infiltrator
 
 struct Collocation
     createConstraints
-    interpolate
+    createInterpolator
     tableau
+    interpolator::Union{Function, Nothing}  # Store the actual interpolator here
 end
 
 
 function createLobattoIIIA(stage)
     tableau = TableauLobattoIIIA(stage);
-    function createDynamicConstraints(f,Xsize,Usize,independentVariable,sampplingPoints,model,X_init,Y_init) 
+    stages = tableau.s  
+    function createDynamicConstraints(f,Xsize,Usize,iterpolationFunction,sampplingPoints,model,X_init,U_init) 
         #create stages
         # potrebujem sampplingPoints + sampplingPoints* stage-2 dalsich
-       
+        #@infiltrate
+        if (length(X_init) != length(U_init))
+            U_init = [U_init; U_init[end,:] ]
+        end
+
+
         c = tableau.s
         stages = tableau.s
         N = length(sampplingPoints)
@@ -44,40 +51,82 @@ function createLobattoIIIA(stage)
                 for col = 1:tableau.s
                     # Correctly index into X for this interval
                     x_idx = interval_start_idx + col - 1
-                    fxSum += tableau.a[stage,col] * f(X[x_idx,:],U[k,:])
+                    fxSum += tableau.a[stage,col] * f(X[x_idx,:],U[k,:])# sem pridat drahu
                 end
                 
-                h = (sampplingPoints[xd+1] - sampplingPoints[xd])
+                h = (iterpolationFunction(xd+1) - iterpolationFunction(xd))
                 
                 # The next point in the sequence
                 next_idx = interval_start_idx + stage - 1
                 @constraint(model, X[next_idx,:] == X[interval_start_idx,:] + h*(fxSum))
-
+                
+                # set the intial solution for all points, even collocation points
                 for i = 1:Xsize
-                    h_stage = h * tableau.c[stage]
-                    X_kInit = interp1(sampplingPoints, X_init[:,i], sampplingPoints[xd] + h_stage, "PCHIP")
+                    s_stage = h * tableau.c[stage]
+                   # @infiltrate
+                    X_kInit = interp1(iterpolationFunction(sampplingPoints), X_init[:,i], iterpolationFunction(xd) + s_stage, "PCHIP")
                     set_start_value(X[next_idx,i], X_kInit)
+                    
+                end
+
+                for i = 1:Usize
+                    s_stage = h * tableau.c[stage]
+                    u_kInit = interp1(iterpolationFunction(sampplingPoints), U_init[:,i], iterpolationFunction(xd) + s_stage, "PCHIP")
+                    set_start_value(U[next_idx,i], u_kInit)
                 end
                 k += 1
             end
         end
-        return  [model,  X, U[1:end-1,:], Xnode,Unode[1:end-1,:]] #this controls vector being shorter has to be better because track can be closed
+        return  [model,  X, U, Xnode,Unode[1:end-1,:]] #this controls vector being shorter has to be better because track can be closed
     end
 
-    function LobattoInterpolation(points,querypoints)
-        #@infiltrate
-        p =  Lagrange(collect(tableau.c),points)
-        p.(querypoints)
+
+        function createLobattoInterpolator(X_values, samplingDistances)
+        # Return a function that only needs querypoints
+        function interpolate(querypoints)
+            nIntervals = length(samplingDistances) - 1
+            nStates = size(X_values, 2)
+            result = zeros(length(querypoints), nStates)
+            
+            for (idx, s_query) in enumerate(querypoints)
+                # Find interval
+                interval = clamp(searchsortedlast(samplingDistances, s_query), 1, nIntervals)
+                
+                # Local coordinate in [0, 1]
+                s_start = samplingDistances[interval]
+                s_end = samplingDistances[interval + 1]
+                tau = (s_query - s_start) / (s_end - s_start)
+                
+                # Extract collocation points for this interval
+                interval_start = 1 + (interval - 1) * (stages - 1)
+                points = X_values[interval_start:(interval_start + stages - 1), :]
+                
+                # Lagrange interpolation at tau
+                for state = 1:nStates
+                    poly = Lagrange(collect(tableau.c), points[:, state])
+                    result[idx, state] = poly(tau)
+                end
+            end
+            
+            return result
+        end
+        
+        return interpolate
     end
 
 
     LobattoIIIAMethod = Collocation(
         createDynamicConstraints,
-        LobattoInterpolation,
-        tableau
+        createLobattoInterpolator,
+        tableau,
+        nothing
     )
     return LobattoIIIAMethod
 end
+
+
+
+#Hermite polynomial
 
 #stage = 5
 #   function f(z, u)

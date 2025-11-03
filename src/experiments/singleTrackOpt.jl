@@ -38,7 +38,6 @@ initialization = initializeSolution(car,track)
 
 
 model = JuMP.Model(Ipopt.Optimizer)
-
 optiResult = findOptimalTrajectory(track,car,model,initialization)
 
 
