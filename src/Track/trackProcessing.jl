@@ -89,7 +89,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
         end
 
 
-    Lobattostage = 7
+    Lobattostage = 3
     lobotom = createLobattoIIIA(Lobattostage,f)
     
     samplingPoints = length(s_traj)
@@ -139,10 +139,10 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     #@infiltrate
     ssss = LinRange(s_all[1],s_all[end],546)
     fig_interp = Figure()
-    stav = 4
+    stav = 1
     ax_interp = Axis(fig_interp[1,1], xlabel = "s", ylabel = "Curvature", title = "Curvature Interpolation - LobattoIIIA Stage $Lobattostage")
     scatter!(ax_interp, s_all, value.(Xall[:,stav]), label = "Actual points", markersize = 5)
-    display(GLMakie.Screen(), fig_interp)
+    #display(GLMakie.Screen(), fig_interp)
     #@infiltrate
     lines!(ax_interp, ssss, itp(collect(s_all[1]:0.1:s_all[end]))[:,stav], label = "Interpolated")
     

@@ -28,7 +28,7 @@ function createLobattoIIIA(stage,f)
         stages = tableau.s
         N = length(sampplingPoints)
 
-        numberOfCollocationPoints = N * (stages - 2)
+        numberOfCollocationPoints = (N-1) * (stages - 2)
         totalPoints = N + numberOfCollocationPoints
 
         @variable(model, X[i=1:totalPoints, j=1:Xsize]) #vyriesit inicializaciu
@@ -41,24 +41,25 @@ function createLobattoIIIA(stage,f)
 
         
         
-        # Create correct sampling points
+# Create correct sampling points
         s_all = zeros(totalPoints)
         k = 1
-        for i = 1:N-1
-            #@infiltrate
-            h = iterpolationFunction(i+1) - iterpolationFunction(i)
-            for stage = 1:stages -1
-               
-                s_all[k] = iterpolationFunction(i) + h*tableau.c[stage]
-                #println(i)
-                #println(stage)
-                #println("")
-                k +=1
+        for i = 1:N
+            # Add the node point first
+            s_all[k] = iterpolationFunction(sampplingPoints[i])
+            k += 1
+            
+            # Add collocation points (if not the last interval)
+            if i < N
+                h = iterpolationFunction(sampplingPoints[i+1]) - iterpolationFunction(sampplingPoints[i])
+                for stage = 2:stages-1
+                    s_all[k] = iterpolationFunction(sampplingPoints[i]) + h * tableau.c[stage]
+                    k += 1
+                end
             end
         end
-        s_all[end] = iterpolationFunction(N)
-        @infiltrate
-        
+        #@infiltrate
+
         k = 1
         for xd = 1:N-1
             # Calculate the starting index for this interval
@@ -119,13 +120,23 @@ function createLobattoIIIA(stage,f)
                     end
                 end
                 #@infiltrate
-                segment_start = segment_idx * step -1
+                # Handle edge cases
+                if segment_idx == -1
+                    if queryPoints[pointIDX] < nodes_s[1]
+                        segment_idx = 1
+                    else
+                        segment_idx = length(nodes_s) - 1
+                    end
+                end
+                
+                segment_start = 1 + (segment_idx - 1) * step
+                #@infiltrate
                 x_segment = x_values[segment_start:segment_start+step, :]
                 u_segment = u_values[segment_start:segment_start+step, :]
                 s_segment = s_all[segment_start:segment_start+step]
                 
-                println(s_segment)
-                println(x_segment)
+                #println(s_segment)
+                #println(x_segment)
                 
                 #if(length(s_segment) != length(x_segment))
                 #    @infiltrate
