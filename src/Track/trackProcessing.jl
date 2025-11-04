@@ -84,13 +84,13 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     ####
     # Initialize the optimization problem
     model = JuMP.Model(Ipopt.Optimizer)
-        function f(z, u)
+        function f(z, u,s)
             return [u; z[1]; cos(z[2]); sin(z[2])]
         end
 
 
-
-    lobotom = createLobattoIIIA(7)
+    Lobattostage = 7
+    lobotom = createLobattoIIIA(Lobattostage,f)
     
     samplingPoints = length(s_traj)
     #@infiltrate
@@ -102,7 +102,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     Uall = xd[3]
     Z = xd[4]
     u = xd[5]
-    
+    s_all = xd[6]
     
     z_C = Z[:, 1]
     z_th= Z[:, 2]
@@ -135,13 +135,26 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     C_traj = value.(z_C)
     th_traj = value.(z_th)
     #@infiltrate
-    lobotom.interpolate(x_traj,s_traj)
+    itp = lobotom.createInterpolator(value(Xall),value(Uall),s_all)
+    #@infiltrate
+    ssss = LinRange(s_all[1],s_all[end],546)
+    fig_interp = Figure()
+    stav = 4
+    ax_interp = Axis(fig_interp[1,1], xlabel = "s", ylabel = "Curvature", title = "Curvature Interpolation - LobattoIIIA Stage $Lobattostage")
+    scatter!(ax_interp, s_all, value.(Xall[:,stav]), label = "Actual points", markersize = 5)
+    display(GLMakie.Screen(), fig_interp)
+    #@infiltrate
+    lines!(ax_interp, ssss, itp(collect(s_all[1]:0.1:s_all[end]))[:,stav], label = "Interpolated")
+    
+    axislegend(ax_interp)
+    display(GLMakie.Screen(), fig_interp)
+    
+    #@infiltrate
     track.x = x_traj
     track.y = y_traj
     track.curvature = C_traj
     track.theta = th_traj
     track.sampleDistances = s_traj    
-    #@infiltrate
     
     return (x_traj, y_traj, C_traj, th_traj)
 
