@@ -1,5 +1,5 @@
 
-using Revise
+#using Revise
 using Infiltrator
 using SLapSim
 using GLMakie
@@ -50,7 +50,7 @@ plotCarPath(track,optiResult,ax)
 println(ax)
 display(fig)
 # simulate in time feed forward using optimal controls
-@infiltrate
+#@infiltrate
 sol = timeSimulation(car, optiResult, track)
 lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6))
 

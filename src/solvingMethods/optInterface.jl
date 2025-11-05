@@ -175,9 +175,11 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
     lobotom= createLobattoIIIA(stage,f)
     
     xd = lobotom.createConstraints(f,6,3,track.fcurve,track.sampleDistances,model,initialization.states,initialization.controls)
-    @infiltrate
+#    @infiltrate
     X = xd[2]
-    U = xd[3]
+    #@infiltrate
+    U = xd[3][1:end-1,:]
+    s_all =xd[6]
    
 
     @constraint(model,X[1:end,1] .>= 0) #vx
@@ -195,7 +197,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
 
 
 
-    out = Result(value.(X),value.(U),track.sampleDistances)
+    out = Result(value.(X),value.(U),s_all)
     return out
 end
 

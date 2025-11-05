@@ -25,6 +25,7 @@ function timeSimulation(car::Car, result::Result, track)
     p[4] = timeVector
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
+    #@infiltrate
     sol = solve(prob, Tsit5(),tstops=timeVector)
     return sol
 end
@@ -65,9 +66,18 @@ function plotCarPath(track::Track, result, axis = nothing)
         axis = Axis(fig[1,1], aspect = DataAspect())
     end
     n = result.states[:, 5]
+    #@infiltrate
+#    @infiltrate
+    carX = zeros(length(result.path))
+    carY = zeros(length(result.path))
+    for (i,s) in enumerate(result.path)
+#@infiltrate
+        carX[i] = track.fcurve(s)[3] .- n[i] .* sin.(track.fcurve(s)[2])
+        carY[i] = track.fcurve(s)[4] .+ n[i] .* cos.(track.fcurve(s)[2])
 
-    carX = track.x .- n .* sin.(track.theta)
-    carY = track.y .+ n .* cos.(track.theta)
+    end
+    #carX = track.x .- n .* sin.(track.theta)
+    #carY = track.y .+ n .* cos.(track.theta)
 
     println(axis)
     plotTrack(track, b_plotStartEnd =false, ax = axis)

@@ -84,7 +84,7 @@ function createLobattoIIIA(stage,f)
                     X_kInit = interp1(node_s, X_init[:, i], s_stage, "PCHIP")
                     set_start_value(X[next_idx, i], X_kInit)
                     println(X_kInit)
-                     @infiltrate
+                    # @infiltrate
                 end
                 println()
                 for i = 1:Usize
@@ -95,7 +95,15 @@ function createLobattoIIIA(stage,f)
                 println()
             end
         end
+        
+        for i = 1:Xsize
+            set_start_value(X[1, i], X_init[1, i])
+        end
 
+        for i = 1:Usize
+            set_start_value(U[1, i], U_init[1, i])
+        end
+#        @infiltrate
         return [model, X, U, Xnode, Unode[1:end-1, :], s_all]
     end
 

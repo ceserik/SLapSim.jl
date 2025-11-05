@@ -1,4 +1,4 @@
-using Revise
+#using Revise
 using SLapSim
 using Interpolations
 using JuMP, Ipopt, Zygote
@@ -212,12 +212,12 @@ end
 
 function kml2track(path::String,closeTrack::Bool,flip    )
     A = kml2cart(path)
-    @infiltrate
+    #@infiltrate
     if flip == true
         A = A[:,[2, 1, 3]]
     end
 
-    @infiltrate
+   # @infiltrate
     if closeTrack
         A = [A[1:end,:]; A[1,:]']
     end
