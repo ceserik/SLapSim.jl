@@ -89,15 +89,15 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
         end
 
 
-    Lobattostage = 3
+    Lobattostage = 2
     lobotom = createLobattoIIIA(Lobattostage,f)
     
     samplingPoints = length(s_traj)
-    #@infiltrate
-    spl = Spline1D(1:samplingPoints, s_traj)
+#    @infiltrate
+    spl = Spline1D(s_traj, s_traj)
     
 
-    xd = lobotom.createConstraints(f,4,1,spl,1:samplingPoints,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
+    xd = lobotom.createConstraints(f,4,1,spl,s_traj,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
     Xall = xd[2]
     Uall = xd[3]
     Z = xd[4]
@@ -138,26 +138,52 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     itp = lobotom.createInterpolator(value(Xall),value(Uall),s_all)
     #@infiltrate
     ssss = LinRange(s_all[1],s_all[end],546)
-    fig_interp = Figure()
-    stav = 1
-    ax_interp = Axis(fig_interp[1,1], xlabel = "s", ylabel = "Curvature", title = "Curvature Interpolation - LobattoIIIA Stage $Lobattostage")
-    scatter!(ax_interp, s_all, value.(Xall[:,stav]), label = "Actual points", markersize = 5)
-    #display(GLMakie.Screen(), fig_interp)
-    #@infiltrate
-    lines!(ax_interp, ssss, itp(collect(s_all[1]:0.1:s_all[end]))[:,stav], label = "Interpolated")
     
+    # plot all four state components on the same axis
+    fig_interp = Figure()
+    ax_interp = Axis(fig_interp[1,1], xlabel = "s", ylabel = "State value", title = "State Interpolation - LobattoIIIA")
+    colors = (:red, :blue, :green, :black)
+    labels = ("curvature", "theta", "x", "y")
+    for stav in 1:4
+        scatter!(ax_interp, s_all, value.(Xall[:,stav]), label = "Actual - "*labels[stav], color = colors[stav], markersize = 5)
+        lines!(ax_interp, ssss, itp(collect(s_all[1]:0.1:s_all[end]))[:,stav], label = "Interpolated - "*labels[stav], color = colors[stav])
+    end
     axislegend(ax_interp)
     display(GLMakie.Screen(), fig_interp)
-    
     #@infiltrate
     track.x = x_traj
     track.y = y_traj
     track.curvature = C_traj
     track.theta = th_traj
     track.sampleDistances = s_traj    
-    
+    track.fcurve = itp
     return (x_traj, y_traj, C_traj, th_traj)
 
+end
+
+
+function plotTrackStates(track::Track)
+    s = track.sampleDistances
+    vals = track.fcurve.(s)              # vector of 4‑tuples: (x,y,theta,curvature)
+    x  = collect(getindex.(vals, 1))
+    y  = collect(getindex.(vals, 2))
+    th = collect(getindex.(vals, 3))
+    C  = collect(getindex.(vals, 4))
+
+    fig = Figure(resolution = (800, 900))
+    ax1 = Axis(fig[1, 1], xlabel = "s", ylabel = "x", title = "x(s)")
+    ax2 = Axis(fig[2, 1], xlabel = "s", ylabel = "y", title = "y(s)")
+    ax3 = Axis(fig[3, 1], xlabel = "s", ylabel = "theta", title = "theta(s)")
+    ax4 = Axis(fig[4, 1], xlabel = "s", ylabel = "curvature", title = "curvature(s)")
+
+    lines!(ax1, s, x)
+    lines!(ax2, s, y)
+    lines!(ax3, s, th)
+    lines!(ax4, s, C)
+
+    # show figure
+    display(GLMakie.Screen(), fig)
+    return fig, (ax1, ax2, ax3, ax4)
 end
 
 function kml2cart(path::String)
@@ -235,7 +261,13 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     end
 
     # get centerline and heading from track
-    xc, yc, thc, _ = track.fcurve(s)
+   # @infiltrate
+    vals = track.fcurve.(s)         # vector of 4-tuples
+    xc  = getindex.(vals, 3)
+    yc  = getindex.(vals, 4)
+    thc = getindex.(vals, 2)
+#    @infiltrate
+    # ignore 4th component or collect it similarly with getindex.(vals,4)   
     xc = collect(xc)
     yc = collect(yc)
     thc = collect(thc)
@@ -248,6 +280,7 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     yc_lim2 =  track.widthR .* cos.(thc)
 
     ## centerline (dashed gray) and boundaries (black)
+#    @infiltrate
     lines!(ax, xc, yc; linestyle = :dash, linewidth = 1)
     lines!(ax, xc .+ xc_lim1, yc .+ yc_lim1; color = :black, linewidth = 1)
     lines!(ax, xc .- xc_lim2, yc .- yc_lim2; color = :black, linewidth = 1)
@@ -268,10 +301,15 @@ end
 
 function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::Vector{Float64}, th_traj::Vector{Float64}, C_traj::Vector{Float64})
     return s -> (
-        interp1(s_traj, x_traj, s,"PCHIP"), # x position of a point
-        interp1(s_traj, y_traj, s,"PCHIP"), # y position of a point
-        interp1(s_traj, th_traj, s,"PCHIP"),# track heading at point
-        interp1(s_traj, C_traj,  s,"PCHIP") # curvate of track at a point
+        #interp1(s_traj, x_traj, s,"PCHIP"), # x position of a point
+        #interp1(s_traj, y_traj, s,"PCHIP"), # y position of a point
+        #interp1(s_traj, th_traj, s,"PCHIP"),# track heading at point
+        #interp1(s_traj, C_traj,  s,"PCHIP") # curvate of track at a point
+#
+        interp1(s_traj, x_traj, s,), # x position of a point
+        interp1(s_traj, y_traj, s,), # y position of a point
+        interp1(s_traj, th_traj, s,),# track heading at point
+        interp1(s_traj, C_traj,  s,) # curvate of track at a point
     )
 end
 

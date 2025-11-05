@@ -168,7 +168,7 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     track.widthR = fill(w_r, length(track.x))
     track.widthL = fill(w_l, length(track.x))
     
-    track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
+    #track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
     
     if vis == 1
         plotTrack(track)

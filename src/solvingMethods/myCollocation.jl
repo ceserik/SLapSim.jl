@@ -15,11 +15,12 @@ end
 
 function createLobattoIIIA(stage,f)
     tableau = TableauLobattoIIIA(stage)
+    #tableau = TableauRunge()
     stages = tableau.s
     function createDynamicConstraints(f, Xsize, Usize, iterpolationFunction, sampplingPoints, model, X_init, U_init)
         #create stages
         # potrebujem sampplingPoints + sampplingPoints* stage-2 dalsich
-        #@infiltrate
+#        @infiltrate
         if (length(X_init) != length(U_init))
             U_init = [U_init; U_init[end, :]]
         end
@@ -39,8 +40,6 @@ function createLobattoIIIA(stage,f)
         Xnode = X[1:step4node:totalPoints, :]
         Unode = U[1:step4node:totalPoints, :]
 
-        
-        
 # Create correct sampling points
         s_all = zeros(totalPoints)
         k = 1
@@ -128,9 +127,11 @@ function createLobattoIIIA(stage,f)
                         segment_idx = length(nodes_s) - 1
                     end
                 end
-                
+                if segment_idx ==0
+                    segment_idx =1
+                end
                 segment_start = 1 + (segment_idx - 1) * step
-                #@infiltrate
+#                @infiltrate
                 x_segment = x_values[segment_start:segment_start+step, :]
                 u_segment = u_values[segment_start:segment_start+step, :]
                 s_segment = s_all[segment_start:segment_start+step]
@@ -152,9 +153,6 @@ function createLobattoIIIA(stage,f)
                     x_interp = polynom(queryPoints[pointIDX])
                     out[pointIDX,x_idx] = x_interp
                 end
-                #@infiltrate
-                #poly = Lagrange(s_segment, vec(segment_values))
-                #out[pointIDX] = poly(queryPoints[pointIDX])
                 
             end
             #@infiltrate

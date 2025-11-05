@@ -4,6 +4,7 @@ using Infiltrator
 using SLapSim
 using JuMP
 using OrdinaryDiffEq
+using DifferentiationInterface
 
 struct Result
     states::Matrix{Float64}
@@ -32,10 +33,10 @@ function initializeSolution(car::Car,track::Track)
     velocityP = 3
     vref = 2
 
-    prob = ODEProblem(carODEPath, x0, span2,[car,track,steeringP,velocityP,vref]);
-    sol = solve(prob, Tsit5(),saveat=track.sampleDistances);
+    prob = ODEProblem(carODE_path2, x0, span2,[car,track,steeringP,velocityP,vref]);
+    sol = solve(prob,Tsit5(), dt = 1,saveat=track.sampleDistances);
 
-    #@infiltrate
+#    @infiltrate
     x = hcat(sol.u...)'
     s = sol.t
     steering = x[:,5] .* steeringP
@@ -52,24 +53,30 @@ function initializeSolution(car::Car,track::Track)
     )
     return initialization
 end;
+fig_interp = Figure()
 
-
-function carODEPath(du, x, p, s)
+function carODE_path2(du, x, p, s)
     car = p[1];
     track = p[2]
     steeringP = p[3]
     velocityP = p[4]
     vref = p[5]
-    
-    control = [(vref - car.carParameters.velocity.value[1])*velocityP, 0.0, x[5]*steeringP]
 
+    
+    ax_interp = Axis(fig_interp[1,1])
+#    @infiltrate
+    #println(s)
+    #scatter!(ax_interp, [s], [x[1]], markersize = 5)
+    #display(GLMakie.Screen(), fig_interp)
+    control = [(vref - car.carParameters.velocity.value[1])*velocityP, 0.0, x[5]*steeringP]
+    #@infiltrate
     dx = carODE_path(car,track,s, control, x,nothing)  ; # carF must return a vector matching length(x)
     du .= dx;
 end;
 
 
 #initializeSolution(1,2)
-## here I need to define trnasofmation of ODE with respect to time to ODE with respect to path
+## here I need to define transfomation of ODE with respect to time to ODE with respect to path
 function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{Nothing,JuMP.Model})
     #track.mapping(track,instantTrack,s)
     dxdt = car.carFunction(car,track,k,model)
@@ -79,8 +86,17 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
     n   = car.carParameters.n.value
     #@infiltrate
     if typeof(k) == Float64
+       
         th = interp1(track.sampleDistances, track.theta, k)
         C  = interp1(track.sampleDistances, track.curvature, k)
+        #print(C)
+        #print(" ")
+        #println(th)
+        #println(track.fcurve(k))
+        println(k)
+        #@infiltrate
+        #th = track.fcurve(k)[1]
+        #C = track.fcurve(k)[2]
     else
         th = track.theta[k]
         C = track.curvature[k]
@@ -123,9 +139,17 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
 
     #determine sizes of inputs and states
     nControls = Int(round(car.carParameters.nControls.value))
+    
 
-    lobatto = createLobattoIIIA(stage)
+    function f(x,u,s)
+        dxds = carODE_path(car,track,s,u,x,model)
+        return dxds
+    end
 
+    @infiltrate
+    stage = 2
+    lobatto = createLobattoIIIA(stage,f)
+    xd = lobotom.createConstraints(f,6,3,spl,1:samplingPoints,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
 
     if isnothing(initialization)
         for i = 1:N
