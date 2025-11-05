@@ -84,12 +84,15 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     ####
     # Initialize the optimization problem
     model = JuMP.Model(Ipopt.Optimizer)
-        function f(z, u,s)
+        function f(z::Vector{JuMP.VariableRef}, u::Vector{JuMP.VariableRef},s::Float64)
             return [u; z[1]; cos(z[2]); sin(z[2])]
         end
 
+        function f(z::Vector{Float64}, u::Vector{Float64},s::Float64)
+            return [u; z[1]; cos(z[2]); sin(z[2])]
+        end
 
-    Lobattostage = 2
+    Lobattostage = 3
     lobotom = createLobattoIIIA(Lobattostage,f)
     
     samplingPoints = length(s_traj)

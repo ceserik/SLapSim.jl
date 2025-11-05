@@ -17,85 +17,86 @@ function createLobattoIIIA(stage,f)
     tableau = TableauLobattoIIIA(stage)
     #tableau = TableauRunge()
     stages = tableau.s
-    function createDynamicConstraints(f, Xsize, Usize, iterpolationFunction, sampplingPoints, model, X_init, U_init)
-        #create stages
-        # potrebujem sampplingPoints + sampplingPoints* stage-2 dalsich
-#        @infiltrate
-        if (length(X_init) != length(U_init))
-            U_init = [U_init; U_init[end, :]]
+    function createDynamicConstraints(f, Xsize::Int64, Usize::Int64, iterpolationFunction, sampplingPoints::Vector{Float64}, model::JuMP.Model, X_init, U_init)
+        # Ensure U_init has same number of node entries as X_init (extend last row if necessary)
+        if size(U_init, 1) != size(X_init, 1)
+#            @infiltrate
+            U_init = vcat(U_init, U_init[end, :]')
         end
 
-        c = tableau.s
         stages = tableau.s
         N = length(sampplingPoints)
 
-        numberOfCollocationPoints = (N-1) * (stages - 2)
+        numberOfCollocationPoints = (N - 1) * (stages - 2)
         totalPoints = N + numberOfCollocationPoints
 
-        @variable(model, X[i=1:totalPoints, j=1:Xsize]) #vyriesit inicializaciu
-        @variable(model, U[i=1:totalPoints, j=1:Usize])
+        @variable(model, X[i = 1:totalPoints, j = 1:Xsize])
+        @variable(model, U[i = 1:totalPoints, j = 1:Usize])
 
-        #create vector of points which are node points (not collocation points)
+        # node indices stride
         step4node = stages - 1
         Xnode = X[1:step4node:totalPoints, :]
         Unode = U[1:step4node:totalPoints, :]
 
-# Create correct sampling points
+        # Build node sampling positions (apply iterpolationFunction to sampplingPoints once)
+        node_s = sampplingPoints
+        # Build full list s_all: each node followed by its collocation points (except last node)
         s_all = zeros(totalPoints)
-        k = 1
+        idx = 1
         for i = 1:N
-            # Add the node point first
-            s_all[k] = iterpolationFunction(sampplingPoints[i])
-            k += 1
-            
-            # Add collocation points (if not the last interval)
+            #println(s_all[idx])
+            #println(node_s[i])
+            s_all[idx] = node_s[i]
+            idx += 1
             if i < N
-                h = iterpolationFunction(sampplingPoints[i+1]) - iterpolationFunction(sampplingPoints[i])
-                for stage = 2:stages-1
-                    s_all[k] = iterpolationFunction(sampplingPoints[i]) + h * tableau.c[stage]
-                    k += 1
+                h_node = node_s[i + 1] - node_s[i]
+                for st = 2:(stages - 1)
+                    s_all[idx] = node_s[i] + h_node * tableau.c[st]
+                    idx += 1
                 end
             end
         end
-        #@infiltrate
 
-        k = 1
-        for xd = 1:N-1
-            # Calculate the starting index for this interval
-            interval_start_idx = 1 + (xd - 1) * (stages - 1)
+        # Collocation / continuity constraints for each interval
+        for interval = 1:(N - 1)
+            interval_start_idx = 1 + (interval - 1) * (stages - 1)
+            node_start_s = node_s[interval]
+            node_end_s = node_s[interval + 1]
+            h = node_end_s - node_start_s
 
-            for stage = 2:tableau.s
-                fxSum = zeros(NonlinearExpr, Xsize)
-                for col = 1:tableau.s
-                    # Correctly index into X for this interval
-                    x_idx = interval_start_idx + col - 1
-                    fxSum += tableau.a[stage, col] * f(X[x_idx, :], U[k, :],s_all[k])# sem pridat drahu
-                end
-
-                h = (iterpolationFunction(xd + 1) - iterpolationFunction(xd))
-
-                # The next point in the sequence
+            for stage = 2:stages
+                # index in X/U corresponding to this collocation/stage point
                 next_idx = interval_start_idx + stage - 1
-                @constraint(model, X[next_idx, :] == X[interval_start_idx, :] + h * (fxSum))
 
-                # set the intial solution for all points, even collocation points
+                # Build Runge-Kutta weighted sum of f evaluated at the stage points in this interval
+                fxSum = zeros(NonlinearExpr, Xsize)
+                for col = 1:stages
+                    x_idx = interval_start_idx + col - 1
+                    fxSum += tableau.a[stage, col] * f(X[x_idx, :], U[x_idx, :], s_all[x_idx])
+                end
+
+                @constraint(model, X[next_idx, :] .== X[interval_start_idx, :] + h * fxSum)
+
+                # set the initial guess (start value) for this collocation point using interpolation over node initial guesses
+                s_stage = node_start_s + h * tableau.c[stage]
                 for i = 1:Xsize
-                    s_stage = h * tableau.c[stage]
-                    # @infiltrate
-                    X_kInit = interp1(iterpolationFunction(sampplingPoints), X_init[:, i], iterpolationFunction(xd) + s_stage, "PCHIP")
+                   # @infiltrate
+                    X_kInit = interp1(node_s, X_init[:, i], s_stage, "PCHIP")
                     set_start_value(X[next_idx, i], X_kInit)
-
+                    println(X_kInit)
+                     @infiltrate
                 end
-
+                println()
                 for i = 1:Usize
-                    s_stage = h * tableau.c[stage]
-                    u_kInit = interp1(iterpolationFunction(sampplingPoints), U_init[:, i], iterpolationFunction(xd) + s_stage, "PCHIP")
+                    u_kInit = interp1(node_s, U_init[:, i], s_stage, "PCHIP")
                     set_start_value(U[next_idx, i], u_kInit)
+                    #println(u_kInit)
                 end
-                k += 1
+                println()
             end
         end
-        return [model, X, U, Xnode, Unode[1:end-1, :],s_all] #this controls vector being shorter has to be better because track can be closed
+
+        return [model, X, U, Xnode, Unode[1:end-1, :], s_all]
     end
 
 
@@ -131,17 +132,10 @@ function createLobattoIIIA(stage,f)
                     segment_idx =1
                 end
                 segment_start = 1 + (segment_idx - 1) * step
-#                @infiltrate
                 x_segment = x_values[segment_start:segment_start+step, :]
                 u_segment = u_values[segment_start:segment_start+step, :]
                 s_segment = s_all[segment_start:segment_start+step]
                 
-                #println(s_segment)
-                #println(x_segment)
-                
-                #if(length(s_segment) != length(x_segment))
-                #    @infiltrate
-                #end
                 derivatives = zeros(stages,size(x_segment,2))
                 for i = 1:stages
                     derivatives[i,:] =f(x_segment[i,:],u_segment[i,:],s_segment[i])
@@ -149,13 +143,11 @@ function createLobattoIIIA(stage,f)
                 
                 for x_idx = eachindex(x_segment[1,:])
                     polynom = HermiteInterpolation.fit(s_segment,x_segment[:,x_idx],derivatives[:,x_idx])
-                    #@infiltrate
                     x_interp = polynom(queryPoints[pointIDX])
                     out[pointIDX,x_idx] = x_interp
                 end
                 
             end
-            #@infiltrate
             return out
         end
 

@@ -21,7 +21,7 @@ function f!(du, x, p, t)
     car = p;
     control = u_const(t);
     dx = carF(car, control, x)  ; # carF must return a vector matching length(x)
-    #print(dx, "\n")
+
     du .= dx;
 end;
 

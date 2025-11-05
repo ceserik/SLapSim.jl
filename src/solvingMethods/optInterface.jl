@@ -34,7 +34,7 @@ function initializeSolution(car::Car,track::Track)
     vref = 2
 
     prob = ODEProblem(carODE_path2, x0, span2,[car,track,steeringP,velocityP,vref]);
-    sol = solve(prob,Tsit5(), dt = 1,saveat=track.sampleDistances);
+    sol = solve(prob,Tsit5(),saveat=track.sampleDistances,reltol=1e-5, abstol=1e-5);
 
 #    @infiltrate
     x = hcat(sol.u...)'
@@ -61,15 +61,7 @@ function carODE_path2(du, x, p, s)
     steeringP = p[3]
     velocityP = p[4]
     vref = p[5]
-
-    
-    ax_interp = Axis(fig_interp[1,1])
-#    @infiltrate
-    #println(s)
-    #scatter!(ax_interp, [s], [x[1]], markersize = 5)
-    #display(GLMakie.Screen(), fig_interp)
     control = [(vref - car.carParameters.velocity.value[1])*velocityP, 0.0, x[5]*steeringP]
-    #@infiltrate
     dx = carODE_path(car,track,s, control, x,nothing)  ; # carF must return a vector matching length(x)
     du .= dx;
 end;
@@ -86,20 +78,20 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
     n   = car.carParameters.n.value
     #@infiltrate
     if typeof(k) == Float64
-       
-        th = interp1(track.sampleDistances, track.theta, k)
-        C  = interp1(track.sampleDistances, track.curvature, k)
-        #print(C)
-        #print(" ")
+        #@infiltrate
+        th = interp1(track.sampleDistances, track.theta, k,"PCHIP")
+        C  = interp1(track.sampleDistances, track.curvature, k,"PCHIP")
+
         #println(th)
         #println(track.fcurve(k))
-        println(k)
+        #println(k)
         #@infiltrate
-        #th = track.fcurve(k)[1]
-        #C = track.fcurve(k)[2]
+        th = track.fcurve(k)[2]
+        C = track.fcurve(k)[1]
+#        @infiltrate
     else
-        th = track.theta[k]
-        C = track.curvature[k]
+        #th = track.theta[k]
+        #C = track.curvature[k]
     end
     
     epsilon = psi - th
@@ -146,10 +138,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
         return dxds
     end
 
-    @infiltrate
-    stage = 2
-    lobatto = createLobattoIIIA(stage,f)
-    xd = lobotom.createConstraints(f,6,3,spl,1:samplingPoints,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
+    
 
     if isnothing(initialization)
         for i = 1:N
@@ -162,71 +151,34 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
             #println(4*(i-1)/(N-1))
         end
     else
-        x = initialization.states
-        u = initialization.controls
-        s = initialization.path
-        for i = 1:N
-            set_start_value(X[i,1], x[i,1])  # vx from initialization
-            set_start_value(X[i,2], x[i,2])  # vy from initialization
-            set_start_value(X[i,3], x[i,3])  # psi from initialization
-            set_start_value(X[i,4], x[i,4])  # dpsi from initialization
-            set_start_value(X[i,5], x[i,5])  # n from initialization
-            set_start_value(X[i,6], x[i,6])  # t from initialization
-        end
-        for i = 1:N-1
-            for j = 1:nControls
-                set_start_value(U[i,j], u[i,j])  # controls from initialization
-            end
-        end
+   #     x = initialization.states
+   #     u = initialization.controls
+   #     s = initialization.path
+   #     for i = 1:N
+   #         set_start_value(X[i,1], x[i,1])  # vx from initialization
+   #         set_start_value(X[i,2], x[i,2])  # vy from initialization
+   #         set_start_value(X[i,3], x[i,3])  # psi from initialization
+   #         set_start_value(X[i,4], x[i,4])  # dpsi from initialization
+   #         set_start_value(X[i,5], x[i,5])  # n from initialization
+   #         set_start_value(X[i,6], x[i,6])  # t from initialization
+   #     end
+   #     for i = 1:N-1
+   #         for j = 1:nControls
+   #             set_start_value(U[i,j], u[i,j])  # controls from initialization
+   #         end
+   #     end
     end
     
+
+#    @infiltrate
+    stage = 2
+    lobotom= createLobattoIIIA(stage,f)
     
-    #t_final = X[end,6]
-    method = "lobotom"
-
-    if method == "fEuler"
-        for k = 1:N-1 # loop over control intervals
-            x_next = X[k,:] .+ (s[k+1]-s[k]) .* carODE_path(car,track,k, U[k,:], X[k,:],model);
-            @constraint(model,X[k+1,:] .== x_next)
-        end
-    end
-
-    if method == "bEuler"
-        for k = 1:N-1 # loop over control intervals
-            h = (s[k+1]-s[k])
-            x_next = X[k,:] .+ h .* carODE_path(car,track,k, U[k,:], X[k+1,:],model);
-            @constraint(model,X[k+1,:] .== x_next)
-        end
-    end
-
-    if method == "hermite-simpson"
-        @variable(model,Xk05[1:N,1:6])
-        for i = 1:N
-            set_start_value(Xk05[i,1], x[i,1])  # vx from initialization
-            set_start_value(Xk05[i,2], x[i,2])  # vy from initialization
-            set_start_value(Xk05[i,3], x[i,3])  # psi from initialization
-            set_start_value(Xk05[i,4], x[i,4])  # dpsi from initialization
-            set_start_value(Xk05[i,5], x[i,5])  # n from initialization
-            set_start_value(Xk05[i,6], x[i,6])  # t from initialization
-        end
-        for k = 1:N-2 # loop over control intervals
-            h = (s[k+1]-s[k])
-            h05 = h/2
-            fk0 = carODE_path(car,track,k, U[k,:], X[k,:],model)
-            fk05 = carODE_path(car,track,s[k]+h05, U[k,:], Xk05[k,:],model)
-            fk1 = carODE_path(car,track,k, U[k+1,:], X[k+1,:],model)
-
-            @constraint(model,Xk05[k,:] .== X[k,:] + h*(5/24*fk0 + 1/3*fk05 - 1/24*fk1))
-            @constraint(model,X[k+1,:]  .== X[k,:] + h*(1/6*fk0 + 2/3*fk05 + 1/6*fk1))
-            
-        end
-    end
-
-    #initial states
-    #        [vx vy psi dpsi n t]
-    #initial = [4; 0; 0; 0; 0; 0]
-    #set initial states
-    #@constraint(model,X[1,:] .== initial)
+    xd = lobotom.createConstraints(f,6,3,track.fcurve,track.sampleDistances,model,initialization.states,initialization.controls)
+    @infiltrate
+    X = xd[2]
+    U = xd[3]
+   
 
     @constraint(model,X[1:end,1] .>= 0) #vx
     #@constraint(model,X[1,1] .== 5) # intial vx

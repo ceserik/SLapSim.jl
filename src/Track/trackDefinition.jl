@@ -162,7 +162,7 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     )
     
     smooth_factor = 1e1
-    smooth_by_OCP(track, 1.0,ds, false)
+    smooth_by_OCP(track, smooth_factor,ds, false)
     
     # Update the width arrays to match the new track length after smoothing
     track.widthR = fill(w_r, length(track.x))

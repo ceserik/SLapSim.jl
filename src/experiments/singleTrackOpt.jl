@@ -28,34 +28,35 @@ GLMakie.closeall()
 car = createSimplestSingleTrack()
 
 #track = singleTurn(50.0,5.0,true)
-track = doubleTurn(true,1.0)
+track = doubleTurn(true,2.5)
 path = "tracks/FSCZ.kml"
 #track = kml2track(path,true,true)
 track.widthL = [0.5]
 track.widthR = [0.5]
 #@infiltrate
-initializeSolution(car,track)
+#initializeSolution(car,track)
 
-#initialization = initializeSolution(car,track)
+initialization = initializeSolution(car,track)
 
 
 #
-#model = JuMP.Model(Ipopt.Optimizer)
-#optiResult = findOptimalTrajectory(track,car,model,initialization)
-#
-#
-#fig = Figure()
-#ax = Axis(fig[1,1], aspect = DataAspect())
-#plotCarPath(track,optiResult,ax)
-#println(ax)
-#display(fig)
-## simulate in time feed forward using optimal controls
-#sol = timeSimulation(car, optiResult, track)
-#lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6))
-#
-#display(fig)
-#
-#fig = nothing
-#ax = nothing
-#SLapSim.plotCarStates(optiResult)
-#SLapSim.plotCarStates2(optiResult)
+model = JuMP.Model(Ipopt.Optimizer)
+optiResult = findOptimalTrajectory(track,car,model,initialization)
+
+
+fig = Figure()
+ax = Axis(fig[1,1], aspect = DataAspect())
+plotCarPath(track,optiResult,ax)
+println(ax)
+display(fig)
+# simulate in time feed forward using optimal controls
+@infiltrate
+sol = timeSimulation(car, optiResult, track)
+lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6))
+
+display(fig)
+
+fig = nothing
+ax = nothing
+SLapSim.plotCarStates(optiResult)
+SLapSim.plotCarStates2(optiResult)
