@@ -5,6 +5,7 @@ using SLapSim
 using GLMakie
 import MathOptInterface as MOI
 using UnoSolver
+using UnicodePlots
 #Infiltrator.clear_disabled!()
 
 
@@ -33,7 +34,7 @@ car = createSimplestSingleTrack()
 
 path = "tracks/FSCZ.kml"
 #track = kml2track(path,false,true)
-track = doubleTurn(true,1.0)
+track = doubleTurn(false,0.5)
 
 
 #Number of transcription points
@@ -64,4 +65,9 @@ SLapSim.plotCarStates(optiResult)
 SLapSim.plotCarStates2(optiResult)
 
 include("../dataAnalysis/jacobian.jl")
-GLMakie.spy(reverse(jacobian,dims=1))
+include("../dataAnalysis/hessian_test2.jl")
+
+println(UnicodePlots.spy(jacobian))
+
+println(UnicodePlots.spy(H_star))
+#GLMakie.spy(rotr90(jacobian)) 

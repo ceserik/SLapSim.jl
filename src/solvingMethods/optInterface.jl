@@ -42,11 +42,18 @@ end;
 fig_interp = Figure()
 
 
-function carODE_path(car::Car,track::Track,k::Union{Int64,Float64},u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
+function carODE_path(
+    car::Car,track::Track,
+    k::Union{Int64,Float64},
+    u::Union{Vector{VariableRef},
+    Vector{Float64}},
+    x::Union{Vector{VariableRef},Vector{Float64}},
+    model::Union{JuMP.Model,Nothing},
+    make_constraints::Bool)
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)
-    dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
+    dzds = time2path(car,track,k,model,make_constraints) #time2path(s,instantCarParams,track,car)
     return dzds
 end;
 
@@ -62,16 +69,16 @@ function carODE_path2(du, x, p, s)
 
     control = [(vref - car.carParameters.velocity.value[1])*velocityP, 0.0, x[5]*steeringP]
 
-    dx = carODE_path(car,track,s, control, x,nothing)  ; # carF must return a vector matching length(x)
+    dx = carODE_path(car,track,s, control, x,nothing,false)  ; # carF must return a vector matching length(x)
     du .= dx;
 end;
 
 
 #initializeSolution(1,2)
 ## here I need to define transfomation of ODE with respect to time to ODE with respect to path
-function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{Nothing,JuMP.Model})
+function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{Nothing,JuMP.Model},make_constraints::Bool=false)
     #track.mapping(track,instantTrack,s)
-    dxdt = car.carFunction(car,track,k,model)
+    dxdt = car.carFunction(car,track,k,model,make_constraints)
     v_x = car.carParameters.velocity.value[1]
     v_y = car.carParameters.velocity.value[2]
     psi = car.carParameters.psi.value
@@ -116,8 +123,8 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     #determine sizes of inputs and states
     nControls = Int(round(car.carParameters.nControls.value))
     
-    function f(x,u,s)
-        dxds = carODE_path(car,track,s,u,x,model)
+    function f(x,u,s,make_constraints)
+        dxds = carODE_path(car,track,s,u,x,model,make_constraints)
         return dxds
     end
 
@@ -127,6 +134,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     X     = xd[2]
     U     = xd[3][1:end-1,:]
     s_all = xd[6]
+    @objective(model,Min,X[end,6])
 
 
     @constraint(model,X[1:end,1] .>= 0) #vx
@@ -139,7 +147,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     @constraint(model,diff(X[:,6]) .>=0) #time goes forward
 
 
-    @objective(model,Min,X[end,6])
+    
     optimize!(model)
 
     out = Result(value.(X),value.(U),s_all)

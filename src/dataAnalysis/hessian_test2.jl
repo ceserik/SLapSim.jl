@@ -20,10 +20,6 @@ function fill_off_diagonal(H)
     return ret
 end
 
-
-
-
-
 function compute_optimal_hessian(model::Model)
     rows = Any[]
     nlp = MOI.Nonlinear.Model()

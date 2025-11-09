@@ -9,6 +9,7 @@ mutable struct  Tire
     slipAngle::carParameter{carVar}
     slipRatio::carParameter{carVar}
     tireFunction::Function
+    tireConstraints::Function
     
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
@@ -32,17 +33,15 @@ function createR20lin(maxTorque::Float64)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = slipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
-        if isnothing(optiModel)
-
-        else
-            @constraint(optiModel, (tire.forces.value[2]/maxForce)^2 + (tire.forces.value[1]/maxForce)^2 <= (tire.forces.value[3]/maxForce)^2)
-            @constraint(optiModel, slipAngle.value <=  5/180*pi)
-            @constraint(optiModel, slipAngle.value >= -5/180*pi)
-
-        end
-        #tire.slipRatio = tire.angularFrequency * tire.radius / velocity[1]
-        #tire.longForce = tire.slipRatio * 
     end
+
+
+    function tireConstraints(optiModel)
+        @constraint(optiModel, (tire.forces.value[2]/maxForce)^2 + (tire.forces.value[1]/maxForce)^2 <= (tire.forces.value[3]/maxForce)^2)
+        @constraint(optiModel, slipAngle.value <=  5/180*pi)
+        @constraint(optiModel, slipAngle.value >= -5/180*pi)
+    end
+
 
 
     
@@ -56,6 +55,7 @@ function createR20lin(maxTorque::Float64)
         forces,
         slipAngle,
         slipRatio,
-        tireFunction
+        tireFunction,
+        tireConstraints
     )
 end

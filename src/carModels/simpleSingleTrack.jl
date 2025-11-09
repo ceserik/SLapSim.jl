@@ -1,7 +1,13 @@
 using SLapSim
 
 
-function simplestSingleTrack(car::Car, track::Union{Track,Nothing}=nothing, k::Union{Int64,Nothing,Float64}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
+function simplestSingleTrack(
+    car::Car,
+    track::Union{Track,Nothing}=nothing,
+    k::Union{Int64,Nothing,Float64}=nothing,
+    optiModel::Union{JuMP.Model,Nothing}=nothing,
+    make_constraints::Bool =false
+       )
     # assign names for easier reading
     torqueFront = car.drivetrain.motors[1].torque.value
     torqueRear = car.drivetrain.motors[2].torque.value
@@ -32,11 +38,14 @@ function simplestSingleTrack(car::Car, track::Union{Track,Nothing}=nothing, k::U
     gbRear.f()
 
     #create constraints for motor
-    if !isnothing(optiModel)
+    if make_constraints == true
         car.drivetrain.motors[1].constraints(torqueFront,optiModel)
         car.drivetrain.motors[2].constraints(torqueRear,optiModel)
         car.wheelAssemblies[1].constraints(optiModel)
         car.wheelAssemblies[2].constraints(optiModel)
+        car.chassis.hitbox(car.carParameters.n.value,track,optiModel)
+        tireFront.tireConstraints(optiModel)
+        tireRear.tireConstraints(optiModel)
     end
     #tire Function, currently same as in bachelors thesis
     # calculate Fz on tires
@@ -59,7 +68,7 @@ function simplestSingleTrack(car::Car, track::Union{Track,Nothing}=nothing, k::U
 
 
     #enforce hitbox
-    car.chassis.hitbox(car.carParameters.n.value,track,optiModel)
+    
     #print cogMoment and cogForce
     #println("CoG Moment 1: ", cogMoment1)
     #println("CoG Moment 2: ", cogMoment2)
@@ -126,17 +135,6 @@ function createSimplestSingleTrack()
         car.drivetrain.motors[2].torque.value = controls[2]#   causes writing variableRef to Float64
         car.wheelAssemblies[1].steeringAngle.value = controls[3]
 
-        ##hotfix to test if it will work this way
-        #v = controls[1]
-        #if isa(v, Number)
-        #    # update existing numeric parameter value in-place
-        #    car.carParameters.motorForce.value = float(v)
-        #else
-        #    # replace parameter with one that stores the JuMP variable/expression
-        #    car.carParameters.motorForce = carParameter(v, "motorForce", "N")
-        #end
-        #
-        #return car
     end
     function stateMapping(car, states)
         car.carParameters.velocity.value = [states[1], states[2], 0.0]

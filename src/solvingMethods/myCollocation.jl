@@ -65,7 +65,7 @@ function createLobattoIIIA(stage,f)
                 end
             end
         end
-
+        constrained = falses(totalPoints)
         # Collocation / continuity constraints for each interval
         for interval = 1:(N - 1)
             interval_start_idx = 1 + (interval - 1) * (stages - 1)
@@ -77,12 +77,26 @@ function createLobattoIIIA(stage,f)
                 # index in X/U corresponding to this collocation/stage point
                 next_idx = interval_start_idx + stage - 1
 
+                
                 # Build Runge-Kutta weighted sum of f evaluated at the stage points in this interval
                 fxSum = zeros(NonlinearExpr, Xsize)
                 for col = 1:stages
                     x_idx = interval_start_idx + col - 1
-                    fxSum += tableau.a[stage, col] * f(X[x_idx, :], U[x_idx, :], s_all[x_idx])
+                    fxSum += tableau.a[stage, col] * f(X[x_idx, :], U[x_idx, :], s_all[x_idx],false)
+                    #xdddd = f(X[x_idx, :], U[x_idx, :], s_all[x_idx],true)
                 end
+
+                 # Only add model constraints for each time point once
+                if !constrained[next_idx]
+                    _ = f(X[next_idx, :], U[next_idx, :], s_all[next_idx], true)
+                    constrained[next_idx] = true
+                end
+                # If you also need them at the start node:
+                if !constrained[interval_start_idx]
+                    _ = f(X[interval_start_idx, :], U[interval_start_idx, :], s_all[interval_start_idx], true)
+                    constrained[interval_start_idx] = true
+                end
+
                 ## quadrature constraint
                 @constraint(model, X[next_idx, :] .== X[interval_start_idx, :] + h * fxSum)
 
@@ -151,7 +165,7 @@ function createLobattoIIIA(stage,f)
                 
                 derivatives = zeros(stages,size(x_segment,2))
                 for i = 1:stages
-                    derivatives[i,:] =f(x_segment[i,:],u_segment[i,:],s_segment[i])
+                    derivatives[i,:] =f(x_segment[i,:],u_segment[i,:],s_segment[i],false)
                 end
                 
                 for x_idx = eachindex(x_segment[1,:])

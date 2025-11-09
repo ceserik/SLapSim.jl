@@ -88,7 +88,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
             return [u; z[1]; cos(z[2]); sin(z[2])]
         end
 
-        function f(z::Vector{Float64}, u::Vector{Float64},s::Float64)
+        function f(z::Union{Vector{Float64},Vector{VariableRef}}, u::Union{Vector{Float64},Vector{VariableRef}},s::Float64=0.0,make_constraints::Bool=false)
             return [u; z[1]; cos(z[2]); sin(z[2])]
         end
 
