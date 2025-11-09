@@ -121,7 +121,9 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     # Track parameters
     w_l = 3.0  # Width of the track [m]
     w_r = 3.0  # Width of the track [m]
-    
+    rho = 1.225
+    μ = 1
+
     R1 = 6.0   # radius of the first turn [m]
     R2 = 5.0   # radius of the second turn [m]
     l_straight = 20.0  # length of the straight at the beginning of the track [m]
@@ -143,11 +145,15 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     # Combine all segments
     X = [x_smpl_straight1; x_smpl_R1; x_smpl_R2]
     Y = [y_smpl_straight1; y_smpl_R1; y_smpl_R2]
+
+
+
+
     
     track = Track(
         [0.0],      # curvature - to be calculated
-        [1.225],    # rho
-        [1.0],      # μ
+        fill(rho, length(X)),    # rho
+        fill(μ, length(X)),       # μ
         [1.0],      # sampleDistances - to be calculated properly
         trackMapping,
         X,
@@ -167,6 +173,8 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     # Update the width arrays to match the new track length after smoothing
     track.widthR = fill(w_r, length(track.x))
     track.widthL = fill(w_l, length(track.x))
+    track.rho    = fill(rho, length(track.x))
+    track.μ      = fill(μ  , length(track.x))
     
     #track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
     

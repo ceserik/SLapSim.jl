@@ -3,6 +3,8 @@
 using Infiltrator
 using SLapSim
 using GLMakie
+import MathOptInterface as MOI
+using UnoSolver
 #Infiltrator.clear_disabled!()
 
 
@@ -27,21 +29,21 @@ end
 GLMakie.closeall()
 car = createSimplestSingleTrack()
 
-#track = singleTurn(50.0,5.0,true)
-track = doubleTurn(true,2.5)
+#track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
+
 path = "tracks/FSCZ.kml"
-#track = kml2track(path,true,true)
-track.widthL = [0.5]
-track.widthR = [0.5]
-#@infiltrate
-#initializeSolution(car,track)
+#track = kml2track(path,false,true)
+track = doubleTurn(true,1.0)
 
-initialization = initializeSolution(car,track)
+@infiltrate
+#Number of transcription points
+sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],20))
+initialization = initializeSolution(car,track,sampleDistances)
 
 
-#
+#UnoSolver.Optimizer
 model = JuMP.Model(Ipopt.Optimizer)
-optiResult = findOptimalTrajectory(track,car,model,initialization)
+optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 
 
 fig = Figure()

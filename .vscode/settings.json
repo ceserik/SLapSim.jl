@@ -5,7 +5,7 @@
         "markdown": false,
         "scminput": false
     },
-    "workbench.editor.enablePreview": false,
+    "workbench.editor.enablePreview": true,
     "workbench.settings.applyToAllProfiles": [
         "workbench.editor.enablePreview",
         "editor.minimap.enabled"

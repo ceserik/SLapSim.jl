@@ -44,8 +44,6 @@ function createLobattoIIIA(stage,f)
         s_all = zeros(totalPoints)
         idx = 1
         for i = 1:N
-            #println(s_all[idx])
-            #println(node_s[i])
             s_all[idx] = node_s[i]
             idx += 1
             if i < N
@@ -83,16 +81,15 @@ function createLobattoIIIA(stage,f)
                    # @infiltrate
                     X_kInit = interp1(node_s, X_init[:, i], s_stage, "PCHIP")
                     set_start_value(X[next_idx, i], X_kInit)
-                    println(X_kInit)
+                    #println(X_kInit)
                     # @infiltrate
                 end
-                println()
+                #println()
                 for i = 1:Usize
                     u_kInit = interp1(node_s, U_init[:, i], s_stage, "PCHIP")
                     set_start_value(U[next_idx, i], u_kInit)
                     #println(u_kInit)
                 end
-                println()
             end
         end
         
@@ -112,8 +109,6 @@ function createLobattoIIIA(stage,f)
         step = stages - 1
         nodes_x = x_values[1:step:end, :]
         nodes_s = s_all[1:step:end, :]
-        
-
 
         function interpolate(queryPoints)
             out = zeros(length(queryPoints),size(nodes_x,2))
@@ -174,17 +169,3 @@ function createLobattoIIIA(stage,f)
     )
     return LobattoIIIAMethod
 end
-
-
-
-#Hermite polynomial
-
-#stage = 5
-#   function f(z, u)
-#        return [u; z[1]; cos(z[2]); sin(z[2])]
-#    end
-#model = JuMP.Model(Ipopt.Optimizer)
-#
-#xdlol = createLobattoIIIA(stage)
-#
-#xdlol.createConstraints(f,4,1,0,track.sampleDistances,model)

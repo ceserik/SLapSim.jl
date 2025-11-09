@@ -99,7 +99,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
 #    @infiltrate
     spl = Spline1D(s_traj, s_traj)
     
-
+    @infiltrate
     xd = lobotom.createConstraints(f,4,1,spl,s_traj,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
     Xall = xd[2]
     Uall = xd[3]
@@ -143,16 +143,16 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     ssss = LinRange(s_all[1],s_all[end],546)
     
     # plot all four state components on the same axis
-    fig_interp = Figure()
-    ax_interp = Axis(fig_interp[1,1], xlabel = "s", ylabel = "State value", title = "State Interpolation - LobattoIIIA")
-    colors = (:red, :blue, :green, :black)
-    labels = ("curvature", "theta", "x", "y")
-    for stav in 1:4
-        scatter!(ax_interp, s_all, value.(Xall[:,stav]), label = "Actual - "*labels[stav], color = colors[stav], markersize = 5)
-        lines!(ax_interp, ssss, itp(collect(s_all[1]:0.1:s_all[end]))[:,stav], label = "Interpolated - "*labels[stav], color = colors[stav])
-    end
-    axislegend(ax_interp)
-    display(GLMakie.Screen(), fig_interp)
+    #fig_interp = Figure()
+    #ax_interp = Axis(fig_interp[1,1], xlabel = "s", ylabel = "State value", title = "State Interpolation - LobattoIIIA")
+    #colors = (:red, :blue, :green, :black)
+    #labels = ("curvature", "theta", "x", "y")
+    #for stav in 1:4
+    #    scatter!(ax_interp, s_all, value.(Xall[:,stav]), label = "Actual - "*labels[stav], color = colors[stav], markersize = 5)
+    #    lines!(ax_interp, ssss, itp(collect(s_all[1]:0.1:s_all[end]))[:,stav], label = "Interpolated - "*labels[stav], color = colors[stav])
+    #end
+    #axislegend(ax_interp)
+    #display(GLMakie.Screen(), fig_interp)
     #@infiltrate
     track.x = x_traj
     track.y = y_traj
@@ -269,13 +269,14 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     xc  = getindex.(vals, 3)
     yc  = getindex.(vals, 4)
     thc = getindex.(vals, 2)
-#    @infiltrate
+
     # ignore 4th component or collect it similarly with getindex.(vals,4)   
     xc = collect(xc)
     yc = collect(yc)
     thc = collect(thc)
 
     # lane limits (broadcast to match shapes)
+
     xc_lim1 = - track.widthL .* sin.(thc)
     xc_lim2 = - track.widthR .* sin.(thc)
 
@@ -283,7 +284,6 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     yc_lim2 =  track.widthR .* cos.(thc)
 
     ## centerline (dashed gray) and boundaries (black)
-#    @infiltrate
     lines!(ax, xc, yc; linestyle = :dash, linewidth = 1)
     lines!(ax, xc .+ xc_lim1, yc .+ yc_lim1; color = :black, linewidth = 1)
     lines!(ax, xc .- xc_lim2, yc .- yc_lim2; color = :black, linewidth = 1)

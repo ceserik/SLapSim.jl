@@ -26,26 +26,25 @@ end;
 
 
 
-function initializeSolution(car::Car,track::Track)
-    span2 = [track.sampleDistances[1],track.sampleDistances[end]]
+function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float64})
+    span2 = [sampleDistances[1],sampleDistances[end]]
     x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
     steeringP = 10
     velocityP = 3
     vref = 2
 
     prob = ODEProblem(carODE_path2, x0, span2,[car,track,steeringP,velocityP,vref]);
-    sol = solve(prob,Tsit5(),saveat=track.sampleDistances,reltol=1e-5, abstol=1e-5);
+    sol = solve(prob,Tsit5(),saveat=sampleDistances,reltol=1e-5, abstol=1e-5);
 
-#    @infiltrate
     x = hcat(sol.u...)'
     s = sol.t
     steering = x[:,5] .* steeringP
     torque = (vref .- x[:,1]) * velocityP
 
-    u = zeros(length(track.sampleDistances),Int64(car.carParameters.nControls.value))
+    u = zeros(length(sampleDistances),Int64(car.carParameters.nControls.value))
     u[:,1] = torque
     u[:,3] = steering
-    #@infiltrate
+
     initialization = Result(
         x,
         u[1:end-1,:],
@@ -61,7 +60,9 @@ function carODE_path2(du, x, p, s)
     steeringP = p[3]
     velocityP = p[4]
     vref = p[5]
+
     control = [(vref - car.carParameters.velocity.value[1])*velocityP, 0.0, x[5]*steeringP]
+
     dx = carODE_path(car,track,s, control, x,nothing)  ; # carF must return a vector matching length(x)
     du .= dx;
 end;
@@ -76,23 +77,9 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
     v_y = car.carParameters.velocity.value[2]
     psi = car.carParameters.psi.value
     n   = car.carParameters.n.value
-    #@infiltrate
-    if typeof(k) == Float64
-        #@infiltrate
-        th = interp1(track.sampleDistances, track.theta, k,"PCHIP")
-        C  = interp1(track.sampleDistances, track.curvature, k,"PCHIP")
 
-        #println(th)
-        #println(track.fcurve(k))
-        #println(k)
-        #@infiltrate
-        th = track.fcurve(k)[2]
-        C = track.fcurve(k)[1]
-#        @infiltrate
-    else
-        #th = track.theta[k]
-        #C = track.curvature[k]
-    end
+    th = track.fcurve(k)[2]
+    C = track.fcurve(k)[1]
     
     epsilon = psi - th
 
@@ -116,29 +103,24 @@ end
 
 
 
-function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initialization=nothing)
-    N = length(track.sampleDistances)
+function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDistances, initialization=nothing)
+    N = length(sampleDistances)
 
     #fill track parameters which are constant along track, should be automatized
     track.rho    = fill(track.rho[1],N)
     track.μ      = fill(track.μ[1],N)
-    track.widthL = fill(track.widthL[1],N)
-    track.widthR = fill(track.widthR[1],N)
 
     nStates =  Int(car.carParameters.nStates.value)
-    s = track.sampleDistances
+    s = sampleDistances
     #create inputs for car model #create instance of track parameters
 
     #determine sizes of inputs and states
     nControls = Int(round(car.carParameters.nControls.value))
     
-
     function f(x,u,s)
         dxds = carODE_path(car,track,s,u,x,model)
         return dxds
     end
-
-    
 
     if isnothing(initialization)
         for i = 1:N
@@ -151,36 +133,16 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
             #println(4*(i-1)/(N-1))
         end
     else
-   #     x = initialization.states
-   #     u = initialization.controls
-   #     s = initialization.path
-   #     for i = 1:N
-   #         set_start_value(X[i,1], x[i,1])  # vx from initialization
-   #         set_start_value(X[i,2], x[i,2])  # vy from initialization
-   #         set_start_value(X[i,3], x[i,3])  # psi from initialization
-   #         set_start_value(X[i,4], x[i,4])  # dpsi from initialization
-   #         set_start_value(X[i,5], x[i,5])  # n from initialization
-   #         set_start_value(X[i,6], x[i,6])  # t from initialization
-   #     end
-   #     for i = 1:N-1
-   #         for j = 1:nControls
-   #             set_start_value(U[i,j], u[i,j])  # controls from initialization
-   #         end
-   #     end
     end
-    
 
-#    @infiltrate
-    stage = 2
+   # @infiltrate
+    stage = 3
     lobotom= createLobattoIIIA(stage,f)
-    
-    xd = lobotom.createConstraints(f,6,3,track.fcurve,track.sampleDistances,model,initialization.states,initialization.controls)
-#    @infiltrate
+    xd = lobotom.createConstraints(f,6,3,track.fcurve,s,model,initialization.states,initialization.controls)
     X = xd[2]
-    #@infiltrate
     U = xd[3][1:end-1,:]
     s_all =xd[6]
-   
+   #@infiltrate
 
     @constraint(model,X[1:end,1] .>= 0) #vx
     #@constraint(model,X[1,1] .== 5) # intial vx
@@ -194,8 +156,6 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model, initiali
 
     @objective(model,Min,X[end,6])
     optimize!(model)
-
-
 
     out = Result(value.(X),value.(U),s_all)
     return out
