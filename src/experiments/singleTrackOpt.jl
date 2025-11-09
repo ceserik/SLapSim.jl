@@ -32,12 +32,12 @@ car = createSimplestSingleTrack()
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path,false,true)
-track = doubleTurn(true,1.0)
+track = kml2track(path,false,true)
+#track = doubleTurn(true,1.0)
 
-@infiltrate
+
 #Number of transcription points
-sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],20))
+sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],1200))
 initialization = initializeSolution(car,track,sampleDistances)
 
 
@@ -52,7 +52,7 @@ plotCarPath(track,optiResult,ax)
 println(ax)
 display(fig)
 # simulate in time feed forward using optimal controls
-#@infiltrate
+
 sol = timeSimulation(car, optiResult, track)
 lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6))
 

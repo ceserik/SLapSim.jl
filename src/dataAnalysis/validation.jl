@@ -24,6 +24,7 @@ function timeSimulation(car::Car, result::Result, track)
     p[4] = timeVector
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
+    @infiltrate
     sol = solve(prob, Tsit5(),tstops=timeVector)
     return sol
 end
@@ -88,7 +89,7 @@ function plotCarStates(result)
     display(GLMakie.Screen(),fig3)
     ax = fig3[1, 1] = Axis(fig3)
     labels = ["Vx", "Vy", "ψ", "ψ̇", "n", "t"] 
-    #@infiltrate
+
     for index = 1:length(x[1,:])
         state = x[:,index]
         lines!(ax,s,state,label = labels[index], linewidth = 5)

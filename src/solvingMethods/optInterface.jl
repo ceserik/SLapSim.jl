@@ -17,7 +17,6 @@ function carODE_path(car::Car,track::Track,k::Union{Int64,Float64},u::Union{Vect
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)
-    #@infiltrate
     dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
     return dzds
 end;
@@ -95,7 +94,7 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
     Sf;               #dt/ds 
     # this should be capable of accepting more states
     ]
-    #@infiltrate
+
     #Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
     return dzds
 end
@@ -135,14 +134,14 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     else
     end
 
-   # @infiltrate
-    stage = 3
+
+    stage = 2
     lobotom= createLobattoIIIA(stage,f)
     xd = lobotom.createConstraints(f,6,3,track.fcurve,s,model,initialization.states,initialization.controls)
     X = xd[2]
     U = xd[3][1:end-1,:]
     s_all =xd[6]
-   #@infiltrate
+
 
     @constraint(model,X[1:end,1] .>= 0) #vx
     #@constraint(model,X[1,1] .== 5) # intial vx

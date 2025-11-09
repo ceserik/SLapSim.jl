@@ -20,7 +20,7 @@ function createLobattoIIIA(stage,f)
     function createDynamicConstraints(f, Xsize::Int64, Usize::Int64, iterpolationFunction, sampplingPoints::Vector{Float64}, model::JuMP.Model, X_init, U_init)
         # Ensure U_init has same number of node entries as X_init (extend last row if necessary)
         if size(U_init, 1) != size(X_init, 1)
-#            @infiltrate
+
             U_init = vcat(U_init, U_init[end, :]')
         end
 
@@ -78,11 +78,10 @@ function createLobattoIIIA(stage,f)
                 # set the initial guess (start value) for this collocation point using interpolation over node initial guesses
                 s_stage = node_start_s + h * tableau.c[stage]
                 for i = 1:Xsize
-                   # @infiltrate
                     X_kInit = interp1(node_s, X_init[:, i], s_stage, "PCHIP")
                     set_start_value(X[next_idx, i], X_kInit)
                     #println(X_kInit)
-                    # @infiltrate
+
                 end
                 #println()
                 for i = 1:Usize
@@ -100,7 +99,7 @@ function createLobattoIIIA(stage,f)
         for i = 1:Usize
             set_start_value(U[1, i], U_init[1, i])
         end
-#        @infiltrate
+
         return [model, X, U, Xnode, Unode[1:end-1, :], s_all]
     end
 
@@ -122,7 +121,7 @@ function createLobattoIIIA(stage,f)
                         break
                     end
                 end
-                #@infiltrate
+
                 # Handle edge cases
                 if segment_idx == -1
                     if queryPoints[pointIDX] < nodes_s[1]

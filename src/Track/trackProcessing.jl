@@ -96,10 +96,10 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     lobotom = createLobattoIIIA(Lobattostage,f)
     
     samplingPoints = length(s_traj)
-#    @infiltrate
+
     spl = Spline1D(s_traj, s_traj)
     
-    @infiltrate
+
     xd = lobotom.createConstraints(f,4,1,spl,s_traj,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
     Xall = xd[2]
     Uall = xd[3]
@@ -115,7 +115,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     # Objective function (minimize the final time)
     x_dev = ((z_x[1:end-1] - x_smpl[1:end-1]).^2 + (z_x[2:end] - x_smpl[2:end]).^2) / 2
     y_dev = ((z_y[1:end-1] - y_smpl[1:end-1]).^2 + (z_y[2:end] - y_smpl[2:end]).^2) / 2
-    #@infiltrate
+
     @objective(model, Min, sum(ds .* (r .* u.^2 .+ x_dev .+ y_dev)))
 
     # Dynamic constraints
@@ -131,16 +131,15 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     # Solve NLP
     optimize!(model)
     # Extract solution values
-    
+
 
     x_traj = value.(z_x)
     y_traj = value.(z_y)
     C_traj = value.(z_C)
     th_traj = value.(z_th)
-    #@infiltrate
+
     itp = lobotom.createInterpolator(value(Xall),value(Uall),s_all)
-    #@infiltrate
-    ssss = LinRange(s_all[1],s_all[end],546)
+    #ssss = LinRange(s_all[1],s_all[end],546)
     
     # plot all four state components on the same axis
     #fig_interp = Figure()
@@ -153,7 +152,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     #end
     #axislegend(ax_interp)
     #display(GLMakie.Screen(), fig_interp)
-    #@infiltrate
+
     track.x = x_traj
     track.y = y_traj
     track.curvature = C_traj
@@ -168,10 +167,10 @@ end
 function plotTrackStates(track::Track)
     s = track.sampleDistances
     vals = track.fcurve.(s)              # vector of 4‑tuples: (x,y,theta,curvature)
-    x  = collect(getindex.(vals, 1))
-    y  = collect(getindex.(vals, 2))
-    th = collect(getindex.(vals, 3))
-    C  = collect(getindex.(vals, 4))
+    x  = collect(getindex.(vals, 3))
+    y  = collect(getindex.(vals, 4))
+    th = collect(getindex.(vals, 2))
+    C  = collect(getindex.(vals, 1))
 
     fig = Figure(resolution = (800, 900))
     ax1 = Axis(fig[1, 1], xlabel = "s", ylabel = "x", title = "x(s)")
@@ -212,12 +211,12 @@ end
 
 function kml2track(path::String,closeTrack::Bool,flip    )
     A = kml2cart(path)
-    #@infiltrate
+
     if flip == true
         A = A[:,[2, 1, 3]]
     end
 
-   # @infiltrate
+
     if closeTrack
         A = [A[1:end,:]; A[1,:]']
     end
@@ -243,7 +242,7 @@ function kml2track(path::String,closeTrack::Bool,flip    )
         #display(fig)
 
         smooth_by_OCP(track,1.0,1.0,closeTrack)
-        track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
+        #track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
         #lines!(ax,track.y, track.x)
         #display(GLMakie.Screen(),trackfig)
         plotTrack(track)
@@ -264,7 +263,7 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     end
 
     # get centerline and heading from track
-   # @infiltrate
+
     vals = track.fcurve.(s)         # vector of 4-tuples
     xc  = getindex.(vals, 3)
     yc  = getindex.(vals, 4)
@@ -282,7 +281,6 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
 
     yc_lim1 =  track.widthL .* cos.(thc)
     yc_lim2 =  track.widthR .* cos.(thc)
-
     ## centerline (dashed gray) and boundaries (black)
     lines!(ax, xc, yc; linestyle = :dash, linewidth = 1)
     lines!(ax, xc .+ xc_lim1, yc .+ yc_lim1; color = :black, linewidth = 1)
@@ -293,7 +291,7 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
         scatter!(ax, [xc[1]], [yc[1]]; color = :red, marker = :circle, markersize = 8)
         scatter!(ax, [xc[end]], [yc[end]]; color = :red, marker = :x, markersize = 10)
     end
-    #@infiltrate
+
     if created
         display(GLMakie.Screen(), fig)
         return fig, ax
