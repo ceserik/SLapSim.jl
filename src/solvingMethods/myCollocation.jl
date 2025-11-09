@@ -30,8 +30,19 @@ function createLobattoIIIA(stage,f)
         numberOfCollocationPoints = (N - 1) * (stages - 2)
         totalPoints = N + numberOfCollocationPoints
 
-        @variable(model, X[i = 1:totalPoints, j = 1:Xsize])
-        @variable(model, U[i = 1:totalPoints, j = 1:Usize])
+        # Create variables sequentially (one time point at a time) for proper Jacobian ordering
+        # This ensures lower triangular structure in the Jacobian
+        X = Matrix{VariableRef}(undef, totalPoints, Xsize)
+        U = Matrix{VariableRef}(undef, totalPoints, Usize)
+        
+        for i = 1:totalPoints
+            for j = 1:Xsize
+                X[i, j] = @variable(model)
+            end
+            for j = 1:Usize
+                U[i, j] = @variable(model)
+            end
+        end
 
         # node indices stride
         step4node = stages - 1
@@ -72,7 +83,7 @@ function createLobattoIIIA(stage,f)
                     x_idx = interval_start_idx + col - 1
                     fxSum += tableau.a[stage, col] * f(X[x_idx, :], U[x_idx, :], s_all[x_idx])
                 end
-
+                ## quadrature constraint
                 @constraint(model, X[next_idx, :] .== X[interval_start_idx, :] + h * fxSum)
 
                 # set the initial guess (start value) for this collocation point using interpolation over node initial guesses

@@ -35,7 +35,7 @@ function createCTU25gearbox()
 
     function gearboxFunction() 
         gearbox.torqueOut.value = gearbox.torqueIn.value * 11.46
-        gearbox.angularFrequencyOut.value = gearbox.angularFrequencyOut.value / 11/46
+        gearbox.angularFrequencyOut.value = gearbox.angularFrequencyOut.value / 11.46
     end
     
     gearbox = Gearbox(

@@ -55,7 +55,7 @@ function compute_optimal_hessian(model::Model)
     MOI.eval_hessian_lagrangian(evaluator, V, value.(x), 1.0, dual.(rows))
     H = SparseArrays.sparse(I, J, V, length(x), length(x))
     GLMakie.spy(H)
-    return H #Matrix(fill_off_diagonal(H))
+    return Matrix(fill_off_diagonal(H))
 end
 H_star = compute_optimal_hessian(model)
 GLMakie.spy(reverse(H_star,dims=1))

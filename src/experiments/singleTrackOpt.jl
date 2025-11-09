@@ -32,12 +32,12 @@ car = createSimplestSingleTrack()
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path,false,true)
-#track = doubleTurn(true,1.0)
+#track = kml2track(path,false,true)
+track = doubleTurn(true,1.0)
 
 
 #Number of transcription points
-sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],1200))
+sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],10))
 initialization = initializeSolution(car,track,sampleDistances)
 
 
@@ -62,3 +62,6 @@ fig = nothing
 ax = nothing
 SLapSim.plotCarStates(optiResult)
 SLapSim.plotCarStates2(optiResult)
+
+include("../dataAnalysis/jacobian.jl")
+GLMakie.spy(reverse(jacobian,dims=1))

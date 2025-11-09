@@ -13,18 +13,6 @@ struct Result
 end
 
 
-function carODE_path(car::Car,track::Track,k::Union{Int64,Float64},u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
-    #car.mapping(car,u,x)
-    car.controlMapping(car,u)
-    car.stateMapping(car,x)
-    dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
-    return dzds
-end;
-
-#poradie car,track,k,s,u,x
-
-
-
 function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float64})
     span2 = [sampleDistances[1],sampleDistances[end]]
     x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
@@ -52,6 +40,18 @@ function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float6
     return initialization
 end;
 fig_interp = Figure()
+
+
+function carODE_path(car::Car,track::Track,k::Union{Int64,Float64},u::Union{Vector{VariableRef},Vector{Float64}},x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
+    #car.mapping(car,u,x)
+    car.controlMapping(car,u)
+    car.stateMapping(car,x)
+    dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
+    return dzds
+end;
+
+#poradie car,track,k,s,u,x
+
 
 function carODE_path2(du, x, p, s)
     car = p[1];
@@ -121,26 +121,12 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
         return dxds
     end
 
-    if isnothing(initialization)
-        for i = 1:N
-            set_start_value(X[i,1], 5.0)  # vx = 5
-            set_start_value(X[i,2], 0.0)  # vy = 0
-            set_start_value(X[i,3], pi/2)  # psi = 0
-            set_start_value(X[i,4], 0.0)  # dpsi = 0
-            set_start_value(X[i,5], 0.0)  # n = 0
-            set_start_value(X[i,6], 4*(i-1)/(N-1))  # t = linspace(0,4,N)
-            #println(4*(i-1)/(N-1))
-        end
-    else
-    end
-
-
-    stage = 2
-    lobotom= createLobattoIIIA(stage,f)
+    stages = 2
+    lobotom= createLobattoIIIA(stages,f)
     xd = lobotom.createConstraints(f,6,3,track.fcurve,s,model,initialization.states,initialization.controls)
-    X = xd[2]
-    U = xd[3][1:end-1,:]
-    s_all =xd[6]
+    X     = xd[2]
+    U     = xd[3][1:end-1,:]
+    s_all = xd[6]
 
 
     @constraint(model,X[1:end,1] .>= 0) #vx

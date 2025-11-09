@@ -33,5 +33,6 @@ function compute_optimal_jacobian(model::Model)
 end
 
 jacobian = compute_optimal_jacobian(model)
+
 GLMakie.spy(reverse(jacobian,dims=1))
 UnicodePlots.spy(jacobian)
