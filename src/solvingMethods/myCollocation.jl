@@ -91,7 +91,6 @@ function createLobattoIIIA(stage,f)
                     _ = f(X[next_idx, :], U[next_idx, :], s_all[next_idx], true)
                     constrained[next_idx] = true
                 end
-                # If you also need them at the start node:
                 if !constrained[interval_start_idx]
                     _ = f(X[interval_start_idx, :], U[interval_start_idx, :], s_all[interval_start_idx], true)
                     constrained[interval_start_idx] = true

@@ -33,17 +33,18 @@ car = createSimplestSingleTrack()
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path,false,true)
-track = doubleTurn(false,0.5)
+track = kml2track(path,false,true)
+#track = doubleTurn(false,0.5)
 
 
 #Number of transcription points
-sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],10))
+sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],1000))
 initialization = initializeSolution(car,track,sampleDistances)
 
 
 #UnoSolver.Optimizer
 model = JuMP.Model(Ipopt.Optimizer)
+#model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 
 
