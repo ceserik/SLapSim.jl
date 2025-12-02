@@ -1,19 +1,18 @@
-
 using Optim
 using Infiltrator
 using LinearAlgebra
+using Plots
 n = collect(1:10)
 
 offset = length(n)  
-f(v) = sum(v[offset+1:end])
+f(v) = -sum(v[offset+1:end])
 
 
 ## objective function,its gradient and hessian
 function f_grad!(g, x)
-    #fill!(g, 1.0)
 
     g[1:offset] .= 0.0
-    g[offset+1:length(g)] .= 1.0
+    g[offset+1:length(g)] .= -1.0
     return g
 end
 
@@ -27,45 +26,36 @@ end
 
 # constraint function, its gradient and hessian
 function c(y, x)
-
     offset = length(n)
-    # 10 <= v̇ <= 10
-    y[1:offset] = x[1:offset]
-    
+    y[1:offset] .= x[1:offset]
     for i = 1:offset
-        #@infiltrate
-        ## -ay <= v̇² <= ay curvature lateral acceleration constraint
-        y[offset+i] = x[offset + i]^2 
+        y[offset + i] = x[offset + i]^2
     end
 
-    # y ma rozmer 2n
-    # x ma rozmer 2n
+    #for i = 1:offset-1
+    #    y[2*offset + i] = x[offset + i]+ x[i] - x[offset + i + 1] 
+    #end
+
     return y
 end
 
- function c_jac!(J, x)
-   # fill!(J, 0.0)
+function c_jac!(J, x)
     offset = length(n)
-    top_part = hcat(I(offset),zeros(offset,offset))
-
-    bottom_part = zeros(10,20)
+    fill!(J, 0.0)
     for i = 1:offset
-        #@infiltrate
-        #bottom_part[i,i] = 2*x[i]
-        bottom_part[i,i+offset] = 2*x[offset + i] 
+        J[i, i] = 1.0
     end
-
-    J = vcat(top_part,bottom_part)
-
+    for i = 1:offset
+        J[offset + i, offset + i] = 2 * x[offset + i]
+    end
     return J
 end
 
-
 function c_hess!(H, x, λ)
     offset = length(n)
-
-    for i = 1:length(n)
-        H[offset + i,offset + i] += λ[offset + i] * 2
+    
+    for i = 1:offset
+        H[offset + i, offset + i] = 2 * λ[offset + i]
     end
     return H
 end
@@ -89,8 +79,8 @@ uc1 = ones(length(n),1)*ax_max
 uc2 = ay_max./curvature
 uc = vec([uc1;uc2])
 
-lx = vec(ones(2*length(n),1)*-999999)
-ux = vec(ones(2*length(n),1)*999999)
+lx = vec(ones(2*length(n),1)*-9999)
+ux = vec(ones(2*length(n),1)*9999)
 
 
 df = TwiceDifferentiable(f, f_grad!, f_hess!, x0)
@@ -103,4 +93,22 @@ dfc = TwiceDifferentiableConstraints(
     lc, 
     uc,
 )
-optimize(df, dfc, x0, IPNewton())
+res = optimize(df, dfc, x0, IPNewton())
+xopt = Optim.minimizer(res)
+
+
+# Plot solution: speeds vs max allowed, accelerations vs bounds
+accel = xopt[1:offset]
+speed = xopt[offset+1:end]
+smax  = sqrt.(ay_max ./ curvature)
+
+plt = plot(layout=(2,1), size=(800,600))
+
+plot!(plt[1], 1:offset, speed; label="speed", marker=:circle, xlabel="index", ylabel="speed")
+plot!(plt[1], 1:offset, smax;  label="speed limit √(ay_max/curv)", ls=:dash)
+
+plot!(plt[2], 1:offset, accel; label="accel", marker=:circle, xlabel="index", ylabel="accel")
+hline!(plt[2], [ ax_max, -ax_max]; label=["+ax_max" "-ax_max"], ls=:dash)
+
+display(plt)
+savefig(plt, "solution_plots.png")
