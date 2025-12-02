@@ -2,6 +2,7 @@ using Optim
 using Infiltrator
 using LinearAlgebra
 using Plots
+#using GLMakie
 n = collect(1:10)
 
 offset = length(n)  
@@ -32,9 +33,9 @@ function c(y, x)
         y[offset + i] = x[offset + i]^2
     end
 
-    #for i = 1:offset-1
-    #    y[2*offset + i] = x[offset + i]+ x[i] - x[offset + i + 1] 
-    #end
+    for i = 1:offset-1
+        y[2*offset + i] = x[offset + i]+ x[i] - x[offset + i + 1] 
+    end
 
     return y
 end
@@ -48,7 +49,16 @@ function c_jac!(J, x)
     for i = 1:offset
         J[offset + i, offset + i] = 2 * x[offset + i]
     end
+
+
+    for i = 1:offset-1
+        J[offset + offset + i,  i] = 1
+        J[offset + offset + i,  offset +i] = 1
+        J[offset + offset + i,  offset +i+1] = -1
+    end
+    
     return J
+
 end
 
 function c_hess!(H, x, λ)
@@ -63,7 +73,8 @@ end
 
 
 curvature = zeros(5).+0.0001
-curvature = [curvature;1:5]/5
+curvature = [curvature;1;0.001;0.001;2;0.001]
+
 ay_max = 20
 ax_max = 10
 
@@ -72,12 +83,12 @@ x0 =[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0
 
 lc1 = ones(length(n),1)*-ax_max
 lc2 = -ay_max./curvature
-lc = vec([lc1;lc2])
+lc = vec([lc1;lc2;zeros(length(n)-1)])
 
 
 uc1 = ones(length(n),1)*ax_max
 uc2 = ay_max./curvature
-uc = vec([uc1;uc2])
+uc = vec([uc1;uc2;zeros(length(n)-1)])
 
 lx = vec(ones(2*length(n),1)*-9999)
 ux = vec(ones(2*length(n),1)*9999)
@@ -100,7 +111,7 @@ xopt = Optim.minimizer(res)
 # Plot solution: speeds vs max allowed, accelerations vs bounds
 accel = xopt[1:offset]
 speed = xopt[offset+1:end]
-smax  = sqrt.(ay_max ./ curvature)
+smax  = min.(100.0,sqrt.(ay_max ./ curvature))
 
 plt = plot(layout=(2,1), size=(800,600))
 
