@@ -5,7 +5,7 @@ using Infiltrator
 using Interpolations
 using OrdinaryDiffEq
 
-function timeSimulation(car::Car, result::Result, track)
+function timeSimulation(car::Car, result, track)
     timeVector = result.states[1:end-1, 6] #this has to be compatible with different car models will cause issues in future
     x0 = result.states[1, 1:4]
     n = result.states[1,5]
@@ -111,7 +111,7 @@ function plotCarStates(result)
 end
 
 
-function plotCarStates2(result::Result)
+function plotCarStates2(result)
     X = result.states
     # Plotting the results
     fig = Figure(layout = GridLayout(6, 1))

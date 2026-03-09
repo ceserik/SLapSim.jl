@@ -46,8 +46,8 @@ initialization = initializeSolution(car,track,sampleDistances)
 #UnoSolver.Optimizer
 model = JuMP.Model(Ipopt.Optimizer)
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
-optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-#optiResult = findOptimalTrajectory2(track,car,model,sampleDistances)
+#optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
+optiResult = find_optimal_trajectory2(track,car,model)
 
 fig = Figure()
 ax = Axis(fig[1,1], aspect = DataAspect())

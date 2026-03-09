@@ -232,7 +232,7 @@ function get_diff_matix(N,variant)
     L_dot = expand(Symbolics.derivative(L, τ))
 
     for i = 1:N
-        D_1 = substitute(L_dot, Dict(τ => nodes[i]))
+        D_1 = substitute(L_dot, Dict(τ => nodes[i+1]))
         D[i, :] = Symbolics.symbolic_to_float.(D_1)
     end
     return (D, nodes)
@@ -260,26 +260,42 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
         
         segment_edges = LinRange(track.sampleDistances[1],track.sampleDistances[end],segments+1)
         scaled_nodes = (nodes.+1)/2
+        segment_nodes = zeros(length(nodes))
         for i = 1:length(segment_edges)-1
             start_idx = (i-1)*pol_order+1
             end_idx = i*pol_order +1
-            segment_nodes = zeros(length(nodes))
+            h = segment_edges[i+1] - segment_edges[i]
+            
             for node = 1:length(nodes)
-                
-                segment_nodes[node] = segment_edges[i]+ scaled_nodes[node]*(segment_edges[i+1] - segment_edges[i])
-            end    
-            for j = 1:pol_order 
-                #@infiltrate
-                init_vals = initialization.states(segment_nodes[j])
-                for k = 1:nStates
-                    set_start_value(X[(i-1)*pol_order+1+j, k], init_vals[k])
-                end
-                FX[j,:] = f(X[(i-1)*pol_order+1+j,:],U[(i-1)*pol_order+1+j,:],segment_nodes[i])
+                segment_nodes[node] = segment_edges[i] + scaled_nodes[node]*(segment_edges[i+1] - segment_edges[i])
             end
-            @constraint(model, D*X[start_idx:end_idx,:] .== FX)
 
-        return [model, X, U, segment_edges]
+            # Initialize boundary point
+            init_boundary = initialization.states(segment_nodes[1])
+            for k = 1:nStates
+                set_start_value(X[start_idx, k], init_boundary[k])
+            end
+            init_u_boundary = initialization.controls(segment_nodes[1])
+            for k = 1:nControls
+                set_start_value(U[start_idx, k], init_u_boundary[k])
+            end
+
+            for j = 1:pol_order
+                # j-th collocation point corresponds to nodes[j+1]
+                init_vals = initialization.states(segment_nodes[j+1])
+                for k = 1:nStates
+                    set_start_value(X[start_idx+j, k], init_vals[k])
+                end
+                init_u = initialization.controls(segment_nodes[j+1])
+                for k = 1:nControls
+                    set_start_value(U[start_idx+j, k], init_u[k])
+                end
+                FX[j,:] = f(X[start_idx+j,:], U[start_idx+j,:], segment_nodes[j+1])
+            end
+            @constraint(model, D*X[start_idx:end_idx,:] .== (h/2) .* FX)
         end
+
+        return [model, X, U, segment_nodes]
     end
     GaussMethod = Collocation(
         create_dynamic_constraints,
