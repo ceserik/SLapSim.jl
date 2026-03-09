@@ -84,11 +84,11 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     ####
     # Initialize the optimization problem
     model = JuMP.Model(Ipopt.Optimizer)
-        function f(z::Vector{JuMP.VariableRef}, u::Vector{JuMP.VariableRef},s::Float64)
+        function f(z::Vector{JuMP.VariableRef}, u::Vector{JuMP.VariableRef},s::Float64,nothing)
             return [u; z[1]; cos(z[2]); sin(z[2])]
         end
 
-        function f(z::Union{Vector{Float64},Vector{VariableRef}}, u::Union{Vector{Float64},Vector{VariableRef}},s::Float64=0.0,make_constraints::Bool=false)
+        function f(z::Union{Vector{Float64},Vector{VariableRef}}, u::Union{Vector{Float64},Vector{VariableRef}},s::Float64,nothing)
             return [u; z[1]; cos(z[2]); sin(z[2])]
         end
 

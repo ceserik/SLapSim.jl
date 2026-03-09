@@ -5,9 +5,7 @@ function simplestSingleTrack(
     car::Car,
     track::Union{Track,Nothing}=nothing,
     k::Union{Int64,Nothing,Float64}=nothing,
-    optiModel::Union{JuMP.Model,Nothing}=nothing,
-    make_constraints::Bool =false
-       )
+    optiModel::Union{JuMP.Model,Nothing}=nothing)
     # assign names for easier reading
     torqueFront = car.drivetrain.motors[1].torque.value
     torqueRear = car.drivetrain.motors[2].torque.value
@@ -38,7 +36,10 @@ function simplestSingleTrack(
     gbRear.f()
 
     #create constraints for motor
-    if make_constraints == true
+    tireFront.tireFunction(gbFront.torqueOut.value,optiModel)
+    tireRear.tireFunction(gbRear.torqueOut.value,optiModel)
+    
+    if !isnothing(optiModel)
         car.drivetrain.motors[1].constraints(torqueFront,optiModel)
         car.drivetrain.motors[2].constraints(torqueRear,optiModel)
         car.wheelAssemblies[1].constraints(optiModel)
@@ -49,12 +50,13 @@ function simplestSingleTrack(
     end
     #tire Function, currently same as in bachelors thesis
     # calculate Fz on tires
+    
+
     car.drivetrain.tires[1].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
     car.drivetrain.tires[2].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
 
 
-    tireFront.tireFunction(gbFront.torqueOut.value,optiModel)
-    tireRear.tireFunction(gbRear.torqueOut.value,optiModel)
+    
 
     car.wheelAssemblies[1].setPivotForce(tireFront)
     car.wheelAssemblies[2].setPivotForce(tireRear)

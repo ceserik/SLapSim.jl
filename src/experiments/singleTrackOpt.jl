@@ -13,7 +13,7 @@ using UnicodePlots
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = true
 if detect
-    x = "kreadconfig6"
+    x = "kreadconfig6"  
     option1 = "--key"
     option2 = "LookAndFeelPackage"
     xd = read(`$x $option1 $option2`,String) # remember the backticks ``
@@ -32,21 +32,22 @@ car = createSimplestSingleTrack()
 
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
-path = "tracks/FSCZ.kml"
-track = kml2track(path,false,true)
-#track = doubleTurn(false,0.5)
+#path = "tracks/FSCZ.kml"
+#track = kml2track(path,false,true)
+track = doubleTurn(false,0.5)
 
 
 #Number of transcription points
-sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],1000))
+sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],50))
 initialization = initializeSolution(car,track,sampleDistances)
+
 
 
 #UnoSolver.Optimizer
 model = JuMP.Model(Ipopt.Optimizer)
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-
+#optiResult = findOptimalTrajectory2(track,car,model,sampleDistances)
 
 fig = Figure()
 ax = Axis(fig[1,1], aspect = DataAspect())
@@ -71,4 +72,4 @@ include("../dataAnalysis/hessian_test2.jl")
 println(UnicodePlots.spy(jacobian))
 
 println(UnicodePlots.spy(H_star))
-#GLMakie.spy(rotr90(jacobian)) 
+GLMakie.spy(rotr90(jacobian)) 

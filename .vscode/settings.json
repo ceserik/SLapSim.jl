@@ -21,5 +21,9 @@
     "julia.debuggerDefaultCompiled": [    
         "ALL_MODULES_EXCEPT_MAIN",      
     ],
-     "window.autoDetectColorScheme": true
+    "window.autoDetectColorScheme": true,
+    "workbench.preferredDarkColorTheme": "Default Dark Modern",
+    "workbench.preferredLightColorTheme": "Default Light Modern",
+   // "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim/src",
+    "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim"
 }

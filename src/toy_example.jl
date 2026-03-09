@@ -118,7 +118,7 @@ plt = plot(layout=(2,1), size=(800,600))
 plot!(plt[1], 1:offset, speed; label="speed", marker=:circle, xlabel="index", ylabel="speed")
 plot!(plt[1], 1:offset, smax;  label="speed limit √(ay_max/curv)", ls=:dash)
 
-plot!(plt[2], 1:offset, accel; label="accel", marker=:circle, xlabel="index", ylabel="accel")
+plot!(plt[2], 1:offset, accel; label=" longitudinal accel", marker=:circle, xlabel="index", ylabel="accel")
 hline!(plt[2], [ ax_max, -ax_max]; label=["+ax_max" "-ax_max"], ls=:dash)
 
 display(plt)

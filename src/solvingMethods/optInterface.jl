@@ -5,6 +5,7 @@ using SLapSim
 using JuMP
 using OrdinaryDiffEq
 using DifferentiationInterface
+using Interpolations
 
 struct Result
     states::Matrix{Float64}
@@ -12,6 +13,12 @@ struct Result
     path::Vector{Float64}
 end
 
+
+struct Result_interpolation
+    states
+    controls
+    path
+end
 
 function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float64})
     span2 = [sampleDistances[1],sampleDistances[end]]
@@ -21,7 +28,7 @@ function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float6
     vref = 2
 
     prob = ODEProblem(carODE_path2, x0, span2,[car,track,steeringP,velocityP,vref]);
-    sol = solve(prob,Tsit5(),saveat=sampleDistances,reltol=1e-5, abstol=1e-5);
+    sol = OrdinaryDiffEq.solve(prob,Tsit5(),saveat=sampleDistances,reltol=1e-5, abstol=1e-5);
 
     x = hcat(sol.u...)'
     s = sol.t
@@ -39,21 +46,48 @@ function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float6
     )
     return initialization
 end;
-fig_interp = Figure()
+
+function initializeSolution_interpolation(car::Car,track::Track,segments::Int64)
+    
+    x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
+    steeringP = 10
+    velocityP = 3
+    vref = 2
+    sampling_distances = LinRange(track.sampleDistances[1],track.sampleDistances[end],segments)
+    span2 = [sampling_distances[1],sampling_distances[end]]
+    #@infiltrate
+    prob = ODEProblem(carODE_path2, x0, span2,[car,track,steeringP,velocityP,vref]);
+    sol = OrdinaryDiffEq.solve(prob,Tsit5(),saveat=sampling_distances,reltol=1e-5, abstol=1e-5);
+
+    x = hcat(sol.u...)'
+    s = sol.t
+    steering = x[:,5] .* steeringP
+    torque = (vref .- x[:,1]) * velocityP
+    #@infiltrate
+    u = zeros(segments,Int64(car.carParameters.nControls.value))
+    u[:,1] = torque
+    u[:,3] = steering
+    
+    # It would make sense to have here my custom interpolation function using gauss quadrature
+    state_interps = [linear_interpolation(s, x[:, i]) for i in 1:size(x, 2)]
+    control_interps = [linear_interpolation(s, u[:, i]) for i in 1:size(u, 2)]
+
+    states_interp(t) = [itp(t) for itp in state_interps]
+    controls_interp(t) = [itp(t) for itp in control_interps]
+    initialization = Result_interpolation(
+        states_interp,
+        controls_interp,
+        s
+    )
+    return initialization
+end;
 
 
-function carODE_path(
-    car::Car,track::Track,
-    k::Union{Int64,Float64},
-    u::Union{Vector{VariableRef},
-    Vector{Float64}},
-    x::Union{Vector{VariableRef},Vector{Float64}},
-    model::Union{JuMP.Model,Nothing},
-    make_constraints::Bool)
+function carODE_path(car::Car,track::Track, k::Union{Int64,Float64}, u::Union{Vector{VariableRef}, Vector{Float64}}, x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)
-    dzds = time2path(car,track,k,model,make_constraints) #time2path(s,instantCarParams,track,car)
+    dzds = time2path(car,track,k,model) #time2path(s,instantCarParams,track,car)
     return dzds
 end;
 
@@ -67,18 +101,17 @@ function carODE_path2(du, x, p, s)
     velocityP = p[4]
     vref = p[5]
 
-    control = [(vref - car.carParameters.velocity.value[1])*velocityP, 0.0, x[5]*steeringP]
-
-    dx = carODE_path(car,track,s, control, x,nothing,false)  ; # carF must return a vector matching length(x)
+    control = [(vref - x[1])*velocityP, 0.0, x[5]*steeringP]
+    dx = carODE_path(car,track,s, control, x,nothing)  ; # carF must return a vector matching length(x)
     du .= dx;
 end;
 
 
 #initializeSolution(1,2)
-## here I need to define transfomation of ODE with respect to time to ODE with respect to path
-function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{Nothing,JuMP.Model},make_constraints::Bool=false)
+#here I need to define transfomation of ODE with respect to time to ODE with respect to path
+function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{Nothing,JuMP.Model})
     #track.mapping(track,instantTrack,s)
-    dxdt = car.carFunction(car,track,k,model,make_constraints)
+    dxdt = car.carFunction(car,track,k,model)
     v_x = car.carParameters.velocity.value[1]
     v_y = car.carParameters.velocity.value[2]
     psi = car.carParameters.psi.value
@@ -106,9 +139,6 @@ function time2path(car::Car,track::Track,k::Union{Int64,Float64},model::Union{No
     return dzds
 end
 
-
-
-
 function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDistances, initialization=nothing)
     N = length(sampleDistances)
 
@@ -123,8 +153,8 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     #determine sizes of inputs and states
     nControls = Int(round(car.carParameters.nControls.value))
     
-    function f(x,u,s,make_constraints)
-        dxds = carODE_path(car,track,s,u,x,model,make_constraints)
+    function f(x,u,s,model)
+        dxds = carODE_path(car,track,s,u,x,model)
         return dxds
     end
 
@@ -155,9 +185,30 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
 end
 
 function simulateInTime(car::Car,track::Track,result::Result)
+end
 
+function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model)
 
+    function F(x,u,s)
+        #@infiltrate
+        dxds = carODE_path(car,track,s,u,x,model)
+        return dxds
+    end
+    segments = 1
+    pol_roder = 20
+    nControls = Int64(car.carParameters.nControls.value)
+    nStates = Int64(car.carParameters.nStates.value)
+    Gauss_radau = create_gauss_pseudospectral_metod(F,pol_roder,"Radau",model,nControls,nStates,track);
+    initialization = initializeSolution_interpolation(car,track,30)
+    xd = Gauss_radau.createConstraints(segments,pol_roder,initialization);
+    X     = xd[2]
+    U     = xd[3]
+    s_all = xd[4]
 
+    @constraint(model,diff(X[:,6]) .>=0) #time goes forward
+    
+    @constraint(model,X[1,6] .>= 0) # final time
 
-
+    @objective(model,Min,X[end,6])
+    optimize!(model)
 end
