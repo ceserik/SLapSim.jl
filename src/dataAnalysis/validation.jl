@@ -12,7 +12,6 @@ function timeSimulation(car::Car, result, track)
     carX = track.x[1] .- n .* sin.(track.theta[1])
     carY = track.y[1] .+ n .* cos.(track.theta[1])
 
-    initialPosition =[0.0,0.0]
     x0 = [x0; carX; carY]
     tspan = [timeVector[1], timeVector[end]]
     p = Vector{Any}(undef, 4)
@@ -24,8 +23,36 @@ function timeSimulation(car::Car, result, track)
     p[4] = timeVector
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-#    @infiltrate
+
     sol = OrdinaryDiffEq.solve(prob, Tsit5(),tstops=timeVector)
+    return sol
+end
+
+function timeSimulation_interpolated(car::Car, result, track)
+    time(s) = result.states(s)[6] #this has to be compatible with different car models will cause issues in future
+    timeVector = time.(result.path)
+    time2s = linear_interpolation(timeVector,result.path) 
+    initial_s = result.path[1]
+    terminal_s= result.path[end]
+    x0 = result.states(initial_s)[1:4]
+    n_initial = result.states(initial_s)[5]
+
+    carX = track.x[1] .- n_initial .* sin.(track.theta[1])
+    carY = track.y[1] .+ n_initial .* cos.(track.theta[1])
+
+    x0 = [x0; carX; carY]
+    tspan = [time(initial_s), time(terminal_s)]
+    p = Vector{Any}(undef, 4)
+
+
+    p[1] = car
+    p[2] = track
+    p[3] = result
+    p[4] = time2s
+
+    prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
+    @infiltrate
+    sol = OrdinaryDiffEq.solve(prob, Tsit5(), tstops = timeVector)
     return sol
 end
 
@@ -33,9 +60,10 @@ function carODE_globalFrame(du, x, p, t)
     car = p[1]
     track = p[2]
     U = p[3]
-    timeVector = p[4]
-    interp_linear = linear_interpolation((timeVector, 1:3), U)
-    u = interp_linear(t, 1:3)
+    time2s = p[4]
+    @infiltrate
+    
+    u = U.controls(time2s(t))
     car.controlMapping(car, u)
     car.stateMapping(car, x)
 
@@ -78,6 +106,30 @@ function plotCarPath(track::Track, result, axis = nothing)
     lines!(axis,carX, carY, label = "Optimised")
     #return ax
 end
+
+
+function plotCarPath_interpolated(track::Track, result, axis = nothing)
+    # take car.s and car.n and match it to track. and then add track.n
+    if axis == nothing
+        fig = Figure()
+        axis = Axis(fig[1,1], aspect = DataAspect())
+    end
+    n(s) = result.states(s)[5]
+    carX = zeros(length(result.path))
+    carY = zeros(length(result.path))
+    for (i,s) in enumerate(result.path)
+        carX[i] = track.fcurve(s)[3] .- n(s) .* sin.(track.fcurve(s)[2])
+        carY[i] = track.fcurve(s)[4] .+ n(s) .* cos.(track.fcurve(s)[2])
+
+    end
+#    @infiltrate
+    println(axis)
+    plotTrack(track, b_plotStartEnd =false, ax = axis)
+    println(axis)
+    lines!(axis,carX, carY, label = "Optimised")
+    #return ax
+end
+
 
 
 

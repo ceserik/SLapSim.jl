@@ -194,6 +194,11 @@ function createLobattoIIIA(stage, f)
     return LobattoIIIAMethod
 end
 
+"""
+### According to: 
+    Berrut, J.-P. and Trefethen, L.N. Barycentric Lagrange Interpolation, SIAM Review, 46(3), 2004,
+
+"""
 function get_diff_matix(N, variant)
     if variant == "Radau"
         nodes = reverse([gaussradau(N)[1]..., 1]) .* -1
@@ -202,7 +207,7 @@ function get_diff_matix(N, variant)
     end
 
     M = length(nodes)
-
+    
     # Barycentric weights
     w = ones(M)
     for j in 1:M

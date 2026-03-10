@@ -129,6 +129,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     end
 
     # Solve NLP
+    set_silent(model)
     optimize!(model)
     # Extract solution values
 

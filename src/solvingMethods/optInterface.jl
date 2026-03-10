@@ -20,6 +20,17 @@ struct Result_interpolation
     path
 end
 
+function make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s_states::Vector{Float64}, s_controls::Vector{Float64})
+    state_interps = [linear_interpolation(s_states, x[:, i]) for i in 1:size(x, 2)]
+    control_interps = [extrapolate(interpolate((s_controls,), u[:, i], Gridded(Linear())), Flat()) for i in 1:size(u, 2)]
+
+    states_interp(t) = [itp(t) for itp in state_interps]
+    controls_interp(t) = [itp(t) for itp in control_interps]
+    return Result_interpolation(states_interp, controls_interp, s_states)
+end
+
+make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s::Vector{Float64}) = make_result_interpolation(x, u, s, s)
+
 function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float64})
     span2 = [sampleDistances[1],sampleDistances[end]]
     x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
@@ -69,16 +80,7 @@ function initializeSolution_interpolation(car::Car,track::Track,segments::Int64)
     u[:,3] = steering
     
     # It would make sense to have here my custom interpolation function using gauss quadrature
-    state_interps = [linear_interpolation(s, x[:, i]) for i in 1:size(x, 2)]
-    control_interps = [linear_interpolation(s, u[:, i]) for i in 1:size(u, 2)]
-
-    states_interp(t) = [itp(t) for itp in state_interps]
-    controls_interp(t) = [itp(t) for itp in control_interps]
-    initialization = Result_interpolation(
-        states_interp,
-        controls_interp,
-        s
-    )
+    initialization = make_result_interpolation(x, u, collect(s))
     return initialization
 end;
 
@@ -180,8 +182,11 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     
     optimize!(model)
 
-    out = Result(value.(X),value.(U),s_all)
-    return out
+    x = value.(X)
+    u = value.(U)
+    out = Result(x, u, s_all)
+    out_interp = make_result_interpolation(x, u, s_all)
+    return out, out_interp
 end
 
 function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model)
@@ -192,7 +197,7 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model)
         return dxds
     end
     segments = 1
-    pol_roder = 150
+    pol_roder = 30
     nControls = Int64(car.carParameters.nControls.value)
     nStates = Int64(car.carParameters.nStates.value)
     Gauss_radau = create_gauss_pseudospectral_metod(F,pol_roder,"Radau",model,nControls,nStates,track);
@@ -211,7 +216,17 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model)
 
     @objective(model,Min,X[end,6])
     optimize!(model)
+#    @infiltrate
 
-    out = Result(value.(X),value.(U[1:end-1,:]),s_all)
-    return out
+
+
+    #this is not ideal, becaus ideally i would like to have the polynomial from ht optimization and use that to interpolate data,
+    #this is just a placeholder (probably will stay for long time 😬😬😬)
+
+    x = value.(X)
+    u = value.(U[1:end-1,:])
+
+    out = Result(x, u, s_all)
+    out_interp = make_result_interpolation(x, u, s_all, s_all[1:end-1])
+    return out, out_interp
 end

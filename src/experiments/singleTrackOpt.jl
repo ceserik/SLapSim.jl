@@ -7,8 +7,8 @@ import MathOptInterface as MOI
 using UnoSolver
 using UnicodePlots
 #Infiltrator.clear_disabled!()
-
-
+include("../solvingMethods/optInterface.jl")
+include("../dataAnalysis/validation.jl")
 
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = true
@@ -33,8 +33,8 @@ car = createSimplestSingleTrack()
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path,false,true)
-#track = doubleTurn(false,0.5)
+#track = kml2track(path,false,true)
+track = doubleTurn(false,0.5)
 
 
 #Number of transcription points
@@ -47,16 +47,18 @@ track = kml2track(path,false,true)
 model = JuMP.Model(Ipopt.Optimizer)
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-optiResult = find_optimal_trajectory2(track,car,model)
+optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model)
 
 fig = Figure()
 ax = Axis(fig[1,1], aspect = DataAspect())
-plotCarPath(track,optiResult,ax)
+#plotCarPath(track,optiResult_interp,ax)
+plotCarPath_interpolated(track,optiResult_interp,ax)
 println(ax)
 screen = display(GLMakie.Screen(), fig)
 # simulate in time feed forward using optimal controls
 
-sol = timeSimulation(car, optiResult, track)
+#sol = timeSimulation(car, optiResult, track)
+sol = timeSimulation_interpolated(car, optiResult_interp, track)
 lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6), label = "Simulated in time")
 axislegend(ax, position = :rt)
 
