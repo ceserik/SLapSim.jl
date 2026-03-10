@@ -75,7 +75,7 @@ function plotCarPath(track::Track, result, axis = nothing)
     println(axis)
     plotTrack(track, b_plotStartEnd =false, ax = axis)
     println(axis)
-    lines!(axis,carX, carY)
+    lines!(axis,carX, carY, label = "Optimised")
     #return ax
 end
 

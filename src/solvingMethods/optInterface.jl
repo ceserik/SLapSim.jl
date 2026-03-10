@@ -166,7 +166,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     s_all = xd[6]
     @objective(model,Min,X[end,6])
 
-
+    
     @constraint(model,X[1:end,1] .>= 0) #vx
     #@constraint(model,X[1,1] .== 5) # intial vx
     @constraint(model,X[1,2] .== 0) # intial vy
@@ -192,21 +192,22 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model)
         return dxds
     end
     segments = 1
-    pol_roder = 50
+    pol_roder = 10
     nControls = Int64(car.carParameters.nControls.value)
     nStates = Int64(car.carParameters.nStates.value)
     Gauss_radau = create_gauss_pseudospectral_metod(F,pol_roder,"Radau",model,nControls,nStates,track);
-    initialization = initializeSolution_interpolation(car,track,30)
+    initialization = initializeSolution_interpolation(car,track,200)
     xd = Gauss_radau.createConstraints(segments,pol_roder,initialization);
     X     = xd[2]
     U     = xd[3]
     s_all = xd[4]
 
-    @constraint(model,diff(X[:,6]) .>=0) #time goes forward
     @constraint(model,X[1:end,1] .>= 0) #vx
-    @constraint(model,X[1,6] .>= 0) # final time
-    @constraint(model,X[1,1] .== 2) # intial vy
+    @constraint(model,X[1,2] .== 0) # intial vy
     @constraint(model,X[1,3] .== track.theta[1]) # intial heading
+    @constraint(model,X[1,6] .>= 0) # final time
+    @constraint(model,diff(X[:,6]) .>=0) #time goes forward
+    
 
     @objective(model,Min,X[end,6])
     optimize!(model)

@@ -32,14 +32,14 @@ car = createSimplestSingleTrack()
 
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
-#path = "tracks/FSCZ.kml"
-#track = kml2track(path,false,true)
-track = doubleTurn(false,0.5)
+path = "tracks/FSCZ.kml"
+track = kml2track(path,false,true)
+#track = doubleTurn(false,0.5)
 
 
 #Number of transcription points
-sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],50))
-initialization = initializeSolution(car,track,sampleDistances)
+#sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],50))
+#initialization = initializeSolution(car,track,sampleDistances)
 
 
 
@@ -53,14 +53,14 @@ fig = Figure()
 ax = Axis(fig[1,1], aspect = DataAspect())
 plotCarPath(track,optiResult,ax)
 println(ax)
-display(fig)
+screen = display(GLMakie.Screen(), fig)
 # simulate in time feed forward using optimal controls
 
 sol = timeSimulation(car, optiResult, track)
-lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6))
+lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6), label = "Simulated in time")
+axislegend(ax, position = :rt)
 
-display(fig)
-
+#@infiltrate
 fig = nothing
 ax = nothing
 SLapSim.plotCarStates(optiResult)

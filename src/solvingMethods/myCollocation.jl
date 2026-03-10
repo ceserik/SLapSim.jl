@@ -228,19 +228,26 @@ function get_diff_matix(N,variant)
     end
 
     @Symbolics.variables τ
+    t0 = time()
     L = Lagrange_polynomial_basis(nodes, τ)
+    println("making lagrange basis: $(round(time() - t0, digits=3))s")
+    t0 = time()
     L_dot = expand(Symbolics.derivative(L, τ))
-
+    println("making lagrange derivations: $(round(time() - t0, digits=3))s")
+    t0 = time()
     for i = 1:N
         D_1 = substitute(L_dot, Dict(τ => nodes[i+1]))
         D[i, :] = Symbolics.symbolic_to_float.(D_1)
     end
+    println("substituting into matrix D: $(round(time() - t0, digits=3))s")
     return (D, nodes)
 end
 
 function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,nStates,track)
-    
+    t0 = time()
     (D, nodes) = get_diff_matix(pol_order, variant)
+    println("making diff matrix and nodes: $(round(time() - t0, digits=3))s")
+    t0 = time()
     FX = Matrix{NonlinearExpr}(undef,  pol_order , nStates)
     function create_dynamic_constraints(segments,pol_order,initialization)
 
@@ -294,6 +301,7 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             end
             @constraint(model, D*X[start_idx:end_idx,:] .== (h/2) .* FX)
         end
+        println("making constraints: $(round(time() - t0, digits=3))s")
 
         return [model, X, U, segment_nodes]
     end
