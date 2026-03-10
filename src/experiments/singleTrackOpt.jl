@@ -47,7 +47,9 @@ track = kml2track(path,false,true)
 model = JuMP.Model(Ipopt.Optimizer)
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model)
+segments = 10
+pol_order = 2
+optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order)
 
 fig = Figure()
 ax = Axis(fig[1,1], aspect = DataAspect())
@@ -65,8 +67,8 @@ axislegend(ax, position = :rt)
 #@infiltrate
 fig = nothing
 ax = nothing
-SLapSim.plotCarStates(optiResult)
-SLapSim.plotCarStates2(optiResult)
+SLapSim.plotCarStates_interp(optiResult_interp,0.01)
+#SLapSim.plotCarStates2(optiResult)
 
 include("../dataAnalysis/jacobian.jl")
 include("../dataAnalysis/hessian_test2.jl")

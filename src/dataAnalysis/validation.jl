@@ -31,10 +31,17 @@ end
 
 function timeSimulation_interpolated(car::Car, result, track)
     time(s) = result.states(s)[6] #this has to be compatible with different car models will cause issues in future
-    timeVector = time.(result.path)
-    time2s = linear_interpolation(timeVector,result.path) 
+    timeVector = accumulate(max, time.(result.path))  # enforce monotonicity against optimizer tolerance violations
+    # remove duplicates (from optimizer tolerance) so interpolation knots are strictly increasing
+    unique_mask = [true; diff(timeVector) .> 0]
+    t_unique   = timeVector[unique_mask]
+    s_unique   = result.path[unique_mask]
+    # Flat() extrapolation prevents BoundsError on RK sub-steps past tspan[end]
+    #i should find cleaner way of fixing this
+    time2s = extrapolate(interpolate((t_unique,), s_unique, Gridded(Linear())), Flat())
+
     initial_s = result.path[1]
-    terminal_s= result.path[end]
+    terminal_s = result.path[end]
     x0 = result.states(initial_s)[1:4]
     n_initial = result.states(initial_s)[5]
 
@@ -42,9 +49,8 @@ function timeSimulation_interpolated(car::Car, result, track)
     carY = track.y[1] .+ n_initial .* cos.(track.theta[1])
 
     x0 = [x0; carX; carY]
-    tspan = [time(initial_s), time(terminal_s)]
+    tspan = [t_unique[1], t_unique[end]]
     p = Vector{Any}(undef, 4)
-
 
     p[1] = car
     p[2] = track
@@ -54,14 +60,13 @@ function timeSimulation_interpolated(car::Car, result, track)
     labels = ["Vx", "Vy", "ψ", "ψ̇", "X", "Y"]
     println(rpad("t", 8), join(rpad.(labels, 10)))
     println("-"^75)
-    cb = FunctionCallingCallback(; funcat = timeVector) do u, t, integrator
+    cb = FunctionCallingCallback(; funcat = t_unique) do u, t, integrator
         vals = join(rpad.(round.(u, digits=4), 10))
         println("$(rpad(round(t,digits=3), 8))$vals")
     end
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-    #@infiltrate
-    sol = OrdinaryDiffEq.solve(prob, Tsit5(), tstops = timeVector, saveat = timeVector, callback = cb)
+    sol = OrdinaryDiffEq.solve(prob, Tsit5(), tstops = t_unique, saveat = t_unique, callback = cb)
     return sol
 end
 
@@ -154,34 +159,36 @@ end
 
 
 
-function plotCarStates(result)
-    x = result.states
-    u = result.controls
-    s = result.path
+function plotCarStates_interp(result, stepsize)
+    s = collect(result.path[1]:stepsize:result.path[end])
+
+    x = hcat(result.states.(s)...)'   # n_samples × nStates
+    u = hcat(result.controls.(s)...)'  # n_samples × nControls
+
     fig3 = Figure()
-    display(GLMakie.Screen(),fig3)
-    ax = fig3[1, 1] = Axis(fig3)
-    labels = ["Vx", "Vy", "ψ", "ψ̇", "n", "t"] 
+    display(GLMakie.Screen(), fig3)
+    labels = ["Vx", "Vy", "ψ", "ψ̇", "n", "t"]
+    ax3 = [Axis(fig3[i, 1], ylabel = labels[i]) for i in 1:size(x, 2)]
 
-    for index = 1:length(x[1,:])
-        state = x[:,index]
-        lines!(ax,s,state,label = labels[index], linewidth = 5)
+    for index = 1:size(x, 2)
+        lines!(ax3[index], s, x[:, index], label = labels[index], linewidth = 5)
+        axislegend(ax3[index], position = :rt)
     end
-    axislegend(ax, "State Variables", position = :rt)
-
-    fig3
     display(fig3)
+
     fig2 = Figure()
-    display(GLMakie.Screen(),fig2)
-    ax2 = [Axis(fig2[i, 1]) for i in 1:3]
-    controls = ["MomentFront", "MomentRear", "Steering"] 
-    for index = 1:length(u[1,:])
-        control = u[:,index]
-        lines!(ax2[index], s[1:end-1], control, label = controls[index], linewidth = 5)
+    display(GLMakie.Screen(), fig2)
+    ax2 = [Axis(fig2[i, 1]) for i in 1:size(u, 2)]
+    ctrl_labels = ["MomentFront", "MomentRear", "Steering"]
+    for index = 1:size(u, 2)
+        lines!(ax2[index], s, u[:, index], label = ctrl_labels[index], linewidth = 5)
         axislegend(ax2[index], position = :rt)
     end
     display(fig2)
 end
+
+
+
 
 
 function plotCarStates2(result)
