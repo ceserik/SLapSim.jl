@@ -4,10 +4,6 @@ using JuMP, Ipopt, Zygote
 using Infiltrator
 using HermiteInterpolation
 using FastGaussQuadrature
-using Symbolics
-using Nemo
-
-
 
 struct Collocation
     createConstraints
@@ -198,48 +194,39 @@ function createLobattoIIIA(stage, f)
     return LobattoIIIAMethod
 end
 
-function Lagrange_polynomial_basis(nodes::Vector{Float64},τ::Num)
-    k = length(nodes)
-    #println(nodes)
-    
-    L = zero(Num)
-    l = ones(Num, k)
-    for j = 1:k
-        l[j] = one(Num)
-        for m = 1:k
-            if j !=m
-                l[j] *= (τ - nodes[m])/(nodes[j] - nodes[m])
-            end
-        end
-        #L += nodes[j]*l[j]
-    end
-    return l
-end
-
-function get_diff_matix(N,variant)
+function get_diff_matix(N, variant)
     if variant == "Radau"
         nodes = reverse([gaussradau(N)[1]..., 1]) .* -1
-        D = zeros(N, N + 1)
-    end
-
-    if variant == "Legendre"
+    elseif variant == "Legendre"
         nodes = [-1; gausslegendre(N)[1]]
-        D = zeros(N, N + 1)
     end
 
-    @Symbolics.variables τ
-    t0 = time()
-    L = Lagrange_polynomial_basis(nodes, τ)
-    println("making lagrange basis: $(round(time() - t0, digits=3))s")
-    t0 = time()
-    L_dot = expand(Symbolics.derivative(L, τ))
-    println("making lagrange derivations: $(round(time() - t0, digits=3))s")
-    t0 = time()
-    for i = 1:N
-        D_1 = substitute(L_dot, Dict(τ => nodes[i+1]))
-        D[i, :] = Symbolics.symbolic_to_float.(D_1)
+    M = length(nodes)
+
+    # Barycentric weights
+    w = ones(M)
+    for j in 1:M
+        for k in 1:M
+            if k != j
+                w[j] *= (nodes[j] - nodes[k])
+            end
+        end
+        w[j] = 1.0 / w[j]
     end
-    println("substituting into matrix D: $(round(time() - t0, digits=3))s")
+
+    # Full differentiation matrix
+    Dfull = zeros(M, M)
+    for i in 1:M
+        for j in 1:M
+            if i != j
+                Dfull[i, j] = (w[j] / w[i]) / (nodes[i] - nodes[j])
+            end
+        end
+        Dfull[i, i] = -sum(Dfull[i, :])
+    end
+
+    # Extract rows for collocation points only (nodes[2:end])
+    D = Dfull[2:end, :]
     return (D, nodes)
 end
 
