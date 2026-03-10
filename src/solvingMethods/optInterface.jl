@@ -197,7 +197,7 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model)
         return dxds
     end
     segments = 1
-    pol_roder = 30
+    pol_roder = 100
     nControls = Int64(car.carParameters.nControls.value)
     nStates = Int64(car.carParameters.nStates.value)
     Gauss_radau = create_gauss_pseudospectral_metod(F,pol_roder,"Radau",model,nControls,nStates,track);

@@ -4,6 +4,7 @@ using JuMP
 using Infiltrator
 using Interpolations
 using OrdinaryDiffEq
+using DiffEqCallbacks
 
 function timeSimulation(car::Car, result, track)
     timeVector = result.states[1:end-1, 6] #this has to be compatible with different car models will cause issues in future
@@ -50,9 +51,17 @@ function timeSimulation_interpolated(car::Car, result, track)
     p[3] = result
     p[4] = time2s
 
+    labels = ["Vx", "Vy", "ψ", "ψ̇", "X", "Y"]
+    println(rpad("t", 8), join(rpad.(labels, 10)))
+    println("-"^75)
+    cb = FunctionCallingCallback(; funcat = timeVector) do u, t, integrator
+        vals = join(rpad.(round.(u, digits=4), 10))
+        println("$(rpad(round(t,digits=3), 8))$vals")
+    end
+
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-    @infiltrate
-    sol = OrdinaryDiffEq.solve(prob, Tsit5(), tstops = timeVector)
+    #@infiltrate
+    sol = OrdinaryDiffEq.solve(prob, Tsit5(), tstops = timeVector, saveat = timeVector, callback = cb)
     return sol
 end
 
@@ -61,7 +70,7 @@ function carODE_globalFrame(du, x, p, t)
     track = p[2]
     U = p[3]
     time2s = p[4]
-    @infiltrate
+    #@infiltrate
     
     u = U.controls(time2s(t))
     car.controlMapping(car, u)
@@ -80,6 +89,18 @@ function carODE_globalFrame(du, x, p, t)
 end
 
 #sol = timeSimulation(car, result, track)
+
+function plotODESolution(sol)
+    t = sol.t
+    X = hcat(sol.u...)'
+    labels = ["Vx", "Vy", "ψ", "ψ̇", "X", "Y"]
+    println("\n  t       ", join(rpad.(labels, 10)))
+    println("-"^75)
+    for i in 1:length(t)
+        vals = join(rpad.(round.(X[i,:], digits=4), 10))
+        println("$(rpad(round(t[i],digits=3), 8))$vals")
+    end
+end
 
 # Plot last two columns (X and Y coordinates) directly
 #lines(getindex.(sol.u, 5), getindex.(sol.u, 6))

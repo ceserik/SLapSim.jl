@@ -33,8 +33,8 @@ car = createSimplestSingleTrack()
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path,false,true)
-track = doubleTurn(false,0.5)
+track = kml2track(path,false,true)
+#track = doubleTurn(false,0.5)
 
 
 #Number of transcription points

@@ -142,10 +142,10 @@ function createSimplestSingleTrack()
         car.carParameters.velocity.value = [states[1], states[2], 0.0]
         car.carParameters.psi.value = states[3]
         car.carParameters.angularVelocity.value = [0.0, 0.0, states[4]]
-        if length(states) ==6 ## this can probably be removed
+        #if length(states) ==6 ## this can probably be removed
             car.carParameters.n.value = states[5]
             car.carParameters.s.value = states[6]
-        end
+        #end
     return car
 end
     
