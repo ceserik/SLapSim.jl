@@ -1,4 +1,5 @@
-% arara: pdflatex: { synctex: yes }
+%\usepackage{amsmath,amssymb,amsfonts}
+
 % arara: makeindex: { style: ctuthesis }
 % arara: bibtex
 
@@ -10,13 +11,13 @@
 	preprint = \today,% footer timestamp
 %	mainlanguage = english,
 %	titlelanguage = czech,
-	mainlanguage = czech,
+	mainlanguage = english,
 	otherlanguages = {slovak,english},
 	title-czech = {Moje bakalářka se strašně, ale hrozně dlouhým předlouhým názvem},
 	title-english = {My Favourite Thesis; Just the Title is Soooooooo Looooong},
 	subtitle-czech = {Cesta do tajů kdovíčeho},
 	subtitle-english = {Journey to the who-knows-what wondeland},
-	doctype = B,
+	doctype = M,
 	faculty = F4,
 	department-czech = {Katedra matematiky},
 	department-english = {Department of Mathematics},
@@ -117,11 +118,46 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 \maketitle
 
 \chapter{Introduction}
+In this chapter i will introduce the  methods used to find minimums/maximums of general functions. My goal is to buid the theory in digestable way, for people not fluent in nonlinear optimisation I will start with simple example to explain main ideas clearly and then generalise it to create optimisation framework. Very good intuitive itroduction is given in this youtube video \cite{cite:48}
+Simplest useful example is: Find $x_1$ and $x_2$ that minimise the function $J(\mathbf{x}) = x_1^2+x_2^2$, subject to constraint function $c(\mathbf{x}) = x_1+x_2+3$. 
+\begin{mini}[2]
+{}{J(\mathbf{x})}{}{}
+\addConstraint{c(\mathbf{x})=0}
+\end{mini}
+with variables $x_1,x_2\in\mathbf{R}$. 
+This is visualised on contour plot. The solution must lie somewhere on the orange constraint line.
+From the figure it can be easily seen that the optimum is on the point where the constraint line 
+of $x_1+x_2+3 =0$ is tangent with contour circle of $x_1^2+x_2^2$.
+In other words, the constraint line is perpendicular to the gradient at the optimal point, this means that 
+gradient of $\nabla J(\mathbf{x})$ and $\nabla c(\mathbf{x})$ differ only in their scale in the optimal point.
+This can be formaly stated by taking gradients $\nabla J(\mathbf{x})$ and $\nabla c(\mathbf{x})$. and writing equaiton
 
-This thesis shows that \ldots
+\begin{equation}
+\nabla J(\mathbf{x}) = \lambda \nabla c(\mathbf{x})\label{eq:lagrange}
+\end{equation}
+\begin{equation}
+\nabla (J(\mathbf{x}) + \lambda c(\mathbf{x}))= 0\label{eq:dlagrangen}
+\end{equation}
+where $\lambda$ is a new scalar variable. $\lambda$ is known as Lagrange multiplier (also called the dual variable; in optimal-control contexts the costate or adjoint variable).
+$\lambda$ can be thought of as a measure of importance of given constraint on the objective function $J(\mathbf{x})$,
+this concept is particularly useful for sensitivity analysis.
+
+
+$\lambda$ quantifies the sensitivity of the optimal cost to the constraint:
+$\frac{dJ^*}{d c(\mathbf{x})} = -\lambda$, where $\varepsilon$ is a small perturbation to $c(\mathbf{x}) = \varepsilon$.
+A large $|\lambda|$ means the constraint is strongly limiting the optimum;
+$\lambda = 0$ means the constraint is inactive and could be removed without affecting $J^*$.
+
+
+To find the optimum equation \eqref{eq:lagrange} is rewritten into the Lagrangian:
+\begin{equation}
+	\nabla L = \nabla J(\mathbf{x}) + \lambda \nabla c(\mathbf{x})\label{eq:lagrangean}
+\end{equation}
 
 \begin{figure}[!h]
-\rule{3cm}{3cm}
+
+\centering
+\includegraphics[width=0.8\textwidth]{../src/examples/constrained_optimum.pdf}
 \caption{Test}
 \end{figure}
 
@@ -175,7 +211,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis interdum facilisis
 
 \printindex
 
-\bibliographystyle{amsalpha}
+\bibliographystyle{plain}
 \bibliography{ctutest/ctutest}
 
 

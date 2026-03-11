@@ -1,5 +1,6 @@
 using GLMakie
-
+using LaTeXStrings
+fontsize = 11
 # Define the function and its gradient
 f(x1, x2) = x1^2 + x2^2
 ∇f(x1, x2) = (2x1, 2x2)
@@ -35,7 +36,7 @@ dX_n = scale .* dX ./ norms
 dY_n = scale .* dY ./ norms
 
 # Filter out small red arrows near the optimum so they don't overlap the big arrows
-clear_radius = 1.2
+clear_radius = 1.6
 keep = sqrt.((X_pts .- x_opt).^2 .+ (Y_pts .- y_opt).^2) .> clear_radius
 X_pts, Y_pts = X_pts[keep], Y_pts[keep]
 dX_n,  dY_n  = dX_n[keep],  dY_n[keep]
@@ -53,35 +54,46 @@ cgy = scale * gy / gnorm
 # Plot
 # 130 mm × 130 mm at 300 DPI → 1535 × 1535 px (fits a single column in a thesis)
 const DPI = 300
-const WIDTH_MM  = 60
-const HEIGHT_MM = 60
+const WIDTH_MM  = 30
+const HEIGHT_MM = 30
 const PX_W = round(Int, WIDTH_MM  / 25.4 * DPI)
 const PX_H = round(Int, HEIGHT_MM / 25.4 * DPI)
-fig = Figure(size = (PX_W, PX_H), fontsize = 14)
+fig = Figure(size = (PX_W, PX_H), fontsize = 11)
 ax = Axis(fig[1, 1];
-
-    #title  = "f = x₁²+x₂², constraint x₁+x₂+3=0",
+    xlabel = L"x_1",
+    ylabel = L"x_2",
     aspect = DataAspect(),
-    limits = (-4.0, 1.5, -4.0, 1.5))
+    limits = (-4.0, 1.5, -4.0, 1.5),
+    xticklabelsize = fontsize,
+    yticklabelsize = fontsize,
+    xlabelsize = fontsize,
+    ylabelsize = fontsize,
+    xticklabelfont = "Latin Modern Roman",
+    yticklabelfont = "Latin Modern Roman",
+    xlabelfont = "Latin Modern Roman",
+    ylabelfont = "Latin Modern Roman",
+)
 
 # Filled contour (top view)
 cf = contourf!(ax, xs, ys, Z; levels = 20, colormap = :viridis)
 contour!(ax, xs, ys, Z; levels = 20, color = :white, linewidth = 0.4, alpha = 0.5)
 
 # Objective gradient arrows (red)
-arrows!(ax, X_pts, Y_pts, dX_n, dY_n;
+arrows2d!(ax, X_pts, Y_pts, dX_n, dY_n;
     color     = :red,
-    arrowsize = 8,
-    linewidth = 1.5)
+    tipwidth  = 6,
+    tiplength = 10,
+    shaftwidth = 1.5)
 
 # Constraint line
 lines!(ax, xc, yc; color = :orange, linewidth = 3)
 
 # Constraint gradient arrows (orange, along the line)
-arrows!(ax, collect(xc), collect(yc), fill(cgx, nc), fill(cgy, nc);
+arrows2d!(ax, collect(xc), collect(yc), fill(cgx, nc), fill(cgy, nc);
     color     = :orange,
-    arrowsize = 10,
-    linewidth = 2.0)
+    tipwidth  = 8,
+    tiplength = 12,
+    shaftwidth = 2.0)
 
 # ── Big arrows at the optimum ────────────────────────────────────────────
 # Proportional lengths: |∇f| = |λ*| · |∇g| = 3 × |∇g|, opposite direction
@@ -89,12 +101,12 @@ unit = 0.55          # display length for one |∇g| unit (data coords)
 d    = 1.0 / sqrt(2.0)   # equal component along each axis for (±1,±1) direction
 
 # ∇g arrow (darkorange): direction (+1,+1)/√2, length = unit
-arrows!(ax, [x_opt], [y_opt], [unit * d], [unit * d];
-    color = :darkorange, arrowsize = 22, linewidth = 7.0)
+arrows2d!(ax, [x_opt], [y_opt], [unit * d], [unit * d];
+    color = :darkorange, tipwidth = 10, tiplength = 14, shaftwidth = 4.0)
 
 # ∇f arrow (crimson): direction (-1,-1)/√2, length = 3*unit  (since λ* = -3)
-arrows!(ax, [x_opt], [y_opt], [-3unit * d], [-3unit * d];
-    color = :crimson, arrowsize = 22, linewidth = 7.0)
+arrows2d!(ax, [x_opt], [y_opt], [-3unit * d], [-3unit * d];
+    color = :crimson, tipwidth = 10, tiplength = 14, shaftwidth = 4.0)
 
 # Tick marks on ∇f at 1× and 2× unit — dividing it into 3 equal |∇g|-length pieces
 perp = 0.13   # half-length of tick, perpendicular direction is (d, -d)
@@ -116,15 +128,15 @@ scatter!(ax, [x_opt], [y_opt];
 
 # Arrow labels
 text!(ax, x_opt + unit * d + 0.05, y_opt + unit * d;
-    text = "∇g", color = :darkorange, fontsize = 28, font = :bold)
-text!(ax, x_opt - 3unit * d - 0.05, y_opt - 3.5unit * d - 0.22;
-    text = "∇f", color = :crimson, fontsize = 28, font = :bold)
+    text = "∇c", color = :darkorange, fontsize = 18, font = "Latin Modern Roman")
+text!(ax, x_opt - 3unit * d + 0.1, y_opt - 3.5unit * d - 0.25;
+    text = "∇J", color = :crimson, fontsize = 18, font = "Latin Modern Roman")
 
 # λ annotation alongside the ∇f arrow (offset to the right of it)
 text!(ax, x_opt - 1.5unit * d + 0.18, y_opt - 3unit * d + 0.08;
-    text = "λ* = −3", color = :white, fontsize = 28, font = :bold)
-text!(ax, x_opt - 1.5unit * d + 0.18, y_opt - 3unit * d - 0.18;
-    text = "∇f = λ*∇g", color = :white, fontsize = 28)
+    text = "λ* = −3", color = :white, fontsize = 16, font = "Latin Modern Roman")
+text!(ax, x_opt - 1.5unit * d + 0.18, y_opt - 3unit * d - 0.28;
+    text = "∇J = λ*∇g", color = :white, fontsize = 14, font = "Latin Modern Roman")
 # Legend
 elem_f     = LineElement(color = :red,        linewidth = 2)
 elem_g     = LineElement(color = :orange,     linewidth = 2)

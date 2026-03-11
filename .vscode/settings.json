@@ -3,7 +3,8 @@
         "*": false,
         "plaintext": false,
         "markdown": false,
-        "scminput": false
+        "scminput": false,
+        "latex": false
     },
     "workbench.editor.enablePreview": true,
     "workbench.settings.applyToAllProfiles": [
@@ -49,5 +50,6 @@
         "args": ["%DOCFILE%"]
     }
 ],
-"latex-workshop.latex.recipe.default": "lualatex"
+"latex-workshop.latex.recipe.default": "lualatex",
+"latex-workshop.synctex.afterBuild.enabled": "true"
 }
