@@ -4,6 +4,7 @@ version = "1.0.0-DEV"
 authors = ["Richard <ciglanskyri@gmail.com> and contributors"]
 
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 ClassicalOrthogonalPolynomials = "b30e2e7b-c4ee-47da-9d5f-2c5c27239acd"
 Compiler = "807dbc54-b67e-4c79-8afb-eafe4df6f2e1"
 ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
@@ -42,6 +43,7 @@ UnoSolver = "1baa60ac-02f7-4b39-a7a8-2f4f58486b05"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+CairoMakie = "0.15.8"
 ClassicalOrthogonalPolynomials = "0.15.16"
 Compiler = "0.1.1"
 ControlSystemsBase = "1.19.0"

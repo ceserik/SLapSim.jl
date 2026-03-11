@@ -51,9 +51,15 @@ cgx = scale * gx / gnorm
 cgy = scale * gy / gnorm
 
 # Plot
-fig = Figure(size = (750, 650))
+# 130 mm × 130 mm at 300 DPI → 1535 × 1535 px (fits a single column in a thesis)
+const DPI = 300
+const WIDTH_MM  = 60
+const HEIGHT_MM = 60
+const PX_W = round(Int, WIDTH_MM  / 25.4 * DPI)
+const PX_H = round(Int, HEIGHT_MM / 25.4 * DPI)
+fig = Figure(size = (PX_W, PX_H), fontsize = 14)
 ax = Axis(fig[1, 1];
-    xlabel = "x₁", ylabel = "x₂",
+
     #title  = "f = x₁²+x₂², constraint x₁+x₂+3=0",
     aspect = DataAspect(),
     limits = (-4.0, 1.5, -4.0, 1.5))
@@ -130,3 +136,8 @@ elem_∇g    = LineElement(color = :darkorange, linewidth = 3)
 #Colorbar(fig[1, 2], cf; label = "f(x₁, x₂)")
 
 display(fig)
+
+# Export as PDF (vector) via CairoMakie — GLMakie only supports raster formats
+import CairoMakie
+# pt_per_unit converts from px to pt so the PDF is exactly WIDTH_MM × HEIGHT_MM mm
+CairoMakie.save("src/examples/constrained_optimum.pdf", fig; pt_per_unit = 72 / DPI)

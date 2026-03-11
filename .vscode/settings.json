@@ -25,5 +25,29 @@
     "workbench.preferredDarkColorTheme": "Default Dark Modern",
     "workbench.preferredLightColorTheme": "Default Light Modern",
    // "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim/src",
-    "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim"
+    "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim",
+    "latex-workshop.latex.recipes": [
+    {
+        "name": "lualatex",
+        "tools": ["lualatex", "bibtex", "lualatex", "lualatex"]
+    }
+],
+"latex-workshop.latex.tools": [
+    {
+        "name": "lualatex",
+        "command": "lualatex",
+        "args": [
+            "-synctex=1",
+            "-interaction=nonstopmode",
+            "-file-line-error",
+            "%DOC%"
+        ]
+    },
+    {
+        "name": "bibtex",
+        "command": "bibtex",
+        "args": ["%DOCFILE%"]
+    }
+],
+"latex-workshop.latex.recipe.default": "lualatex"
 }
