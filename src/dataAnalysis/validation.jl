@@ -5,6 +5,7 @@ using Infiltrator
 using Interpolations
 using OrdinaryDiffEq
 using DiffEqCallbacks
+using LinearAlgebra
 
 function timeSimulation(car::Car, result, track)
     timeVector = result.states[1:end-1, 6] #this has to be compatible with different car models will cause issues in future
@@ -92,7 +93,6 @@ function carODE_globalFrame(du, x, p, t)
     du .= dx
     return dx
 end
-
 #sol = timeSimulation(car, result, track)
 
 function plotODESolution(sol)
@@ -188,6 +188,35 @@ function plotCarStates_interp(result, stepsize)
 end
 
 
+#This function applies states and control from optimisation result and using Tsit5 predicts next states, the difference 
+#between states from optimisation and states from Tsit5 simulation is compared and used as output.
+
+function getErrors(problem)
+    error_vector = Vector{Float64}(undef, length(problem.optiResult.path))
+    for i = 1:length(problem.optiResult.path)-1
+        
+        error = getError([problem.optiResult.path[i],problem.optiResult.path[i+1]],problem)
+        error_vector[i] = error
+        println(error)
+    end
+    return error_vector
+end
+
+
+
+function getError(s, problem)
+    u  = problem.optiResult.controls(s[1])   # piecewise constant over segment
+    x0 = problem.optiResult.states(s[1])
+    ode(du, x, p, s) = du .= carODE_path(p[1], p[2], s, p[3], x, nothing)
+    prob = ODEProblem(ode, x0, (s[1], s[2]), (problem.car, problem.track, u))
+    
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-5, abstol=1e-5)
+    final_states_time_sim = sol.u[end]
+    final_states_optimized= problem.optiResult.states(s[2])
+    #@infiltrate
+    # return scalar L2 norm (single number)
+    return norm(final_states_time_sim .- final_states_optimized)
+end
 
 
 

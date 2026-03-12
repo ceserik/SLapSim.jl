@@ -14,6 +14,13 @@ struct Result
 end
 
 
+mutable struct Problem_config
+    car
+    track
+    model
+    optiResult
+end
+
 struct Result_interpolation
     states
     controls
@@ -38,7 +45,7 @@ function initializeSolution(car::Car,track::Track,sampleDistances::Vector{Float6
     velocityP = 3
     vref = 2
 
-    prob = ODEProblem(carODE_path2, x0, span2,[car,track,steeringP,velocityP,vref]);
+    prob = ODEProblem(carODE_path_initialization, x0, span2,[car,track,steeringP,velocityP,vref]);
     sol = OrdinaryDiffEq.solve(prob,Tsit5(),saveat=sampleDistances,reltol=1e-5, abstol=1e-5);
 
     x = hcat(sol.u...)'
@@ -67,7 +74,7 @@ function initializeSolution_interpolation(car::Car,track::Track,segments::Int64)
     sampling_distances = LinRange(track.sampleDistances[1],track.sampleDistances[end],segments)
     span2 = [sampling_distances[1],sampling_distances[end]]
     #@infiltrate
-    prob = ODEProblem(carODE_path2, x0, span2,[car,track,steeringP,velocityP,vref]);
+    prob = ODEProblem(carODE_path_initialization, x0, span2,[car,track,steeringP,velocityP,vref]);
     sol = OrdinaryDiffEq.solve(prob,Tsit5(),saveat=sampling_distances,reltol=1e-5, abstol=1e-5);
 
     x = hcat(sol.u...)'
@@ -96,7 +103,7 @@ end;
 #poradie car,track,k,s,u,x
 
 
-function carODE_path2(du, x, p, s)
+function carODE_path_initialization(du, x, p, s)
     car = p[1];
     track = p[2]
     steeringP = p[3]
