@@ -92,7 +92,9 @@ function initializeSolution_interpolation(car::Car,track::Track,segments::Int64)
 end;
 
 
-function carODE_path(car::Car,track::Track, k::Union{Int64,Float64}, u::Union{Vector{VariableRef}, Vector{Float64}}, x::Union{Vector{VariableRef},Vector{Float64}},model::Union{JuMP.Model,Nothing})
+function carODE_path(car::Car, track::Track, k::Union{Int64,Float64}, 
+                     u::AbstractVector, x::AbstractVector, 
+                     model::Union{JuMP.Model,Nothing}=nothing)
     #car.mapping(car,u,x)
     car.controlMapping(car,u)
     car.stateMapping(car,x)

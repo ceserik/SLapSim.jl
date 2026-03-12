@@ -197,9 +197,11 @@ function getErrors(problem)
         
         error = getError([problem.optiResult.path[i],problem.optiResult.path[i+1]],problem)
         error_vector[i] = error
-        println(error)
+        #println(error)
     end
-    return error_vector
+#    @infiltrate
+    itp = linear_interpolation(problem.optiResult.path,error_vector)
+    return itp
 end
 
 
@@ -233,4 +235,38 @@ function plotCarStates2(result)
         lines!(ax, value.(X[:,i]), label=label)
     end
     display(GLMakie.Screen(), fig)  # This creates a new window
+end
+
+function plotErrorsOnTrack2D( problem; axis=nothing, colormap=:viridis)
+    track = problem.track
+    itp = getErrors(problem)              # interpolation from getErrors
+    s = problem.optiResult.path
+    errs = itp.(s)
+
+    # compute car trajectory (offset from centerline) like plotCarPath_interpolated
+    n(s) = problem.optiResult.states(s)[5]
+    carX = zeros(length(s))
+    carY = zeros(length(s))
+    for (i, si) in enumerate(s)
+        fc = track.fcurve(si)
+        carX[i] = fc[3] .- n(si) * sin(fc[2])
+        carY[i] = fc[4] .+ n(si) * cos(fc[2])
+    end
+
+    created = false
+    if axis === nothing
+        fig = Figure()
+        axis = Axis(fig[1,1], aspect = DataAspect())
+        created = true
+    end
+
+    plotTrack(track, b_plotStartEnd=false, ax = axis)   # draw base track
+    plt = lines!(axis, carX, carY; color = errs, colormap = colormap, linewidth = 4)
+    if created
+        Colorbar(fig, plt; label = "error")
+        display(GLMakie.Screen(), fig)
+        return fig, axis, plt
+    else
+        return axis, plt
+    end
 end

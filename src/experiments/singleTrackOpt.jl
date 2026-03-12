@@ -52,7 +52,7 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 250
+segments = 150
 pol_order = 2
 optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order)
 
@@ -80,10 +80,12 @@ SLapSim.plotCarStates_interp(optiResult_interp,0.01)
 
 include("../dataAnalysis/jacobian.jl")
 include("../dataAnalysis/hessian_test2.jl")
-
+println("jacobian")
 println(UnicodePlots.spy(jacobian))
-
+println("hessian")
 println(UnicodePlots.spy(H_star))
+
 GLMakie.spy(rotr90(jacobian)) 
 
-plot(getErrors(problem))
+plot(getErrors(problem)(optiResult_interp.path))
+plotErrorsOnTrack2D(problem)
