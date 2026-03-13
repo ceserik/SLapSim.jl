@@ -76,7 +76,7 @@ function simplestSingleTrack(
     #println("CoG Moment 2: ", cogMoment2)
     #println("CoG Force: ", cogForce)
 
-    dv = cogForce/car.carParameters.mass.value + angularVelocity × velocity
+    dv = cogForce/car.carParameters.mass.value - angularVelocity × velocity #really check what sign should be here !!!!
     dangularVelocity = cogMoment/car.carParameters.inertia.value
     dx = [dv[1],dv[2],angularVelocity[3],dangularVelocity[3]]
     return dx
@@ -96,7 +96,7 @@ function createSimplestSingleTrack()
 
     #get max motor torque for scaling
     maxMotorTorqueFront = motorFront.torqueSpeedFunction(0.0) * gearboxFront.ratio.value
-    maxMotorTorqueRear = motorFront.torqueSpeedFunction(0.0) * gearboxRear.ratio.value
+    maxMotorTorqueRear = motorRear.torqueSpeedFunction(0.0) * gearboxRear.ratio.value
 
     tireFront = createR20lin(maxMotorTorqueFront)
     tireRear = createR20lin(maxMotorTorqueRear)

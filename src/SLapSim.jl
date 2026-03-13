@@ -15,6 +15,7 @@ const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
 # Include files in dependency order
 include("Track/trackDefinition.jl")
 include("Track/trackProcessing.jl")
+include("Track/skidpad.jl")
 
 # Components (no dependencies between them)
 include("carModels/carParameters.jl")
@@ -42,7 +43,7 @@ include("solvingMethods/myCollocation.jl")
 
 # Export public functions
 export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution
-export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix
+export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad
 #println("SLapSim module loaded")
 
 end # module

@@ -364,7 +364,14 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             i0  = (seg - 1) * pol_order + 1
             # Controls defined at the N LGR collocation nodes (rows i0+1 … i0+pol_order)
             u_seg = U_vals[i0+1 : i0 + pol_order, :]            # N × nControls
-            return [_bary_eval(ctrl_nodes, w_ctrl, u_seg[:, k], τ) for k in 1:size(u_seg, 2)]
+            hold_controls = 1
+            if hold_controls ==1
+                # hold the first control node in the interval across the whole interval
+                u0 = u_seg[1, :]
+                return [u0[k] for k in 1:size(u_seg, 2)]
+            else
+                return [_bary_eval(ctrl_nodes, w_ctrl, u_seg[:, k], τ) for k in 1:size(u_seg, 2)]
+            end
         end
 
         return Result_interpolation(state_interp, control_interp, all_nodes)

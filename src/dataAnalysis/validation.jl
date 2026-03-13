@@ -192,15 +192,17 @@ end
 #between states from optimisation and states from Tsit5 simulation is compared and used as output.
 
 function getErrors(problem)
-    error_vector = Vector{Float64}(undef, length(problem.optiResult.path))
-    for i = 1:length(problem.optiResult.path)-1
+    s = problem.optiResult.path
+    n = length(s)
+    error_vector = zeros(Float64, n)
+    for i = 1:n-1
         
-        error = getError([problem.optiResult.path[i],problem.optiResult.path[i+1]],problem)
+        error = getError([s[i], s[i+1]],problem)
         error_vector[i] = error
         #println(error)
     end
-#    @infiltrate
-    itp = linear_interpolation(problem.optiResult.path,error_vector)
+    error_vector[end] = error_vector[end-1]
+    itp = linear_interpolation(s, error_vector)
     return itp
 end
 
@@ -237,9 +239,11 @@ function plotCarStates2(result)
     display(GLMakie.Screen(), fig)  # This creates a new window
 end
 
-function plotErrorsOnTrack2D( problem; axis=nothing, colormap=:viridis)
+function plotErrorsOnTrack2D(problem; axis=nothing, colormap=:viridis, itp=nothing)
     track = problem.track
-    itp = getErrors(problem)              # interpolation from getErrors
+    if itp === nothing
+        itp = getErrors(problem)          # interpolation from getErrors
+    end
     s = problem.optiResult.path
     errs = itp.(s)
 
@@ -259,11 +263,48 @@ function plotErrorsOnTrack2D( problem; axis=nothing, colormap=:viridis)
         axis = Axis(fig[1,1], aspect = DataAspect())
         created = true
     end
+    
 
     plotTrack(track, b_plotStartEnd=false, ax = axis)   # draw base track
     plt = lines!(axis, carX, carY; color = errs, colormap = colormap, linewidth = 4)
     if created
-        Colorbar(fig, plt; label = "error")
+        Colorbar(fig[1,2], plt; label = "error", width = 25)
+        display(GLMakie.Screen(), fig)
+        return fig, axis, plt
+    else
+        return axis, plt
+    end
+end
+
+
+function plot_on_path(problem,itp,legend; axis=nothing, colormap=:viridis)
+    track = problem.track
+
+    #itp = getErrors(problem)              # interpolation from getErrors
+    s = problem.optiResult.path
+    vis_vars = itp.(s)
+
+    # compute car trajectory (offset from centerline) like plotCarPath_interpolated
+    n(s) = problem.optiResult.states(s)[5]
+    carX = zeros(length(s))
+    carY = zeros(length(s))
+    for (i, si) in enumerate(s)
+        fc = track.fcurve(si)
+        carX[i] = fc[3] .- n(si) * sin(fc[2])
+        carY[i] = fc[4] .+ n(si) * cos(fc[2])
+    end
+
+    created = false
+    if axis === nothing
+        fig = Figure()
+        axis = Axis(fig[1,1], aspect = DataAspect())
+        created = true
+    end
+
+    plotTrack(track, b_plotStartEnd=false, ax = axis)   # draw base track
+    plt = lines!(axis, carX, carY; color = vis_vars, colormap = colormap, linewidth = 4)
+    if created
+        Colorbar(fig[1,2], plt; label = legend, width = 25)
         display(GLMakie.Screen(), fig)
         return fig, axis, plt
     else

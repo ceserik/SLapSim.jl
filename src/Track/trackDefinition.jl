@@ -146,10 +146,6 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     X = [x_smpl_straight1; x_smpl_R1; x_smpl_R2]
     Y = [y_smpl_straight1; y_smpl_R1; y_smpl_R2]
 
-
-
-
-    
     track = Track(
         [0.0],      # curvature - to be calculated
         fill(rho, length(X)),    # rho

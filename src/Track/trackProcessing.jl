@@ -77,7 +77,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     dy = diff(y_smpl)
 
     th_init = unwrap(atan.(dy, dx))
-    th_init = [th_init; th_init[end]]
+    th_init = [th_init[1];th_init]
     C_init = diff(th_init) ./ ds
     C_init = [C_init; C_init[end]]
 
@@ -92,14 +92,11 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
             return [u; z[1]; cos(z[2]); sin(z[2])]
         end
 
-    Lobattostage = 3
+    Lobattostage = 2
     lobotom = createLobattoIIIA(Lobattostage,f)
-    
+
     samplingPoints = length(s_traj)
-
     spl = Spline1D(s_traj, s_traj)
-    
-
     xd = lobotom.createConstraints(f,4,1,spl,s_traj,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
     Xall = xd[2]
     Uall = xd[3]
@@ -126,13 +123,17 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
         @constraint(model, z_y[end] == z_y[1])
         @constraint(model, z_th[end] == z_th[1] + 2 * pi * round((th_init[end] - th_init[1]) / 2 / pi))
         @constraint(model, z_C[end] == z_C[1])
+    else
+        @constraint(model, z_th[end] == th_init[end])
+        @constraint(model, z_x[end] == x_smpl[end])
+        @constraint(model, z_y[end] == y_smpl[end])
     end
 
     # Solve NLP
     set_silent(model)
     optimize!(model)
     # Extract solution values
-
+#    @infiltrate
 
     x_traj = value.(z_x)
     y_traj = value.(z_y)
@@ -160,6 +161,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     track.theta = th_traj
     track.sampleDistances = s_traj    
     track.fcurve = itp
+#    @infiltrate
     return (x_traj, y_traj, C_traj, th_traj)
 
 end

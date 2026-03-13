@@ -39,6 +39,7 @@ problem.car = car
 path = "tracks/FSCZ.kml"
 #track = kml2track(path,false,true)
 track = doubleTurn(false,0.5)
+#track = skidpad(false)
 problem.track = track
 
 #Number of transcription points
@@ -52,8 +53,8 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 150
-pol_order = 2
+segments = 30
+pol_order = 1
 optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order)
 
 problem.optiResult = optiResult_interp
@@ -87,5 +88,35 @@ println(UnicodePlots.spy(H_star))
 
 GLMakie.spy(rotr90(jacobian)) 
 
-plot(getErrors(problem)(optiResult_interp.path))
-plotErrorsOnTrack2D(problem)
+error_itp = getErrors(problem)
+plot(error_itp(optiResult_interp.path))
+plotErrorsOnTrack2D(problem; itp = error_itp)
+
+# Plot all controls + error in a single square window (stacked rows)
+fig = Figure(resolution = (900, 900))
+# 2x2 grid of plots, each plot gets its own colorbar to the right
+plots = [
+    (s->optiResult_interp.controls(s)[1], "moment_front"),
+    (s->optiResult_interp.controls(s)[2], "moment_rear"),
+    (s->optiResult_interp.controls(s)[3], "steering"),
+    (s->error_itp(s), "error"),
+]
+
+# prepare error interpolant and append as a callable
+
+
+
+# Layout: 2 rows × 4 columns (each plot + its colorbar occupies 2 columns)
+for i in 1:length(plots)
+    row = div(i-1, 2) + 1
+    col = mod(i-1, 2) + 1
+    ax_col = 2*col - 1
+    cb_col = 2*col
+    p = plots[i]
+    f = p[1]
+    name = p[2]
+    ax = Axis(fig[row, ax_col], aspect = DataAspect())
+    _, plt = plot_on_path(problem, f, name; axis = ax)
+    Colorbar(fig[row, cb_col], plt; label = name, width = 25)
+end
+display(GLMakie.Screen(), fig)

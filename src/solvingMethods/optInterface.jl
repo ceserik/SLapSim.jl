@@ -216,11 +216,20 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model,segmen
     segment_edges = xd[5]
 
     @constraint(model,X[1:end,1] .>= 0) #vx
+    @constraint(model,X[1,1] .>= 5) #vx
     @constraint(model,X[1,2] .== 0) # intial vy
     @constraint(model,X[1,3] .== track.theta[1]) # intial heading
     @constraint(model,X[1,6] .>= 0) # final time
     @constraint(model,diff(X[:,6]) .>=0) #time goes forward
+    
 
+    #@constraint(model,diff(U[:,1]) .>=-1) #constraint on controls derivative
+
+    #this has to have variable length to allow closed track
+    #@constraint(model,-100 .<= diff(U[1:end-1,1]./diff(X[:,6])) .<= 100) #constraint on controls derivative
+    #@constraint(model,-100 .<= diff(U[1:end-1,2]./diff(X[:,6])) .<= 100) #constraint on controls derivative
+    #@constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
+    @constraint(model,U[1:end,1].== 0) #motor front off
     @objective(model,Min,X[end,6])
     optimize!(model)
 
