@@ -9,7 +9,7 @@ using UnicodePlots
 #Infiltrator.clear_disabled!()
 include("../solvingMethods/optInterface.jl")
 include("../dataAnalysis/validation.jl")
-
+include("../solvingMethods/myCollocation.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = true
 if detect
@@ -54,12 +54,16 @@ problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 segments = 30
-pol_order = 1
+pol_order = 3
 optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order)
 
 problem.optiResult = optiResult_interp
 
-fig = Figure()
+
+
+
+if 1==1
+    fig = Figure()
 ax = Axis(fig[1,1], aspect = DataAspect())
 #plotCarPath(track,optiResult_interp,ax)
 plotCarPath_interpolated(track,optiResult_interp,ax)
@@ -85,7 +89,6 @@ println("jacobian")
 println(UnicodePlots.spy(jacobian))
 println("hessian")
 println(UnicodePlots.spy(H_star))
-
 GLMakie.spy(rotr90(jacobian)) 
 
 error_itp = getErrors(problem)
@@ -120,3 +123,5 @@ for i in 1:length(plots)
     Colorbar(fig[row, cb_col], plt; label = name, width = 25)
 end
 display(GLMakie.Screen(), fig)
+
+end

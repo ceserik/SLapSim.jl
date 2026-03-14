@@ -156,7 +156,7 @@ By introducing more constraints to $c(\mathbf{x}) =0$, first order necessary con
 c(\mathbf{x})= 0.
 \end{equation}
 Point which satisfies this conditions is either optimum, minimum or saddle point
-$\lambda$ is  known as Lagrange multiplier,it is not some meaningless valuable that is be thrown away after finding the solution.  $\lambda$ can be thought of as a measure of importance of given constraint on the objective function $J(\mathbf{x})$,this concept is particularly useful for sensitivity analysis. Formally: $\lambda$ quantifies the sensitivity of the optimal cost to the constraint: $\frac{dJ^*}{d c(\mathbf{x})} = -\lambda$, where $\varepsilon$ is a small perturbation to $c(\mathbf{x}) = \varepsilon$. A large $|\lambda|$ means the constraint is strongly limiting the optimum; $\lambda = 0$ means the constraint is inactive and could be removed without affecting $J^*$, aaah i should make sure it is like this.
+$\lambda$ is  known as Lagrange multiplier,it is not some meaningless valuable that is be thrown away after finding the solution.  $\lambda$ can be thought of as a measure of importance of given constraint on the objective function $J(\mathbf{x})$,this concept is particularly useful for sensitivity analysis. Formally: $\lambda$ quantifies the sensitivity of the optimal cost to the constraint: $\frac{dJ^*}{d c(\mathbf{x})} = -\lambda$, where $\varepsilon$ is a small perturbation to $c(\mathbf{x}) = \varepsilon$. A large $|\lambda|$ means the constraint is strongly limiting the optimum, $\lambda = 0$ means the constraint is inactive and could be removed without affecting $J^*$, aaah i should make sure it is like this.
 
 
 \subsection{Inequality constrained optimization}
@@ -166,6 +166,24 @@ $\lambda$ is  known as Lagrange multiplier,it is not some meaningless valuable t
 	%\nabla L = \nabla J(\mathbf{x}) + \lambda \nabla c(\mathbf{x})\label{eq:lagrangean}
 %\end{equation}
 dsghdgdfg
+
+\chapter{Transcription}
+this chapter deal with the problem of transcribing the continuous optimal control problem into direct optimization problem, that is with discrete states and controls. The task boils down to integrating a function by evaluating it at discrete steps, this is called quadrature. The most commonly used quadratures for optimal control are Gauss-Legendre, Gauss-Radau and Gauss-Lobatto. Methods which are using these quadratures are called pseudospectral collocation methods. These methods are representing the integral of the function using polynomial, they are called collocation methods, because they work by forcing the derivation of the approximating polynomial to be equal to right hand side of the differential equation it is solving. Key aspect of these methods is that they can represent the solution to differential equation without error up to the degree of approximating polynomial. pridat toto s konstantou ktora big O little o...
+
+The approximating polynomials are constructing with roots of legendre, sometinh something lagrange polynomials
+DX = F(X,U)
+
+barycentric weights
+
+
+
+collocation point = derivation is equal to the differential equation
+boundary point = the constraints to tie two segment together are used for the solution
+
+gauss legendre points odnt contain any of the endpoint, the endpoints have to be constrained by extra addConstraint
+gauss legendre collocation
+N is in number of collocation points, order of approximating polynomial is then  for LG = 2N-1, for LGR = 2N-2, for LGL = 2N-3
+
 
 \part{My Party}
 
