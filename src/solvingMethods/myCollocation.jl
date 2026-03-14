@@ -229,7 +229,7 @@ function get_diff_matix(N, variant)
         end
         Dfull[i, i] = -sum(Dfull[i, :])
     end
-    @infiltrate
+
     # Extract rows for collocation points only (nodes[2:end])
     D = Dfull[2:end, :]
     return (D, nodes)
@@ -269,14 +269,21 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
     end
 
     function create_dynamic_constraints(segments,pol_order,initialization)
+        
+        if variant == "Radau"
+            additional_nodes = 1    
+        end
+        if variant == "Legendre"
+            additional_nodes = 2    
+        end
 
-        X = Matrix{VariableRef}(undef, segments * pol_order + 1, nStates)
-        U = Matrix{VariableRef}(undef, segments * pol_order + 1, nControls)
+        X = Matrix{VariableRef}(undef, segments * pol_order + additional_nodes, nStates)
+        U = Matrix{VariableRef}(undef, segments * pol_order + additional_nodes, nControls)
         if variant == "Legendre"
             wF = Matrix{NonlinearExpr}(undef, pol_order , nStates)
             kl,w = gausslegendre(pol_order)
         end
-        for i = 1:segments * pol_order +1
+        for i = 1:segments * pol_order + additional_nodes
             for j = 1:nStates
                 X[i, j] = @variable(model)    
             end
@@ -325,12 +332,13 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
                 FX[j,:] = f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
             end
             @constraint(model, D*X[start_idx:end_idx,:] .== (h/2) .* FX)
+            
             if variant == "Legendre"
                 for j = 1:pol_order
-                    
                     wF[j,:] =  f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
                 end
-                @constraint(model,X[end_idx ,:] == X[start_idx,:] + (h/2)*wF'*w)
+                @infiltrate
+                @constraint(model,X[end_idx+1 ,:] == X[start_idx,:] + (h/2)*wF'*w)
             end
         end
         println("making constraints: $(round(time() - t0, digits=3))s")

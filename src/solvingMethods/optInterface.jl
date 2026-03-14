@@ -198,7 +198,7 @@ function findOptimalTrajectory(track::Track,car::Car,model::JuMP.Model,sampleDis
     return out, out_interp
 end
 
-function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model,segments::Int64,pol_order::Int64)
+function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model,segments::Int64,pol_order::Int64,variant)
 
     function F(x,u,s)
         #@infiltrate
@@ -207,7 +207,7 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model,segmen
     end
     nControls = Int64(car.carParameters.nControls.value)
     nStates = Int64(car.carParameters.nStates.value)
-    Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,"Legendre",model,nControls,nStates,track);
+    Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
     initialization = initializeSolution_interpolation(car,track,200)
     xd = Gauss_radau.createConstraints(segments,pol_order,initialization);
     X             = xd[2]

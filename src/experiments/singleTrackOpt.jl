@@ -41,26 +41,19 @@ path = "tracks/FSCZ.kml"
 track = doubleTurn(false,0.5)
 #track = skidpad(false)
 problem.track = track
-
 #Number of transcription points
 #sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],50))
 #initialization = initializeSolution(car,track,sampleDistances)
-
-
-
 #UnoSolver.Optimizer
+
 model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 1 
-pol_order = 80
-optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order)
-
+segments = 100
+pol_order = 3
+optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order,"Radau")
 problem.optiResult = optiResult_interp
-
-
-
 
 if 1==1
     fig = Figure()
