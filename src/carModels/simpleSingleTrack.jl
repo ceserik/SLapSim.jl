@@ -76,7 +76,7 @@ function simplestSingleTrack(
     #println("CoG Moment 2: ", cogMoment2)
     #println("CoG Force: ", cogForce)
 
-    dv = cogForce/car.carParameters.mass.value - angularVelocity × velocity #really check what sign should be here !!!!
+    dv = cogForce/car.carParameters.mass.value + angularVelocity × velocity #really check what sign should be here !!!!
     dangularVelocity = cogMoment/car.carParameters.inertia.value
     dx = [dv[1],dv[2],angularVelocity[3],dangularVelocity[3]]
     return dx

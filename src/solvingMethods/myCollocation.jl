@@ -335,10 +335,10 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             
             if variant == "Legendre"
                 for j = 1:pol_order
-                    wF[j,:] =  f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
+                    #wF[j,:] =  f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
                 end
                 @infiltrate
-                @constraint(model,X[end_idx+1 ,:] == X[start_idx,:] + (h/2)*wF'*w)
+                @constraint(model,X[end_idx+1 ,:] == X[start_idx,:] + (h/2)*FX'*w)
             end
         end
         println("making constraints: $(round(time() - t0, digits=3))s")
@@ -383,7 +383,7 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             i0  = (seg - 1) * pol_order + 1
             # Controls defined at the N LGR collocation nodes (rows i0+1 … i0+pol_order)
             u_seg = U_vals[i0+1 : i0 + pol_order, :]            # N × nControls
-            hold_controls = 1
+            hold_controls = 0
             if hold_controls ==1
                 # hold the first control node in the interval across the whole interval
                 u0 = u_seg[1, :]

@@ -10,6 +10,7 @@ using UnicodePlots
 include("../solvingMethods/optInterface.jl")
 include("../dataAnalysis/validation.jl")
 include("../solvingMethods/myCollocation.jl")
+#include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = true
 if detect
@@ -51,7 +52,7 @@ problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 segments = 100
-pol_order = 3
+pol_order = 2
 optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order,"Radau")
 problem.optiResult = optiResult_interp
 
