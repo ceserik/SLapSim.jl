@@ -79,15 +79,14 @@
 
 % Abstract in Czech
 \begin{abstract-czech}
-Tys honí až nevrlí komise omylem kontor město sbírku a koutě, pán nu lež, slzy, nemají zasvé šťasten. Tetě veselá. Vem lépe ty jí cíp vrhá. Novinám prachy kabát. Býti čaj via pakujte přeli, dyť do chuť kroutí kolínský bába odkrouhnul. Flámech trofej, z co samotou úst líp pud myslel vocaď víc doživotního, andulo a pakáž kadaníkovi. Čímž protiva v žába vězí duní.
+Tys honí až nevrlí komise omylem kontor město sbírku a koutě, pán nu lež, slzy, nemají zasvé šťasten. Tetě veselá. Vem lépe ty jí cíp vrhá. Novinám prachy kabát. Býti čaj via pakujte přeli, dyť do chuť kroutí kolínský bába odkrouhnul. Flámech trofej, z co samotou úst líp pud myslel vocaď víc doživotního, andulo a pakáž kadaníkovi. Čímž protiva v žába vězí duní. aadasasdf.
 
 Jé ní ticho vzoru. Lepší zburcují učil nepořádku zboží ní mučedník obdivem! Bas nemožné postele bys cítíte ať února. Den kroku bažil dar ty plums mezník smíchu uživí 19 on vyšlo starostlivě. Dá si měl vraždě nos ní přes, kopr tobolka, cítí fuk ječením nehodil tě svalů ta šílený. Uf teď jaké 19 divným.
 \end{abstract-czech}
 
 % Abstract in English
 \begin{abstract-english}
- Let us suppose we are given a modulus $d$.  In \cite{cite:10}, the main result was the extension of Newton random variables.  We show that ${\Gamma_{\mathfrak{{r}},b}} ( {Z_{\beta,f}} ) \sim \bar{E}$.  The work in \cite{cite:20} did not consider the infinite, hyper-reversible, local case. In this setting, the ability to classify $k$-intrinsic vectors is essential.
- 
+ Let us suppose we are given a modulus $d$.  In \cite{cite:10}, the main result was the extension of Newton random variables.  We show that ${\Gamma_{\mathfrak{{r}},b}} ( {Z_{\beta,f}} ) \sim \bar{E}$.  The work in \cite{cite:20} did not consider the infinite, hyper-reversible, local case. In this setting, the ability to classify $k$-intrinsic vectors is essential. zxcvzx
 Let us suppose $\mathfrak{{a}} > \mathfrak{{c}}''$.  Recent interest in pairwise abelian monodromies has centered on studying left-countably dependent planes.  We show that $\Delta \ge 0$.  It was Brouwer who first asked whether classes can be described. B. Artin \cite{cite:30} improved upon the results of M. Bernoulli by deriving nonnegative classes.
 
 x\par x\par x\par x\par x\par x\par x\par x\par x\par x\par x\par x\par x
@@ -118,48 +117,55 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 \maketitle
 
 \chapter{Introduction}
-In this chapter i will introduce the  methods used to find minimums/maximums of general functions. My goal is to buid the theory in digestable way, for people not fluent in nonlinear optimisation I will start with simple example to explain main ideas clearly and then generalise it to create optimisation framework. Very good intuitive itroduction is given in this youtube video \cite{cite:48}
-Simplest useful example is: Find $x_1$ and $x_2$ that minimise the function $J(\mathbf{x}) = x_1^2+x_2^2$, subject to constraint function $c(\mathbf{x}) = x_1+x_2+3$. 
+\section{Conditions of optimality for constrainednoptimization}
+This chapeter derives conditions which given popint must satisfy if it is optimal, Algorithms for finding these points will be described in next chapter. My goal is to buid the theory in digestable way,for people not fluent in nonlinear optimisation I will start with simple example to explain main ideas clearly
+and then generalise it to create optimisation framework. Very good intuitive itroduction is given in this youtube video \cite{cite:48}
+Simplest useful example is: Find $x_1$ and $x_2$ that minimise the objective function $J(\mathbf{x}) = x_1^2+x_2^2$, subject to constraint function $c(\mathbf{x}) = x_1+x_2+3$. 
 \begin{mini}[2]
 {}{J(\mathbf{x})}{}{}
 \addConstraint{c(\mathbf{x})=0}
 \end{mini}
 with variables $x_1,x_2\in\mathbf{R}$. 
-This is visualised on contour plot. The solution must lie somewhere on the orange constraint line.
+This is visualised on contour plot of $J(\mathbf{x})$ Figure \ref{eq:constrained_optim}, orange line is constraint function, red arrow are vectors of gradient at each point. The solution must lie somewhere on the orange constraint line.
 From the figure it can be easily seen that the optimum is on the point where the constraint line 
 of $x_1+x_2+3 =0$ is tangent with contour circle of $x_1^2+x_2^2$.
 In other words, the constraint line is perpendicular to the gradient at the optimal point, this means that 
-gradient of $\nabla J(\mathbf{x})$ and $\nabla c(\mathbf{x})$ differ only in their scale in the optimal point.
-This can be formaly stated by taking gradients $\nabla J(\mathbf{x})$ and $\nabla c(\mathbf{x})$. and writing equaiton
-
+gradient of $J(\mathbf{x})$ and gradiebnt of  $ c(\mathbf{x})$ differ only in their scale in the optimal point, to symbolize their difference in scale, scalar variable $\lambda$ is introduced.
+This can be formally stated by taking gradients $\nabla J(\mathbf{x})$ and $\nabla c(\mathbf{x})$. and writing equation
+erafad
 \begin{equation}
 \nabla J(\mathbf{x}) = \lambda \nabla c(\mathbf{x})\label{eq:lagrange}
 \end{equation}
 \begin{equation}
 \nabla (J(\mathbf{x}) + \lambda c(\mathbf{x}))= 0\label{eq:dlagrangen}
 \end{equation}
-where $\lambda$ is a new scalar variable. $\lambda$ is known as Lagrange multiplier (also called the dual variable; in optimal-control contexts the costate or adjoint variable).
-$\lambda$ can be thought of as a measure of importance of given constraint on the objective function $J(\mathbf{x})$,
-this concept is particularly useful for sensitivity analysis.
-
-
-$\lambda$ quantifies the sensitivity of the optimal cost to the constraint:
-$\frac{dJ^*}{d c(\mathbf{x})} = -\lambda$, where $\varepsilon$ is a small perturbation to $c(\mathbf{x}) = \varepsilon$.
-A large $|\lambda|$ means the constraint is strongly limiting the optimum;
-$\lambda = 0$ means the constraint is inactive and could be removed without affecting $J^*$.
-
-
-To find the optimum equation \eqref{eq:lagrange} is rewritten into the Lagrangian:
-\begin{equation}
-	\nabla L = \nabla J(\mathbf{x}) + \lambda \nabla c(\mathbf{x})\label{eq:lagrangean}
-\end{equation}
 
 \begin{figure}[!h]
-
 \centering
 \includegraphics[width=0.8\textwidth]{../src/examples/constrained_optimum.pdf}
 \caption{Test}
+\label{eq:constrained_optim}
 \end{figure}
+
+By introducing more constraints to $c(\mathbf{x}) =0$, first order necessary conditions of optimality are stated%  \ref{eq:lagrange} 
+
+\begin{equation}
+\nabla J(\mathbf{x}) + \symbf{\lambda} \nabla c(\mathbf{x})= 0  \label{eq:first_order},
+\end{equation}
+\begin{equation}
+c(\mathbf{x})= 0.
+\end{equation}
+Point which satisfies this conditions is either optimum, minimum or saddle point
+$\lambda$ is  known as Lagrange multiplier,it is not some meaningless valuable that is be thrown away after finding the solution.  $\lambda$ can be thought of as a measure of importance of given constraint on the objective function $J(\mathbf{x})$,this concept is particularly useful for sensitivity analysis. Formally: $\lambda$ quantifies the sensitivity of the optimal cost to the constraint: $\frac{dJ^*}{d c(\mathbf{x})} = -\lambda$, where $\varepsilon$ is a small perturbation to $c(\mathbf{x}) = \varepsilon$. A large $|\lambda|$ means the constraint is strongly limiting the optimum; $\lambda = 0$ means the constraint is inactive and could be removed without affecting $J^*$, aaah i should make sure it is like this.
+
+
+\subsection{Inequality constrained optimization}
+
+%To find the $\mathbf{x}$ which minimizes $J(\mathbf{x})$, the equation \eqref{eq:lagrange} is rewritten into the gradient of Lagrangian:
+%\begin{equation}
+	%\nabla L = \nabla J(\mathbf{x}) + \lambda \nabla c(\mathbf{x})\label{eq:lagrangean}
+%\end{equation}
+dsghdgdfg
 
 \part{My Party}
 
@@ -216,5 +222,3 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis interdum facilisis
 
 
 \end{document}
-
-

@@ -36,7 +36,7 @@ dX_n = scale .* dX ./ norms
 dY_n = scale .* dY ./ norms
 
 # Filter out small red arrows near the optimum so they don't overlap the big arrows
-clear_radius = 1.6
+clear_radius = 0.15
 keep = sqrt.((X_pts .- x_opt).^2 .+ (Y_pts .- y_opt).^2) .> clear_radius
 X_pts, Y_pts = X_pts[keep], Y_pts[keep]
 dX_n,  dY_n  = dX_n[keep],  dY_n[keep]
@@ -81,6 +81,7 @@ contour!(ax, xs, ys, Z; levels = 20, color = :white, linewidth = 0.4, alpha = 0.
 # Objective gradient arrows (red)
 arrows2d!(ax, X_pts, Y_pts, dX_n, dY_n;
     color     = :red,
+    alpha     = 0.3,
     tipwidth  = 6,
     tiplength = 10,
     shaftwidth = 1.5)

@@ -51,5 +51,5 @@
     }
 ],
 "latex-workshop.latex.recipe.default": "lualatex",
-"latex-workshop.synctex.afterBuild.enabled": "true"
+"latex-workshop.synctex.afterBuild.enabled": "true",
 }

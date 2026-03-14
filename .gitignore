@@ -1,2 +1,12 @@
 /Manifest*.toml
 src/todo.txt
+thesis/thesis.aux
+thesis/thesis.bbl
+thesis/thesis.blg
+thesis/thesis.idx
+thesis/thesis.lof
+thesis/thesis.log
+thesis/thesis.lot
+thesis/thesis.out
+thesis/thesis.synctex.gz
+thesis/thesis.toc
