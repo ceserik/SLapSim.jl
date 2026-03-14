@@ -10,3 +10,6 @@ thesis/thesis.lot
 thesis/thesis.out
 thesis/thesis.synctex.gz
 thesis/thesis.toc
+thesis/thesis.synctex(busy)
+src/playground/*
+TODO
