@@ -113,9 +113,11 @@ end
 
 function plotCarPath(track::Track, result, axis = nothing)
     # take car.s and car.n and match it to track. and then add track.n
-    if axis == nothing
+    created = false
+    if axis === nothing
         fig = Figure()
         axis = Axis(fig[1,1], aspect = DataAspect())
+        created = true
     end
     n = result.states[:, 5]
     carX = zeros(length(result.path))
@@ -130,6 +132,10 @@ function plotCarPath(track::Track, result, axis = nothing)
     plotTrack(track, b_plotStartEnd =false, ax = axis)
     println(axis)
     lines!(axis,carX, carY, label = "Optimised")
+    
+    if created
+        display(GLMakie.Screen(), fig)
+    end
     #return ax
 end
 

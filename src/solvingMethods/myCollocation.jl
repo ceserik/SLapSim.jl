@@ -277,13 +277,13 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             additional_nodes = 2    
         end
 
-        X = Matrix{VariableRef}(undef, segments * pol_order + additional_nodes, nStates)
-        U = Matrix{VariableRef}(undef, segments * pol_order + additional_nodes, nControls)
+        X = Matrix{VariableRef}(undef, segments * (pol_order + 1)+1, nStates)
+        U = Matrix{VariableRef}(undef, segments * (pol_order + 1)+1, nControls)
         if variant == "Legendre"
             wF = Matrix{NonlinearExpr}(undef, pol_order , nStates)
             kl,w = gausslegendre(pol_order)
         end
-        for i = 1:segments * pol_order + additional_nodes
+        for i = 1:segments * (pol_order + 1)+1
             for j = 1:nStates
                 X[i, j] = @variable(model)    
             end
@@ -295,17 +295,19 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
         segment_edges = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],segments+1))
         scaled_nodes  = (nodes .+ 1) / 2
         # Store physical path positions for every optimisation node (all segments)
-        all_nodes = zeros(segments * pol_order + 1)
-
+        all_nodes = zeros(segments * (pol_order+1) + 1)
+        start_idx = 1
         for i = 1:segments
-            start_idx = (i-1)*pol_order+1
-            end_idx   = i*pol_order + 1
+            #start_idx = (i-1)*pol_order+1
+            end_idx   = start_idx + pol_order
             h = segment_edges[i+1] - segment_edges[i]
             
             # Physical positions of the pol_order+1 nodes in this segment
+            #@infiltrate
             for node = 1:length(nodes)
                 all_nodes[start_idx + node - 1] = segment_edges[i] + scaled_nodes[node] * h
             end
+#            @infiltrate
             seg_nodes = all_nodes[start_idx:end_idx]
 
             # Initialize boundary point
@@ -317,18 +319,22 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             for k = 1:nControls
                 set_start_value(U[start_idx, k], init_u_boundary[k])
             end
-            
+            #@infiltrate
             for j = 1:pol_order
+
                 # j-th collocation point corresponds to nodes[j+1]
                 init_vals = initialization.states(seg_nodes[j+1])
+                
                 for k = 1:nStates
-                    set_start_value(X[start_idx+j, k], init_vals[k])
                     
+                    set_start_value(X[start_idx+j, k], init_vals[k])
                 end
+
                 init_u = initialization.controls(seg_nodes[j+1])
                 for k = 1:nControls
                     set_start_value(U[start_idx+j, k], init_u[k])
                 end
+                
                 FX[j,:] = f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
             end
             @constraint(model, D*X[start_idx:end_idx,:] .== (h/2) .* FX)
@@ -337,9 +343,12 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
                 for j = 1:pol_order
                     #wF[j,:] =  f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
                 end
-                @infiltrate
-                @constraint(model,X[end_idx+1 ,:] == X[start_idx,:] + (h/2)*FX'*w)
+               # @infiltrate
+                @constraint(model,X[end_idx+1 ,:] .== X[start_idx,:] + (h/2)*FX'*w)
+                all_nodes[end_idx + 1] = segment_edges[i + 1]  # the right edge of THIS segment
+
             end
+            start_idx = end_idx +1
         end
         println("making constraints: $(round(time() - t0, digits=3))s")
 
