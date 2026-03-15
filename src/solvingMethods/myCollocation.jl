@@ -277,7 +277,7 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             final = 1
         elseif variant == "Legendre"
             additional_nodes = 1
-            fina = 1
+            final= 1
         elseif variant == "Lobatto"
             additional_nodes =-1
             final = 0
@@ -391,7 +391,7 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
     """
     function create_gauss_interpolator(X_vals, U_vals, all_nodes, segment_edges; hold_controls=true)
         segments = length(segment_edges) - 1
-        stride = variant == "Legendre" ? pol_order + 1 : pol_order
+        stride = variant == "Legendre" ? pol_order + 1 : (variant == "Lobatto" ? pol_order - 1 : pol_order)
 
         function find_segment(s)
             for i in 1:segments
@@ -405,7 +405,9 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             h = segment_edges[seg+1] - segment_edges[seg]
             τ = 2 * (s - segment_edges[seg]) / h - 1
             i0 = (seg - 1) * stride + 1
-            x_seg = X_vals[i0:i0+pol_order, :]
+            
+            i_end = min(i0 + pol_order, size(X_vals, 1))
+            x_seg = X_vals[i0:i_end, :]
             return [_bary_eval(nodes, w_state, x_seg[:, k], τ) for k in 1:size(x_seg, 2)]
         end
 
@@ -414,11 +416,13 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             i0  = (seg - 1) * stride + 1
             h   = segment_edges[seg+1] - segment_edges[seg]
             τ = 2 * (s - segment_edges[seg]) / h - 1
+            
             node_idx = 1
-            for j in 1:pol_order
+            for j in 1:min(pol_order, length(ctrl_nodes))
                 ctrl_nodes[j] <= τ && (node_idx = j)
             end
-
+            node_idx = min(node_idx, length(ctrl_nodes))
+            
             return U_vals[i0 + node_idx, :]
         end
 

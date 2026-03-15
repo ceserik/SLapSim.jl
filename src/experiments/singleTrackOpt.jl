@@ -51,7 +51,7 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 30
+segments = 120
 pol_order = 2
 optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order,"Radau")
 problem.optiResult = optiResult_interp
