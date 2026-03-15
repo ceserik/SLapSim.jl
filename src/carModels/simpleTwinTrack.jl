@@ -2,50 +2,81 @@ using Revise
 using SLapSim
 
 
-function simplestSingleTrack(
+function simpleTwinTrack(
     car::Car,
     track::Union{Track,Nothing}=nothing,
     k::Union{Int64,Nothing,Float64}=nothing,
     optiModel::Union{JuMP.Model,Nothing}=nothing)
     # assign names for easier reading
-    torqueFront = car.drivetrain.motors[1].torque.value
-    torqueRear = car.drivetrain.motors[2].torque.value
+    T_FL = car.drivetrain.motors[1].torque.value
+    T_FR = car.drivetrain.motors[2].torque.value
+    T_RL = car.drivetrain.motors[3].torque.value
+    T_RR = car.drivetrain.motors[4].torque.value
     steeringAngle = car.wheelAssemblies[1].steeringAngle.value
 
-    gbFront = car.drivetrain.gearboxes[1]
-    gbRear = car.drivetrain.gearboxes[2]
+    gbFL = car.drivetrain.gearboxes[1]
+    gbFR = car.drivetrain.gearboxes[2]
+    gbRL = car.drivetrain.gearboxes[3]
+    gbRR = car.drivetrain.gearboxes[4]
 
     velocity = car.carParameters.velocity.value
     angularVelocity = car.carParameters.angularVelocity.value
 
-    tireFront = car.drivetrain.tires[1]
-    tireRear = car.drivetrain.tires[2]
+    tireFL = car.drivetrain.tires[1]
+    tireFR = car.drivetrain.tires[2]
+    tireRL = car.drivetrain.tires[3]
+    tireRR = car.drivetrain.tires[4]
+
+
 
     # Transformation of velocities from cog to wheels
     car.wheelAssemblies[1].setPivotVelocity(angularVelocity,velocity)
     car.wheelAssemblies[2].setPivotVelocity(angularVelocity,velocity)
+    car.wheelAssemblies[3].setPivotVelocity(angularVelocity,velocity)
+    car.wheelAssemblies[4].setPivotVelocity(angularVelocity,velocity)
 
     #Steer the wheels
-    car.wheelAssemblies[1].setTireSpeeds(tireFront)
-    car.wheelAssemblies[2].setTireSpeeds(tireRear)
+    car.wheelAssemblies[1].setTireSpeeds(tireFL)
+    car.wheelAssemblies[2].setTireSpeeds(tireFR)
+    car.wheelAssemblies[3].setTireSpeeds(tireRL)
+    car.wheelAssemblies[4].setTireSpeeds(tireRR)
+
 
     #gearing of forces from motor to tire, would be nice o have this in a loop
-    gbFront.torqueIn.value = torqueFront
-    gbFront.f()
+    
+    gbFL.torqueIn.value = T_FL
+    gbFL.f()
 
-    gbRear.torqueIn.value = torqueRear
-    gbRear.f()
+    gbFR.torqueIn.value = T_FR
+    gbFR.f()
+
+    gbRL.torqueIn.value = T_RL
+    gbRL.f()
+
+    gbFL.torqueIn.value = T_RR
+    gbRR.f()
 
     #create constraints for motor
-    tireFront.tireFunction(gbFront.torqueOut.value,optiModel)
-    tireRear.tireFunction(gbRear.torqueOut.value,optiModel)
+    tireFL.tireFunction(gbFL.torqueOut.value,optiModel)
+    tireFR.tireFunction(gbFR.torqueOut.value,optiModel)
+    tireRL.tireFunction(gbRL.torqueOut.value,optiModel)
+    tireRR.tireFunction(gbRR.torqueOut.value,optiModel)
+
     
     if !isnothing(optiModel)
-        car.drivetrain.motors[1].constraints(torqueFront,optiModel)
-        car.drivetrain.motors[2].constraints(torqueRear,optiModel)
+        # motor torque limit
+        car.drivetrain.motors[3].constraints(torqueFR,optiModel)
+        car.drivetrain.motors[4].constraints(torqueRear,optiModel)
+
+        #steering angle
         car.wheelAssemblies[1].constraints(optiModel)
         car.wheelAssemblies[2].constraints(optiModel)
+        
+
+        #hitbox
         car.chassis.hitbox(car.carParameters.n.value,track,optiModel)
+
+
         tireFront.tireConstraints(optiModel)
         tireRear.tireConstraints(optiModel)
     end
@@ -87,31 +118,51 @@ end
 
 function createSimplestSingleTrack()
 
-    gearboxFront = createCTU25gearbox()
-    gearboxRear = createCTU25gearbox()
+    gearboxFL = createCTU25gearbox()
+    gearboxFR = createCTU25gearbox()
+    gearboxRL = createCTU25gearbox()
+    gearboxRR = createCTU25gearbox()
 
-    motorFront = createFischerMotor()
-    motorRear = createFischerMotor()
+    motorFL = createFischerMotor()
+    motorFR = createFischerMotor()
+    motorRL = createFischerMotor()
+    motorRR = createFischerMotor()
 
     #get max motor torque for scaling
-    maxMotorTorqueFront = motorFront.torqueSpeedFunction(0.0) * gearboxFront.ratio.value
-    maxMotorTorqueRear = motorRear.torqueSpeedFunction(0.0) * gearboxRear.ratio.value
+    maxMotorTorqueFL = motorFL.torqueSpeedFunction(0.0) * gearboxFL.ratio.value
+    maxMotorTorqueFR = motorFR.torqueSpeedFunction(0.0) * gearboxFR.ratio.value
 
-    tireFront = createR20lin(maxMotorTorqueFront)
-    tireRear = createR20lin(maxMotorTorqueRear)
+    maxMotorTorqueRL = motorRL.torqueSpeedFunction(0.0) * gearboxRL.ratio.value
+    maxMotorTorqueRR = motorRR.torqueSpeedFunction(0.0) * gearboxRR.ratio.value
+    
+
+    
+    tireFL = createR20lin(maxMotorTorqueFL)
+    tireFR = createR20lin(maxMotorTorqueFR)
+    tireRL = createR20lin(maxMotorTorqueRL)
+    tireRR = createR20lin(maxMotorTorqueRR)
+
 
 
     drivetrain = Drivetrain(
-        [motorFront,motorRear],
-        [gearboxFront, gearboxRear],
-        [tireFront,tireRear],
+        [motorFL,motorFR,motorRL,motorRR],
+        [gearboxFL, gearboxFR,gearboxRL,gearboxRR],
+        [tireFL,tireFR,tireRL,tireRR],
         createPepikCTU25())
 
     aero = createBasicAero()
     suspension = createDummySuspension()
-    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520/2, 0, 0])) # wheelbase musi byt parameter!!!!
-    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520/2, 0, 0]))
+
     chassis = createCTU25chassis()
+    wheelAssemblyFL = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value/2, chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
+    wheelAssemblyFR = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value/2, -chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
+
+    wheelAssemblyRL = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value/2, chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
+    wheelAssemblyRR = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value/2, -chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
+
+
+    
+    
 
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s");
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s");
@@ -132,19 +183,18 @@ function createSimplestSingleTrack()
 
 
     function controlMapping(car, controls)
-        car.drivetrain.motors[1].torque.value = controls[1]  
-        car.drivetrain.motors[2].torque.value = controls[2]#   causes writing variableRef to Float64
-        car.wheelAssemblies[1].steeringAngle.value = controls[3]
+        car.drivetrain.motors[3].torque.value = controls[1]  
+        car.drivetrain.motors[4].torque.value = controls[1]
+        car.wheelAssemblies[1].steeringAngle.value = controls[2]
+        car.wheelAssemblies[2].steeringAngle.value = controls[2]
 
     end
     function stateMapping(car, states)
         car.carParameters.velocity.value = [states[1], states[2], 0.0]
         car.carParameters.psi.value = states[3]
         car.carParameters.angularVelocity.value = [0.0, 0.0, states[4]]
-        #if length(states) ==6 ## this can probably be removed
-            car.carParameters.n.value = states[5]
-            car.carParameters.s.value = states[6]
-        #end
+        car.carParameters.n.value = states[5]
+        car.carParameters.s.value = states[6]
     return car
     end
     

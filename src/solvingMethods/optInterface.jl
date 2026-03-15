@@ -229,7 +229,7 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model,segmen
     #@constraint(model,-100 .<= diff(U[1:end-1,1]./diff(X[:,6])) .<= 100) #constraint on controls derivative
     #@constraint(model,-100 .<= diff(U[1:end-1,2]./diff(X[:,6])) .<= 100) #constraint on controls derivative
     #@constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
-    @constraint(model,U[1,:].== U[2,:])
+    #@constraint(model,U[1,:].== U[2,:])
     @objective(model,Min,X[end,6])
     optimize!(model)
 

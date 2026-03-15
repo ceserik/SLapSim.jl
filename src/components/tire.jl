@@ -1,3 +1,4 @@
+using Revise
 mutable struct  Tire
     radius::carParameter{carVar}
     width::carParameter{carVar}
@@ -31,7 +32,7 @@ function createR20lin(maxTorque::Float64)
 
     function tireFunction(inTorque::carVar,optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
-        forces.value[2] = 2*slipAngle.value * forces.value[3]
+        forces.value[2] = slipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
     end
 
