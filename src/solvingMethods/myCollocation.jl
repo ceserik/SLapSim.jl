@@ -207,7 +207,7 @@ function get_diff_matix(N, variant)
     end
 
     M = length(nodes)
-    
+
     # Barycentric weights
     w = ones(M)
     for j in 1:M
@@ -235,12 +235,12 @@ function get_diff_matix(N, variant)
     return (D, nodes)
 end
 
-function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,nStates,track)
+function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nControls, nStates, track)
     t0 = time()
     (D, nodes) = get_diff_matix(pol_order, variant)
     println("making diff matrix and nodes: $(round(time() - t0, digits=3))s")
     t0 = time()
-   
+
 
     # --- Barycentric weights (Berrut & Trefethen, SIAM Review 2004) ---
     function _bary_weights(pts)
@@ -253,10 +253,10 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
     end
 
     # State polynomial: all pol_order+1 nodes (initial boundary + LGR collocation pts)
-    w_state   = _bary_weights(nodes)
+    w_state = _bary_weights(nodes)
     # Control polynomial: pol_order LGR collocation nodes only (excludes initial boundary)
     ctrl_nodes = nodes[2:end]
-    w_ctrl     = _bary_weights(ctrl_nodes)
+    w_ctrl = _bary_weights(ctrl_nodes)
 
     """Evaluate barycentric Lagrange polynomial at τ given reference nodes, weights, values."""
     function _bary_eval(ref_nodes, weights, values, τ)
@@ -264,36 +264,36 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             abs(τ - ref_nodes[j]) < 100 * eps(Float64) && return Float64(values[j])
         end
         num = sum(weights[j] * values[j] / (τ - ref_nodes[j]) for j in eachindex(ref_nodes))
-        den = sum(weights[j]             / (τ - ref_nodes[j]) for j in eachindex(ref_nodes))
+        den = sum(weights[j] / (τ - ref_nodes[j]) for j in eachindex(ref_nodes))
         return num / den
     end
 
-    function create_dynamic_constraints(segments,initialization)
-        
+    function create_dynamic_constraints(segments, initialization)
+
         if variant == "Radau"
-            additional_nodes = 0    
+            additional_nodes = 0
         end
         if variant == "Legendre"
-            additional_nodes =  1    
+            additional_nodes = 1
         end
 
         X = Matrix{VariableRef}(undef, segments * (pol_order + additional_nodes) + 1, nStates)
         U = Matrix{VariableRef}(undef, segments * (pol_order + additional_nodes) + 1, nControls)
-        FX = Matrix{NonlinearExpr}(undef,  pol_order , nStates)
+        FX = Matrix{NonlinearExpr}(undef, pol_order, nStates)
         if variant == "Legendre"
-            kl,w = gausslegendre(pol_order)
+            kl, w = gausslegendre(pol_order)
         end
-        for i = 1:segments * (pol_order + additional_nodes)+1
+        for i = 1:segments*(pol_order+additional_nodes)+1
             for j = 1:nStates
-                X[i, j] = @variable(model)    
+                X[i, j] = @variable(model)
             end
             for j = 1:nControls
                 U[i, j] = @variable(model)
             end
         end
-        
-        segment_edges = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],segments+1))
-        scaled_nodes  = (nodes .+ 1) / 2
+
+        segment_edges = collect(LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1))
+        scaled_nodes = (nodes .+ 1) / 2
         # Store physical path positions for every optimisation node (all segments)
         all_nodes = zeros(segments * (pol_order + additional_nodes) + 1)
         start_idx = 1
@@ -302,15 +302,15 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             if variant == "Legendre"
                 end_idx = start_idx + pol_order
             elseif variant == "Radau"
-                end_idx = start_idx + pol_order 
+                end_idx = start_idx + pol_order
             end
 
             h = segment_edges[i+1] - segment_edges[i]
-            
+
             # Physical positions of the pol_order+1 nodes in this segment
-#            @infiltrate
+            #            @infiltrate
             for node = 1:length(nodes)
-                all_nodes[start_idx + node - 1] = segment_edges[i] + scaled_nodes[node] * h
+                all_nodes[start_idx+node-1] = segment_edges[i] + scaled_nodes[node] * h
             end
             seg_nodes = all_nodes[start_idx:end_idx]
 
@@ -327,7 +327,7 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
 
                 # j-th collocation point corresponds to nodes[j+1]
                 init_vals = initialization.states(seg_nodes[j+1])
-                
+
                 for k = 1:nStates
 
                     set_start_value(X[start_idx+j, k], init_vals[k])
@@ -337,22 +337,22 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
                 for k = 1:nControls
                     set_start_value(U[start_idx+j, k], init_u[k])
                 end
-                
-                FX[j,:] = f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
+
+                FX[j, :] = f(X[start_idx+j, :], U[start_idx+j, :], seg_nodes[j+1])
             end
-            @constraint(model, D*X[start_idx:end_idx,:] .== (h/2) .* FX)
-            
+            @constraint(model, D * X[start_idx:end_idx, :] .== (h / 2) .* FX)
+
             if variant == "Legendre"
-                @constraint(model,X[end_idx+1 ,:] .== X[start_idx,:] + (h/2)*FX'*w)
-                all_nodes[end_idx + 1] = segment_edges[i + 1]  # the right edge of THIS segment
+                @constraint(model, X[end_idx+1, :] .== X[start_idx, :] + (h / 2) * FX' * w)
+                all_nodes[end_idx+1] = segment_edges[i+1]  # the right edge of THIS segment
 
             end
             if variant == "Legendre"
-                start_idx = end_idx +1
+                start_idx = end_idx + 1
             elseif variant == "Radau"
                 start_idx = end_idx
             else
-                start_idx =-1
+                start_idx = -1
             end
         end
         println("making constraints: $(round(time() - t0, digits=3))s")
@@ -371,8 +371,9 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
       collocation nodes {τ₁,…,τ_N} only.
     Evaluation uses the numerically stable barycentric form (Berrut & Trefethen 2004).
     """
-    function create_gauss_interpolator(X_vals, U_vals, all_nodes, segment_edges)
+    function create_gauss_interpolator(X_vals, U_vals, all_nodes, segment_edges; hold_controls=true)
         segments = length(segment_edges) - 1
+        stride = variant == "Legendre" ? pol_order + 1 : pol_order
 
         function find_segment(s)
             for i in 1:segments
@@ -383,31 +384,27 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
 
         function state_interp(s)
             seg = find_segment(s)
-            h   = segment_edges[seg+1] - segment_edges[seg]
-            τ   = 2 * (s - segment_edges[seg]) / h - 1          # map s → [-1,1]
-            i0  = (seg - 1) * pol_order + 1
-            x_seg = X_vals[i0 : i0 + pol_order, :]              # (N+1) × nStates
+            h = segment_edges[seg+1] - segment_edges[seg]
+            τ = 2 * (s - segment_edges[seg]) / h - 1
+            i0 = (seg - 1) * stride + 1
+            x_seg = X_vals[i0:i0+pol_order, :]
             return [_bary_eval(nodes, w_state, x_seg[:, k], τ) for k in 1:size(x_seg, 2)]
         end
 
-        function control_interp(s)
+        function control_interp_zoh(s)
             seg = find_segment(s)
+            i0  = (seg - 1) * stride + 1
             h   = segment_edges[seg+1] - segment_edges[seg]
-            τ   = 2 * (s - segment_edges[seg]) / h - 1
-            i0  = (seg - 1) * pol_order + 1
-            # Controls defined at the N LGR collocation nodes (rows i0+1 … i0+pol_order)
-            u_seg = U_vals[i0+1 : i0 + pol_order, :]            # N × nControls
-            hold_controls = 0
-            if hold_controls ==1
-                # hold the first control node in the interval across the whole interval
-                u0 = u_seg[1, :]
-                return [u0[k] for k in 1:size(u_seg, 2)]
-            else
-                return [_bary_eval(ctrl_nodes, w_ctrl, u_seg[:, k], τ) for k in 1:size(u_seg, 2)]
+            τ = 2 * (s - segment_edges[seg]) / h - 1
+            node_idx = 1
+            for j in 1:pol_order
+                ctrl_nodes[j] <= τ && (node_idx = j)
             end
+
+            return U_vals[i0 + node_idx, :]
         end
 
-        return Result_interpolation(state_interp, control_interp, all_nodes)
+        return Result_interpolation(state_interp, control_interp_zoh, all_nodes)
     end
 
     GaussMethod = Collocation(
