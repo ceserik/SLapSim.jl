@@ -232,11 +232,8 @@ function get_diff_matix(N, variant)
     end
 
     # Extract rows for collocation points only (nodes[2:end])
-    if variant == "Lobatto"
-        D = Dfull
-    else
-        D = Dfull[2:end, :]
-    end
+    # Skip row 1 because the left boundary is constrained by continuity, not as an ODE point
+    D = Dfull[2:end, :]
     return (D, nodes)
 end
 
@@ -292,7 +289,10 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             X = Matrix{VariableRef}(undef, (segments-1)*(pol_order-1) +pol_order, nStates)
             U = Matrix{VariableRef}(undef, (segments-1)*(pol_order-1) +pol_order, nControls)
         end
-        FX = Matrix{NonlinearExpr}(undef, pol_order, nStates)
+        
+        # FX size is determined by D matrix rows (same for all variants now)
+        n_ode_rows = size(D, 1)
+        FX = Matrix{NonlinearExpr}(undef, n_ode_rows, nStates)
         if variant == "Legendre"
             kl, w = gausslegendre(pol_order)
         end
@@ -340,28 +340,22 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
                 set_start_value(U[start_idx, k], init_u_boundary[k])
             end
 
-            if variant == "Lobatto"
-                lol = 1
-            else
-                lol = 0
-            end
+            loop_end = n_ode_rows
 
-            for j = 1:pol_order
-               
-                # j-th collocation point corresponds to nodes[j+1]
-                init_vals = initialization.states(seg_nodes[j+1-lol])
+            for j = 1:loop_end
+                node_s = seg_nodes[j + 1]   # nodes 2..end (skip left boundary)
+                x_idx  = start_idx + j
 
+                init_vals = initialization.states(node_s)
                 for k = 1:nStates
-
-                    set_start_value(X[start_idx+j-lol, k], init_vals[k])
+                    set_start_value(X[x_idx, k], init_vals[k])
                 end
-
-                init_u = initialization.controls(seg_nodes[j+1-lol])
+                init_u = initialization.controls(node_s)
                 for k = 1:nControls
-                    set_start_value(U[start_idx+j-lol, k], init_u[k])
+                    set_start_value(U[x_idx, k], init_u[k])
                 end
 
-                FX[j, :] = f(X[start_idx+j-lol, :], U[start_idx+j-lol, :], seg_nodes[j+1-lol])
+                FX[j, :] = f(X[x_idx, :], U[x_idx, :], node_s)
             end
             @constraint(model, D * X[start_idx:end_idx, :] .== (h / 2) .* FX)
 
