@@ -240,7 +240,7 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
     (D, nodes) = get_diff_matix(pol_order, variant)
     println("making diff matrix and nodes: $(round(time() - t0, digits=3))s")
     t0 = time()
-    FX = Matrix{NonlinearExpr}(undef,  pol_order , nStates)
+   
 
     # --- Barycentric weights (Berrut & Trefethen, SIAM Review 2004) ---
     function _bary_weights(pts)
@@ -268,7 +268,7 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
         return num / den
     end
 
-    function create_dynamic_constraints(segments,pol_order,initialization)
+    function create_dynamic_constraints(segments,initialization)
         
         if variant == "Radau"
             additional_nodes = 1    
@@ -279,8 +279,8 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
 
         X = Matrix{VariableRef}(undef, segments * (pol_order + 1)+1, nStates)
         U = Matrix{VariableRef}(undef, segments * (pol_order + 1)+1, nControls)
+        FX = Matrix{NonlinearExpr}(undef,  pol_order , nStates)
         if variant == "Legendre"
-            wF = Matrix{NonlinearExpr}(undef, pol_order , nStates)
             kl,w = gausslegendre(pol_order)
         end
         for i = 1:segments * (pol_order + 1)+1
@@ -340,9 +340,6 @@ function create_gauss_pseudospectral_metod(f,pol_order,variant,model,nControls,n
             @constraint(model, D*X[start_idx:end_idx,:] .== (h/2) .* FX)
             
             if variant == "Legendre"
-                for j = 1:pol_order
-                    #wF[j,:] =  f(X[start_idx+j,:], U[start_idx+j,:], seg_nodes[j+1])
-                end
                # @infiltrate
                 @constraint(model,X[end_idx+1 ,:] .== X[start_idx,:] + (h/2)*FX'*w)
                 all_nodes[end_idx + 1] = segment_edges[i + 1]  # the right edge of THIS segment
