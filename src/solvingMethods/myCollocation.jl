@@ -204,8 +204,9 @@ function get_diff_matix(N, variant)
         nodes = reverse([gaussradau(N)[1]..., 1]) .* -1
     elseif variant == "Legendre"
         nodes = [-1; gausslegendre(N)[1]]
+    elseif variant == "Lobatto"
+        nodes = gausslobatto(N)[1]
     end
-
     M = length(nodes)
 
     # Barycentric weights
@@ -231,7 +232,11 @@ function get_diff_matix(N, variant)
     end
 
     # Extract rows for collocation points only (nodes[2:end])
-    D = Dfull[2:end, :]
+    if variant == "Lobatto"
+        D = Dfull
+    else
+        D = Dfull[2:end, :]
+    end
     return (D, nodes)
 end
 
@@ -271,18 +276,27 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
     function create_dynamic_constraints(segments, initialization)
 
         if variant == "Radau"
-            additional_nodes = 0
-        end
-        if variant == "Legendre"
+            additional_nodes = 0        
+            final = 1
+        elseif variant == "Legendre"
             additional_nodes = 1
+            fina = 1
+        elseif variant == "Lobatto"
+            additional_nodes =-1
+            final = 0
         end
-
-        X = Matrix{VariableRef}(undef, segments * (pol_order + additional_nodes) + 1, nStates)
-        U = Matrix{VariableRef}(undef, segments * (pol_order + additional_nodes) + 1, nControls)
+        if variant == "Radau" || variant =="Legendre"
+            X = Matrix{VariableRef}(undef, segments * (pol_order + additional_nodes) + final, nStates)
+            U = Matrix{VariableRef}(undef, segments * (pol_order + additional_nodes) + final, nControls)
+        else
+            X = Matrix{VariableRef}(undef, (segments-1)*(pol_order-1) +pol_order, nStates)
+            U = Matrix{VariableRef}(undef, (segments-1)*(pol_order-1) +pol_order, nControls)
+        end
         FX = Matrix{NonlinearExpr}(undef, pol_order, nStates)
         if variant == "Legendre"
             kl, w = gausslegendre(pol_order)
         end
+       # @infiltrate
         for i = 1:segments*(pol_order+additional_nodes)+1
             for j = 1:nStates
                 X[i, j] = @variable(model)
@@ -303,6 +317,8 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
                 end_idx = start_idx + pol_order
             elseif variant == "Radau"
                 end_idx = start_idx + pol_order
+            elseif variant == "Lobatto"
+                end_idx = start_idx + pol_order-1
             end
 
             h = segment_edges[i+1] - segment_edges[i]
@@ -323,22 +339,29 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             for k = 1:nControls
                 set_start_value(U[start_idx, k], init_u_boundary[k])
             end
-            for j = 1:pol_order
 
+            if variant == "Lobatto"
+                lol = 1
+            else
+                lol = 0
+            end
+
+            for j = 1:pol_order
+               
                 # j-th collocation point corresponds to nodes[j+1]
-                init_vals = initialization.states(seg_nodes[j+1])
+                init_vals = initialization.states(seg_nodes[j+1-lol])
 
                 for k = 1:nStates
 
-                    set_start_value(X[start_idx+j, k], init_vals[k])
+                    set_start_value(X[start_idx+j-lol, k], init_vals[k])
                 end
 
-                init_u = initialization.controls(seg_nodes[j+1])
+                init_u = initialization.controls(seg_nodes[j+1-lol])
                 for k = 1:nControls
-                    set_start_value(U[start_idx+j, k], init_u[k])
+                    set_start_value(U[start_idx+j-lol, k], init_u[k])
                 end
 
-                FX[j, :] = f(X[start_idx+j, :], U[start_idx+j, :], seg_nodes[j+1])
+                FX[j, :] = f(X[start_idx+j-lol, :], U[start_idx+j-lol, :], seg_nodes[j+1-lol])
             end
             @constraint(model, D * X[start_idx:end_idx, :] .== (h / 2) .* FX)
 
@@ -347,12 +370,13 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
                 all_nodes[end_idx+1] = segment_edges[i+1]  # the right edge of THIS segment
 
             end
+            #@infiltrate
             if variant == "Legendre"
                 start_idx = end_idx + 1
             elseif variant == "Radau"
                 start_idx = end_idx
             else
-                start_idx = -1
+                start_idx = end_idx
             end
         end
         println("making constraints: $(round(time() - t0, digits=3))s")
