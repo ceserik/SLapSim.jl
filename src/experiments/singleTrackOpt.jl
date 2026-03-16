@@ -51,8 +51,8 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 120
-pol_order = 2
+segments = 60
+pol_order = 3
 optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order,"Radau")
 problem.optiResult = optiResult_interp
 
@@ -74,7 +74,7 @@ axislegend(ax, position = :rt)
 #@infiltrate
 fig = nothing
 ax = nothing
-SLapSim.plotCarStates_interp(optiResult_interp,0.01)
+SLapSim.plotCarStates_interp(optiResult_interp,0.001)
 #SLapSim.plotCarStates2(optiResult)
 
 include("../dataAnalysis/jacobian.jl")

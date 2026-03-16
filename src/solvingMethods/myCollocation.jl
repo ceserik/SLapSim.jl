@@ -412,18 +412,20 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
         end
 
         function control_interp_zoh(s)
-            seg = find_segment(s)
-            i0  = (seg - 1) * stride + 1
-            h   = segment_edges[seg+1] - segment_edges[seg]
-            τ = 2 * (s - segment_edges[seg]) / h - 1
-            
-            node_idx = 1
-            for j in 1:min(pol_order, length(ctrl_nodes))
-                ctrl_nodes[j] <= τ && (node_idx = j)
+            u_idx = -1
+            for i = eachindex(all_nodes)
+                
+                if all_nodes[i] >= s
+                    u_idx = i
+                    break
+                end
             end
-            node_idx = min(node_idx, length(ctrl_nodes))
+            @infiltrate
             
-            return U_vals[i0 + node_idx, :]
+            if u_idx ==-1
+                @infiltrate
+            end
+            return U_vals[u_idx, :]
         end
 
         return Result_interpolation(state_interp, control_interp_zoh, all_nodes)
@@ -440,3 +442,19 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
 end
 
 
+
+
+
+#function control_interp_smooth(s)
+#            seg = find_segment(s)
+#            h = segment_edges[seg+1] - segment_edges[seg]
+#            τ = 2 * (s - segment_edges[seg]) / h - 1
+#            
+#            i0 = (seg - 1) * stride + 1
+#            # Extract control nodes for this segment (skip left boundary, include internal + right boundary)
+#            n_ctrl = min(pol_order, size(U_vals, 1) - i0)  # defensive bound
+#            u_seg = U_vals[i0+1 : i0+n_ctrl, :]  # nodes 2..end in segment
+#            
+#            # Use barycentric interpolation through control nodes (polynomial, not step function)
+#            return [_bary_eval(ctrl_nodes[1:n_ctrl], w_ctrl[1:n_ctrl], u_seg[:, k], τ) for k in 1:size(u_seg, 2)]
+#        end

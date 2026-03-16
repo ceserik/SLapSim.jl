@@ -175,7 +175,20 @@ DX = F(X,U)
 
 barycentric weights
 
+\section{used methods}
+\subsection{gauss legendre}
+\subsection{gauss radau}
+\subsection{gauss lobatto}
+\section{comparison of global pseudospectral collocation}
+i can tune just polynomial order
+\section{comparison of pseudospectral collocation swegmented}
+now i can tune polynomial order and number of segments
 
+\section{lavretniev phenomena}
+https://arxiv.org/pdf/1909.03326
+Sometimes the solution converes to incorrect point, nechapem tomu uplne
+\section{comparison of adaptive hp methods}
+now i can tune polynomial order and number of segments, and length of individual sewgments
 
 collocation point = derivation is equal to the differential equation
 boundary point = the constraints to tie two segment together are used for the solution
@@ -183,6 +196,11 @@ boundary point = the constraints to tie two segment together are used for the so
 gauss legendre points odnt contain any of the endpoint, the endpoints have to be constrained by extra addConstraint
 gauss legendre collocation
 N is in number of collocation points, order of approximating polynomial is then  for LG = 2N-1, for LGR = 2N-2, for LGL = 2N-3
+
+\section{time marching}
+runge kutaaa butcher table, show equiavalence between collocation methods and runge kutta methods, show runge kutta methods explicit/implicit, show that they can be used for transcription, tell implicit are better because we have states in future available.
+
+
 
 \subsection{quadrature rules}
 
