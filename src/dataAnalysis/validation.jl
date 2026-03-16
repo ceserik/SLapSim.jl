@@ -167,7 +167,7 @@ end
 
 function plotCarStates_interp(result, stepsize)
     s = collect(result.path[1]:stepsize:result.path[end])
-
+    #s  = result.path
     x = hcat(result.states.(s)...)'   # n_samples × nStates
     u = hcat(result.controls.(s)...)'  # n_samples × nControls
 
@@ -177,7 +177,7 @@ function plotCarStates_interp(result, stepsize)
     ax3 = [Axis(fig3[i, 1], ylabel = labels[i]) for i in 1:size(x, 2)]
 
     for index = 1:size(x, 2)
-        lines!(ax3[index], s, x[:, index], label = labels[index], linewidth = 5)
+        lines!(ax3[index], s, x[:, index], label = labels[index], linewidth = 1)
         axislegend(ax3[index], position = :rt)
     end
     display(fig3)
@@ -187,7 +187,7 @@ function plotCarStates_interp(result, stepsize)
     ax2 = [Axis(fig2[i, 1]) for i in 1:size(u, 2)]
     ctrl_labels = ["MomentFront", "MomentRear", "Steering"]
     for index = 1:size(u, 2)
-        lines!(ax2[index], s, u[:, index], label = ctrl_labels[index], linewidth = 5)
+        lines!(ax2[index], s, u[:, index], label = ctrl_labels[index], linewidth = 1)
         axislegend(ax2[index], position = :rt)
     end
     display(fig2)
