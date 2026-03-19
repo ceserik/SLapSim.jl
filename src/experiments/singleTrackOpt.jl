@@ -14,18 +14,22 @@ include("../solvingMethods/collocation.jl")
 include("../solvingMethods/adaptiveRK.jl")
 #include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
-detect = true
+detect = Sys.islinux()
 if detect
     x = "kreadconfig6"  
     option1 = "--key"
     option2 = "LookAndFeelPackage"
-    xd = read(`$x $option1 $option2`,String) # remember the backticks ``
-    is_dark = occursin("dark", lowercase(xd))
-    println("Is dark theme: ", is_dark)
-    if is_dark
-        set_theme!(theme_dark())
-    else
-        set_theme!(Makie.current_default_theme())
+    try
+        xd = read(`$x $option1 $option2`,String) # remember the backticks ``
+        is_dark = occursin("dark", lowercase(xd))
+        println("Is dark theme: ", is_dark)
+        if is_dark
+            set_theme!(theme_dark())
+        else
+            set_theme!(Makie.current_default_theme())
+        end
+    catch
+        println("Could not detect dark theme")
     end
 end
 
@@ -53,7 +57,7 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 30
+segments = 100
 pol_order = 3
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem,segments,pol_order,"Radau")

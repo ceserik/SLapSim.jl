@@ -1,6 +1,8 @@
 function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
     tableau = TableauLobattoIIIA(stages)
-
+    τ_ref  = tableau.c                      
+    w_bary = barycentric_weights(τ_ref)    
+ 
     function createDynamicConstraints(segment_edges, initialization)
         number_of_segments = length(segment_edges) - 1
         totalPoints = number_of_segments * (stages - 1) + 1
@@ -62,20 +64,46 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
 
         return [model, X, U, s_all, segment_edges]
     end
-
+ 
     function create_interpolation(X_vals, U_vals, s_all, segment_edges)
-        #shoul be real inteprolation but naaaaaaah, later
+        number_of_segments = length(segment_edges) - 1
+        stride = stages - 1  # points per segment (adjacent segments share boundary)
+ 
+        function find_segment(s)
+            for i in 1:number_of_segments
+                s <= segment_edges[i+1] && return i
+            end
+            return number_of_segments
+        end
+ 
+        # Map s to the reference coordinate τ ∈ [0,1] for the owning segment,
+        # then evaluate the degree-(stages-1) Lagrange polynomial built on the
+        # Lobatto IIIA nodes tableau.c — exactly the polynomial the integrator uses.
         function state_interp(s)
-            node = searchsortedlast(s_all, s)
-            return X_vals[node,:]
+            seg   = find_segment(s)
+            h     = segment_edges[seg+1] - segment_edges[seg]
+            τ_eval = (s - segment_edges[seg]) / h       # map to [0,1]
+            i0    = (seg - 1) * stride + 1
+            i_end = i0 + stages - 1
+            x_seg = X_vals[i0:i_end, :]
+            return [_bary_eval(τ_ref, w_bary, x_seg[:, k], τ_eval) for k in 1:nStates]
         end
+ 
+        # Controls are also defined at all Lobatto nodes (including boundaries),
+        # so the same polynomial basis applies.
         function control_interp(s)
-            node = searchsortedlast(s_all, s)
-            return U_vals[node,:]
+            seg    = find_segment(s)
+            h      = segment_edges[seg+1] - segment_edges[seg]
+            τ_eval = (s - segment_edges[seg]) / h
+            i0     = (seg - 1) * stride + 1
+            i_end  = i0 + stages - 1
+            u_seg  = U_vals[i0:i_end, :]
+            return [_bary_eval(τ_ref, w_bary, u_seg[:, k], τ_eval) for k in 1:nControls]
         end
+ 
         return Result_interpolation(state_interp, control_interp, s_all)
     end
-
+ 
     LobattoIIIAMethod = Collocation(
         createDynamicConstraints,
         create_interpolation,
