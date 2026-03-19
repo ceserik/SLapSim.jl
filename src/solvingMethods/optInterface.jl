@@ -260,7 +260,36 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     return out, out_interp
 end
 
+function refineMesh(problem,segment_edges,s_all)
+    error_itp = getErrors(problem)
+    segment_errors = zeros(length(segment_edges) - 1)
+    idx = 1
+    clear = 1
+    for i = eachindex(segment_errors)
+        error_segment = 0
+        for node = 2:pol_order
+            error_segment += error_itp(s_all[idx])
+            idx += 1
+        end
+        segment_errors[i] = error_segment
+    end
+    error_threshold = 1e-1
 
+    # Find and insert nodes for segments with error > 1e-3
+    segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
+    for i = length(segment_errors):-1:1  # Iterate backwards to avoid index shifting issues
+        if segment_errors[i] > error_threshold
+            s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
+            insert!(segment_edges, i + 1, s_mid)
+            clear = 0
+        end
+    end
+    fig = plot(segment_errors)
+    lines!(fig.axis, [1, length(segment_errors)], [error_threshold, error_threshold], color=:red, linewidth=2)
+    display(fig)
+    sleep(1)   # give the backend time to render
+    return segment_edges,clear,segment_errors
+end
 
 
 
@@ -283,9 +312,9 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
 
     initialization = initializeSolution_interpolation(car, track, 200)
     segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
-    clear = 0 
+    clear = 0
     iterations = 0
-    while clear == 0 && iterations <=50
+    while clear == 0 && iterations <= 50
         clear = 1
         iterations += 1
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
@@ -310,34 +339,11 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         problem.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
         initialization = make_result_interpolation(x, u, s_all)
 
-        error_itp = getErrors(problem)
-        segment_errors = zeros(length(segment_edges) - 1)
-        idx = 1
-        for i = eachindex(segment_errors)
-            error_segment = 0
-            for node = 2:pol_order
-                error_segment += error_itp(s_all[idx])
-                idx += 1
-            end
-            segment_errors[i] = error_segment
-        end
-        error_threshold = 1e-1
-        
-        # Find and insert nodes for segments with error > 1e-3
-        segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
-        for i = length(segment_errors):-1:1  # Iterate backwards to avoid index shifting issues
-            if segment_errors[i] > error_threshold
-                s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
-                insert!(segment_edges, i + 1, s_mid)
-                clear = 0
-            end
-        end
+        (segment_edges,clear,segment_errors) = refineMesh(problem,segment_edges,s_all,)
 
         model = JuMP.Model(Ipopt.Optimizer)
-        fig = plot(segment_errors)
-        lines!(fig.axis, [1, length(segment_errors)], [error_threshold, error_threshold], color=:red, linewidth=2)
-        display(fig)
-        sleep(1)   # give the backend time to render
+        
+        
         println("Sum of all errors: ", sum(segment_errors))
 
 

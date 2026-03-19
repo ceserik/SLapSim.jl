@@ -215,10 +215,9 @@ end
 
 
 function getError(s, problem)
-    u  = problem.optiResult.controls(s[1])   # piecewise constant over segment
     x0 = problem.optiResult.states(s[1])
-    ode(du, x, p, s) = du .= carODE_path(p[1], p[2], s, p[3], x, nothing)
-    prob = ODEProblem(ode, x0, (s[1], s[2]), (problem.car, problem.track, u))
+    ode(du, x, p, s) = du .= carODE_path(p[1], p[2], s, p[3](s), x, nothing)
+    prob = ODEProblem(ode, x0, (s[1], s[2]), (problem.car, problem.track, problem.optiResult.controls))
     
     sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-5, abstol=1e-5)
     final_states_time_sim = sol.u[end]

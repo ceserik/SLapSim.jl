@@ -76,9 +76,7 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
             return number_of_segments
         end
  
-        # Map s to the reference coordinate τ ∈ [0,1] for the owning segment,
-        # then evaluate the degree-(stages-1) Lagrange polynomial built on the
-        # Lobatto IIIA nodes tableau.c — exactly the polynomial the integrator uses.
+
         function state_interp(s)
             seg   = find_segment(s)
             h     = segment_edges[seg+1] - segment_edges[seg]
@@ -89,8 +87,6 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
             return [_bary_eval(τ_ref, w_bary, x_seg[:, k], τ_eval) for k in 1:nStates]
         end
  
-        # Controls are also defined at all Lobatto nodes (including boundaries),
-        # so the same polynomial basis applies.
         function control_interp(s)
             seg    = find_segment(s)
             h      = segment_edges[seg+1] - segment_edges[seg]
