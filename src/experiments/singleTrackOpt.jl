@@ -10,6 +10,8 @@ using UnicodePlots
 include("../solvingMethods/optInterface.jl")
 include("../dataAnalysis/validation.jl")
 include("../solvingMethods/myCollocation.jl")
+include("../solvingMethods/collocation.jl")
+include("../solvingMethods/adaptiveRK.jl")
 #include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = true
@@ -51,9 +53,9 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 1
-pol_order = 100
-optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order,"Lobatto")
+segments = 300
+pol_order = 2
+optiResult, optiResult_interp = find_optimal_trajectory2(track,car,model,segments,pol_order,"Radau")
 problem.optiResult = optiResult_interp
 
 if 1==1
@@ -74,7 +76,7 @@ axislegend(ax, position = :rt)
 #@infiltrate
 fig = nothing
 ax = nothing
-SLapSim.plotCarStates_interp(optiResult_interp,0.001)
+SLapSim.plotCarStates_interp(optiResult_interp,0.1)
 #SLapSim.plotCarStates2(optiResult)
 
 include("../dataAnalysis/jacobian.jl")
@@ -117,5 +119,5 @@ for i in 1:length(plots)
     Colorbar(fig[row, cb_col], plt; label = name, width = 25)
 end
 display(GLMakie.Screen(), fig)
-
+lines(error_itp(optiResult_interp.path), axis=(title="chyba v zavislosti na poloze", yscale=log10))
 end

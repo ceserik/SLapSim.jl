@@ -7,6 +7,7 @@ using OrdinaryDiffEq
 using DifferentiationInterface
 using Interpolations
 
+
 struct Result
     states::Matrix{Float64}
     controls::Matrix{Float64}
@@ -205,11 +206,24 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model,segmen
         dxds = carODE_path(car,track,s,u,x,model)
         return dxds
     end
+
+    function f(x,u,s,model)
+        dxds = carODE_path(car,track,s,u,x,model)
+        return dxds
+    end
+
     nControls = Int64(car.carParameters.nControls.value)
     nStates = Int64(car.carParameters.nStates.value)
-    Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
     initialization = initializeSolution_interpolation(car,track,200)
-    xd = Gauss_radau.createConstraints(segments,initialization);
+
+    #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
+    #xd = Gauss_radau.createConstraints(segments,initialization);
+
+    #Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
+    #xd = Gauss_legendre.createConstraints(segments,initialization);
+    segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
+    RKadaptive = createLobattoIIIA_Adaptive(f,pol_order,model,nControls,nStates,track);
+    xd = RKadaptive.createConstraints(segment_edges,initialization);
     X             = xd[2]
     U             = xd[3]
     s_all         = xd[4]
@@ -237,7 +251,73 @@ function find_optimal_trajectory2(track::Track,car::Car,model::JuMP.Model,segmen
     u = value.(U)
 
     # Interpolate using the LGR polynomial from the optimisation (Garg et al. 2010)
-    out_interp = Gauss_radau.createInterpolator(x, u, s_all, segment_edges)
+    #out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
+    out_interp = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
+    
+    out = Result(x, u[1:end-1, :], s_all)
+    return out, out_interp
+end
+
+
+
+
+
+
+function find_optimal_trajectory_adaptive(track::Track,car::Car,model::JuMP.Model,segments::Int64,pol_order::Int64,variant)
+
+    function F(x,u,s)
+        #@infiltrate
+        dxds = carODE_path(car,track,s,u,x,model)
+        return dxds
+    end
+
+    function f(x,u,s,model)
+        dxds = carODE_path(car,track,s,u,x,model)
+        return dxds
+    end
+
+    nControls = Int64(car.carParameters.nControls.value)
+    nStates = Int64(car.carParameters.nStates.value)
+    initialization = initializeSolution_interpolation(car,track,200)
+
+    #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
+    #xd = Gauss_radau.createConstraints(segments,initialization);
+
+    #Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
+    #xd = Gauss_legendre.createConstraints(segments,initialization);
+    segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
+    RKadaptive = createLobattoIIIA_Adaptive(f,pol_order,model,nControls,nStates,track);
+    xd = RKadaptive.createConstraints(segment_edges,initialization);
+    X             = xd[2]
+    U             = xd[3]
+    s_all         = xd[4]
+    segment_edges = xd[5]
+
+    @constraint(model,X[1:end,1] .>= 0) #vx
+    @constraint(model,X[1,1] .>= 5) #vx
+    @constraint(model,X[1,2] .== 0) # intial vy
+    @constraint(model,X[1,3] .== track.theta[1]) # intial heading
+    @constraint(model,X[1,6] .>= 0) # final time
+    @constraint(model,diff(X[:,6]) .>=0) #time goes forward
+    
+
+    #@constraint(model,diff(U[:,1]) .>=-1) #constraint on controls derivative
+
+    #this has to have variable length to allow closed track
+    #@constraint(model,-100 .<= diff(U[1:end-1,1]./diff(X[:,6])) .<= 100) #constraint on controls derivative
+    #@constraint(model,-100 .<= diff(U[1:end-1,2]./diff(X[:,6])) .<= 100) #constraint on controls derivative
+    #@constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
+    #@constraint(model,U[1,:].== U[2,:])
+    @objective(model,Min,X[end,6])
+    optimize!(model)
+
+    x = value.(X)
+    u = value.(U)
+
+    # Interpolate using the LGR polynomial from the optimisation (Garg et al. 2010)
+    #out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
+    out_interp = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
+    
     out = Result(x, u[1:end-1, :], s_all)
     return out, out_interp
 end

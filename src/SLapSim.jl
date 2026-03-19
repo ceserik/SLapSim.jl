@@ -6,7 +6,7 @@ using JuMP, Ipopt, Zygote
 using ControlSystemsBase
 using OrdinaryDiffEq
 using Debugger
-
+using FastGaussQuadrature
 using Infiltrator
 
 const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
@@ -39,11 +39,12 @@ include("solvingMethods/optInterface.jl")
 
 include("dataAnalysis/validation.jl")
 include("solvingMethods/myCollocation.jl")
+include("solvingMethods/collocation.jl")
 
 
 # Export public functions
 export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution
-export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad
+export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad, create_gauss_legendre
 #println("SLapSim module loaded")
 
 end # module

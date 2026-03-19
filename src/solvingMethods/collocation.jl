@@ -58,6 +58,15 @@ function diff_matrix(x, w)
 end
 
 
+function _bary_eval(ref_nodes, weights, values, τ)
+    for j in eachindex(ref_nodes)
+        abs(τ - ref_nodes[j]) < 100 * eps(Float64) && return Float64(values[j])
+    end
+    num = sum(weights[j] * values[j] / (τ - ref_nodes[j]) for j in eachindex(ref_nodes))
+    den = sum(weights[j] / (τ - ref_nodes[j]) for j in eachindex(ref_nodes))
+    return num / den
+end
+
 
 """
 Darby, Christopher L., William W. Hager, and Anil V. Rao. 
@@ -67,7 +76,8 @@ https://doi.org/10.1002/oca.957.
 
 """
 function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates, track)
-    (nodes_LG,w2) = gausslegendre(pol_order)
+
+    (nodes_LG, w2) = gausslegendre(pol_order)
     τ = [-1; nodes_LG]
     w = barycentric_weights(τ)
 
@@ -75,7 +85,7 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
     D = D[2:end, :]
 
     function create_dynamic_constraints(segments, initialization)
-        X = Matrix{VariableRef}(undef, segments * (pol_order + 1)+1, nStates)
+        X = Matrix{VariableRef}(undef, segments * (pol_order + 1) + 1, nStates)
         U = Matrix{VariableRef}(undef, segments * (pol_order), nControls)
         FX = Matrix{NonlinearExpr}(undef, pol_order, nStates)
 
@@ -94,29 +104,30 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
             end
         end
 
-        segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments+1)
+        segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
         x_start_idx = 1
         u_start_idx = 1
         scaled_τ = (τ .+ 1) / 2 #difference between nodes_LG and tau is that tau has 1 extra point which is not collocated -1
         all_s = zeros(segments * (pol_order + 1))
 
         #now create the collocation constraints
+        t0_constraints = time()
         for i = 1:segments
             end_idx = x_start_idx + pol_order
-            
+
             h = segment_edges[i+1] - segment_edges[i]
 
             for node = 1:length(τ)
                 all_s[x_start_idx+node-1] = segment_edges[i] + scaled_τ[node] * h
             end
             seg_nodes = all_s[x_start_idx:end_idx]
-            
+            last_u_idx = -1
             for j = 1:length(nodes_LG)
                 node_s = seg_nodes[j+1]
                 x_idx = x_start_idx + j
-                u_idx = u_start_idx 
+                u_idx = u_start_idx
                 u_start_idx += 1
-                
+
                 init_vals = initialization.states(node_s)
                 for k = 1:nStates
                     set_start_value(X[x_idx, k], init_vals[k])
@@ -126,37 +137,83 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
                 for k = 1:nControls
                     set_start_value(U[u_idx, k], init_u[k])
                 end
-                
+
                 FX[j, :] = f(X[x_idx, :], U[u_idx, :], node_s)
-                
+                last_u_idx = u_idx
             end
-#            @infiltrate
+            init_boundary = initialization.states(segment_edges[i+1])
+            for k = 1:nStates
+                set_start_value(X[end_idx+1, k], init_boundary[k])
+            end
             @constraint(model, D * X[x_start_idx:end_idx, :] .== (h / 2) .* FX)
-            @constraint(model,X[end_idx+1,:] .== X[x_start_idx,:] + (h / 2) * FX' * w2)
-            x_start_idx  = end_idx + 1
+            @constraint(model, X[end_idx+1, :] .== X[x_start_idx, :] + (h / 2) * FX' * w2)
+            #last_u_idx = u_start_idx - 1
+            f(X[end_idx+1, :], U[last_u_idx, :], segment_edges[i+1])
+            
+            x_start_idx = end_idx + 1
             #u_start_idx += pol_order 
 
-            
+
         end
+        println("Creating constraints: $(round(time() - t0_constraints, digits=3))s")
         return [model, X, U, all_s, segment_edges]
     end
 
+    function create_interpolation(X_vals, U_vals, all_s, segment_edges)
+
+
+        x_stride = pol_order + 1
+        u_stride = pol_order 
+        function find_segment(s)
+            for i in 1:segments
+                s <= segment_edges[i+1] && return i
+            end
+            return segments
+        end
+
+        function state_interp(s)
+            seg = find_segment(s)
+            h = segment_edges[seg+1] - segment_edges[seg]
+            τ_eval = 2 * (s - segment_edges[seg]) / h - 1   
+            i0 = (seg - 1) * x_stride + 1
+            i_end = min(i0 + pol_order, size(X_vals, 1))
+            x_seg = X_vals[i0:i_end, :]
+            return [_bary_eval(τ, w, x_seg[:, k], τ_eval) for k in 1:size(x_seg, 2)]
+        end
+
+        u_positions = zeros(segments * pol_order)
+        for i in 1:segments
+            x_start = (i - 1) * x_stride + 1
+            u_base  = (i - 1) * pol_order
+            for j in 1:pol_order
+                u_positions[u_base + j] = all_s[x_start + j]
+            end
+        end
+
+        function control_interp_zoh(s)
+            u_idx = -1
+            for i in eachindex(u_positions)
+                if u_positions[i] >= s
+                    u_idx = i
+                    break
+                end
+            end
+            if u_idx == -1
+                u_idx = length(u_positions)
+            end
+            return U_vals[u_idx, :]
+        end
+
+
+        return Result_interpolation(state_interp, control_interp_zoh, all_s)
+    end
 
     GaussMethod = Collocation(
         create_dynamic_constraints,
-        nothing,
+        create_interpolation,
         nothing,
         nothing,
         nothing
     )
 end
 
-
-
-
-#track = doubleTurn(false, 0.5)
-#car = createSimplestSingleTrack()
-#model = JuMP.Model(Ipopt.Optimizer)
-#initialization = initializeSolution_interpolation(car, track, 200)
-#xd = create_gauss_legendre(1, 2, 2, model, 1, 1, track)
-#xd.createConstraints(2, initialization)
