@@ -10,11 +10,13 @@ mutable struct WheelAssembly
     setTireSpeeds::Function
     setPivotForce::Function
     constraints::Function
+    maxAngle::carParameter{carVar}
 end
 
 
 function createBasicWheelAssembly(position::Vector{carVar})
     steeringAngle = carParameter{carVar}(0.0,"steering angle","rad")
+    MaxSteeringAngle = carParameter{carVar}(20/180*pi," max steering angle","rad")
     forces = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Pivot forces","N N N")
     velocity = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Velocity at pivot","m/s")
     position = carParameter{Vector{carVar}}(position,"Position from CoG","m m m")
@@ -36,8 +38,8 @@ function createBasicWheelAssembly(position::Vector{carVar})
         return out
     end
     function constraints(optiModel::JuMP.Model)
-        @constraint(optiModel, steeringAngle.value <= 20/180*pi) 
-        @constraint(optiModel, steeringAngle.value >= -20/180*pi) 
+        @constraint(optiModel, steeringAngle.value/MaxSteeringAngle.value <= 20/180*pi/MaxSteeringAngle.value) 
+        @constraint(optiModel, steeringAngle.value/MaxSteeringAngle.value >= -20/180*pi/MaxSteeringAngle.value) 
     end
 
     function pivot2CoG(forces)
@@ -68,7 +70,8 @@ function createBasicWheelAssembly(position::Vector{carVar})
         rotZ,
         setTireSpeeds,
         setPivotForce,
-        constraints
+        constraints,
+        MaxSteeringAngle
         
     )
     return testWheelAssembly

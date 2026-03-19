@@ -11,7 +11,7 @@ mutable struct  Tire
     slipRatio::carParameter{carVar}
     tireFunction::Function
     tireConstraints::Function
-    
+    maxSLipAngle::carParameter{carVar}
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
 
@@ -27,7 +27,7 @@ function createR20lin(maxTorque::Float64)
     forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Forces from tire x y z", "N")
     slipAngle = carParameter{carVar}(0.0, "slip angle", "rad")
     slipRatio = carParameter{carVar}(0.0, "slip ratio", "-")
-
+    maxSlipAngle = carParameter{carVar}( 5/180*pi, "max slip angle", "rad")
     maxForce = maxTorque/radius.value
 
     function tireFunction(inTorque::carVar,optiModel::Union{JuMP.Model,Nothing}=nothing)
@@ -39,8 +39,8 @@ function createR20lin(maxTorque::Float64)
 
     function tireConstraints(optiModel)
         @constraint(optiModel, (tire.forces.value[2]/maxForce)^2 + (tire.forces.value[1]/maxForce)^2 <= (tire.forces.value[3]/maxForce)^2)
-        @constraint(optiModel, slipAngle.value <=  5/180*pi)
-        @constraint(optiModel, slipAngle.value >= -5/180*pi)
+        @constraint(optiModel, slipAngle.value/maxSlipAngle.value <=  5/180*pi/maxSlipAngle.value)
+        @constraint(optiModel, slipAngle.value/maxSlipAngle.value >= -5/180*pi/maxSlipAngle.value)
     end
 
 
@@ -57,6 +57,7 @@ function createR20lin(maxTorque::Float64)
         slipAngle,
         slipRatio,
         tireFunction,
-        tireConstraints
+        tireConstraints,
+        maxSlipAngle
     )
 end

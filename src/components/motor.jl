@@ -16,8 +16,8 @@ function createFischerMotor()
     mass = carParameter{carVar}(3.0,"mass??","kg")
 
     function constraints(u,optiModel::JuMP.Model)
-        @constraint(optiModel, u <= 29)
-        @constraint(optiModel, u >= -29)
+        @constraint(optiModel, u/torqueSpeedFunction(0.0)<= 29/torqueSpeedFunction(0.0))
+        @constraint(optiModel, u/torqueSpeedFunction(0.0) >= -29/torqueSpeedFunction(0.0))
     end
 
 
