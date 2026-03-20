@@ -16,11 +16,11 @@ include("../solvingMethods/adaptiveRK.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = Sys.islinux()
 if detect
-    x = "kreadconfig6"  
+    x = "kreadconfig6"
     option1 = "--key"
     option2 = "LookAndFeelPackage"
     try
-        xd = read(`$x $option1 $option2`,String) # remember the backticks ``
+        xd = read(`$x $option1 $option2`, String) # remember the backticks ``
         is_dark = occursin("dark", lowercase(xd))
         println("Is dark theme: ", is_dark)
         if is_dark
@@ -36,7 +36,7 @@ end
 
 GLMakie.closeall()
 
-problem = Problem_config(0,0,0,0)
+problem = Problem_config(0, 0, 0, 0)
 
 
 car = createSimplestSingleTrack()
@@ -44,8 +44,8 @@ problem.car = car
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path,false,true)
-#track = doubleTurn(false,0.5)
+#track = kml2track(path, false, true)
+track = doubleTurn(false,0.5)
 #track = skidpad(false)
 problem.track = track
 #Number of transcription points
@@ -57,72 +57,76 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 100
+segments = 20
 pol_order = 3
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
-optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem,segments,pol_order,"Radau")
+optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
 problem.optiResult = optiResult_interp
 
-if 1==1
+if 1 == 1
     fig = Figure()
-ax = Axis(fig[1,1], aspect = DataAspect())
-#plotCarPath(track,optiResult_interp,ax)
-plotCarPath_interpolated(track,optiResult_interp,ax)
-println(ax)
-screen = display(GLMakie.Screen(), fig)
-# simulate in time feed forward using optimal controls
+    ax = Axis(fig[1, 1], aspect=DataAspect())
+    #plotCarPath(track,optiResult_interp,ax)
+    plotCarPath_interpolated(track, optiResult_interp, ax)
+    println(ax)
+    screen = display(GLMakie.Screen(), fig)
+    # simulate in time feed forward using optimal controls
 
-getError([1,5],problem)
-#sol = timeSimulation(car, optiResult, track)
-sol = timeSimulation_interpolated(car, optiResult_interp, track)
-lines!(ax,getindex.(sol.u, 5), getindex.(sol.u, 6), label = "Simulated in time")
-axislegend(ax, position = :rt)
+    getError([1, 5], problem)
+    #sol = timeSimulation(car, optiResult, track)
+    sol = timeSimulation_interpolated(car, optiResult_interp, track)
+    lines!(ax, getindex.(sol.u, 5), getindex.(sol.u, 6), label="Simulated in time")
+    axislegend(ax, position=:rt)
 
-#@infiltrate
-fig = nothing
-ax = nothing
-SLapSim.plotCarStates_interp(optiResult_interp,0.1)
-#SLapSim.plotCarStates2(optiResult)
+    #@infiltrate
+    fig = nothing
+    ax = nothing
+    SLapSim.plotCarStates_interp(optiResult_interp, 0.1)
+    #SLapSim.plotCarStates2(optiResult)
 
-include("../dataAnalysis/jacobian.jl")
-include("../dataAnalysis/hessian_test2.jl")
-println("jacobian")
-println(UnicodePlots.spy(jacobian))
-println("hessian")
-println(UnicodePlots.spy(H_star))
-GLMakie.spy(rotr90(jacobian)) 
+    include("../dataAnalysis/jacobian.jl")
+    include("../dataAnalysis/hessian_test2.jl")
+    println("jacobian")
+    println(UnicodePlots.spy(jacobian))
+    println("hessian")
+    println(UnicodePlots.spy(H_star))
+    GLMakie.spy(rotr90(jacobian))
 
-error_itp = getErrors(problem)
-plot(error_itp(optiResult_interp.path))
-plotErrorsOnTrack2D(problem; itp = error_itp)
+    error_itp = getErrors(problem)
+    plot(error_itp(optiResult_interp.path))
+    plotErrorsOnTrack2D(problem; itp=error_itp)
 
-# Plot all controls + error in a single square window (stacked rows)
-fig = Figure(resolution = (900, 900))
-# 2x2 grid of plots, each plot gets its own colorbar to the right
-plots = [
-    (s->optiResult_interp.controls(s)[1], "moment_front"),
-    (s->optiResult_interp.controls(s)[2], "moment_rear"),
-    (s->optiResult_interp.controls(s)[3], "steering"),
-    (s->error_itp(s), "error"),
-]
+    # Plot all controls + error in a single square window (stacked rows)
+    fig = Figure(resolution=(900, 900))
+    # 2x2 grid of plots, each plot gets its own colorbar to the right
+    plots = [
+        (s -> optiResult_interp.controls(s)[1], "moment_front"),
+        (s -> optiResult_interp.controls(s)[2], "moment_rear"),
+        (s -> optiResult_interp.controls(s)[3], "steering"),
+        (s -> error_itp(s), "error"),
+    ]
 
-# prepare error interpolant and append as a callable
+    # prepare error interpolant and append as a callable
 
 
 
-# Layout: 2 rows × 4 columns (each plot + its colorbar occupies 2 columns)
-for i in 1:length(plots)
-    row = div(i-1, 2) + 1
-    col = mod(i-1, 2) + 1
-    ax_col = 2*col - 1
-    cb_col = 2*col
-    p = plots[i]
-    f = p[1]
-    name = p[2]
-    ax = Axis(fig[row, ax_col], aspect = DataAspect())
-    _, plt = plot_on_path(problem, f, name; axis = ax)
-    Colorbar(fig[row, cb_col], plt; label = name, width = 25)
-end
-display(GLMakie.Screen(), fig)
-lines(error_itp(optiResult_interp.path), axis=(title="chyba v zavislosti na poloze", yscale=log10))
+    # Layout: 2 rows × 4 columns (each plot + its colorbar occupies 2 columns)
+    for i in 1:length(plots)
+        row = div(i - 1, 2) + 1
+        col = mod(i - 1, 2) + 1
+        ax_col = 2 * col - 1
+        cb_col = 2 * col
+        p = plots[i]
+        f = p[1]
+        name = p[2]
+        ax = Axis(fig[row, ax_col], aspect=DataAspect())
+        _, plt = plot_on_path(problem, f, name; axis=ax)
+        Colorbar(fig[row, cb_col], plt; label=name, width=25)
+    end
+    display(GLMakie.Screen(), fig)
+    lines(error_itp(optiResult_interp.path), axis=(title="chyba v zavislosti na poloze", yscale=log10))
+    sampling_density = get_sampling_density(optiResult_interp.path)
+    plot_on_path(problem,sampling_density,"sampling density")
+
+
 end

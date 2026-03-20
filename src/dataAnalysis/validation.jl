@@ -316,3 +316,22 @@ function plot_on_path(problem,itp,legend; axis=nothing, colormap=:viridis)
         return axis, plt
     end
 end
+
+
+function get_sampling_density(segment_edges)
+    h = diff(segment_edges)
+    density = 1 ./ h
+    left_edges = segment_edges[1:end-1]
+
+    #fig = plot(left_edges, density,
+    #    xlabel="Track position (m)",
+    #    ylabel="Segments / m",
+    #    title="Sampling density",
+    #    seriestype=:steppre,
+    #    label="density")
+    #display(fig)
+
+    density_itp = extrapolate(interpolate((left_edges,), density, Gridded(Linear())), Flat())
+
+    return density_itp
+end
