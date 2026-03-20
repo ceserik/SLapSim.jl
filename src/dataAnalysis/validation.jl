@@ -6,6 +6,7 @@ using Interpolations
 using OrdinaryDiffEq
 using DiffEqCallbacks
 using LinearAlgebra
+using LaTeXStrings
 
 function timeSimulation(car::Car, result, track)
     timeVector = result.states[1:end-1, 6] #this has to be compatible with different car models will cause issues in future

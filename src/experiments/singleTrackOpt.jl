@@ -33,6 +33,26 @@ if detect
     end
 end
 
+update_theme!(
+    fontsize = 11,
+    fonts = (; regular = "Latin Modern Roman", bold = "Latin Modern Roman Bold"),
+    palette = (color = Makie.to_colormap(:tab10),),
+    Axis = (
+        titlesize = 13,
+        xlabelsize = 12,
+        ylabelsize = 12,
+        xticklabelsize = 10,
+        yticklabelsize = 10,
+    ),
+    Legend = (
+        labelsize = 11,
+        titlesize = 12,
+    ),
+    Colorbar = (
+        ticklabelsize = 10,
+        labelsize = 11,
+    ),
+)
 
 GLMakie.closeall()
 
@@ -58,7 +78,7 @@ problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 segments = 20
-pol_order = 3
+pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
 problem.optiResult = optiResult_interp
