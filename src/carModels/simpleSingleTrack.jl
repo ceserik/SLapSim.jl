@@ -2,85 +2,6 @@ using Revise
 using SLapSim
 
 
-function simplestSingleTrack(car::Car, track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
-    # assign names for easier reading
-    torqueFront = car.drivetrain.motors[1].torque.value
-    torqueRear = car.drivetrain.motors[2].torque.value
-    steeringAngle = car.wheelAssemblies[1].steeringAngle.value
-
-    gbFront = car.drivetrain.gearboxes[1]
-    gbRear = car.drivetrain.gearboxes[2]
-
-    velocity = car.carParameters.velocity.value
-    angularVelocity = car.carParameters.angularVelocity.value
-
-    tireFront = car.drivetrain.tires[1]
-    tireRear = car.drivetrain.tires[2]
-
-    # Transformation of velocities from cog to wheels
-    car.wheelAssemblies[1].setPivotVelocity(angularVelocity,velocity)
-    car.wheelAssemblies[2].setPivotVelocity(angularVelocity,velocity)
-
-    #Steer the wheels
-    car.wheelAssemblies[1].setTireSpeeds(tireFront)
-    car.wheelAssemblies[2].setTireSpeeds(tireRear)
-
-    #gearing of forces from motor to tire, would be nice o have this in a loop
-    gbFront.torqueIn.value = torqueFront
-    gbFront.f()
-
-    gbRear.torqueIn.value = torqueRear
-    gbRear.f()
-
-    #create constraints for motor
-    tireFront.tireFunction(gbFront.torqueOut.value,optiModel)
-    tireRear.tireFunction(gbRear.torqueOut.value,optiModel)
-    
-    if !isnothing(optiModel)
-        car.drivetrain.motors[1].constraints(torqueFront,optiModel)
-        car.drivetrain.motors[2].constraints(torqueRear,optiModel)
-        car.wheelAssemblies[1].constraints(optiModel)
-        car.wheelAssemblies[2].constraints(optiModel)
-        car.chassis.hitbox(car.carParameters.n.value,track,optiModel)
-        tireFront.tireConstraints(optiModel)
-        tireRear.tireConstraints(optiModel)
-    end
-    #tire Function, currently same as in bachelors thesis
-    # calculate Fz on tires
-    
-
-    car.drivetrain.tires[1].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
-    car.drivetrain.tires[2].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
-
-
-    
-
-    car.wheelAssemblies[1].setPivotForce(tireFront)
-    car.wheelAssemblies[2].setPivotForce(tireRear)
-
-
-    cogMoment1 = car.wheelAssemblies[1].pivot2CoG(tireFront.forces.value) # zero at the end is because vertcial force would cause car to spn around y
-    cogMoment2 = car.wheelAssemblies[2].pivot2CoG(tireRear.forces.value)
-
-    cogForce = car.wheelAssemblies[1].forces.value .+ car.wheelAssemblies[2].forces.value
-    cogMoment = cogMoment1 + cogMoment2
-
-
-    #enforce hitbox
-    
-    #print cogMoment and cogForce
-    #println("CoG Moment 1: ", cogMoment1)
-    #println("CoG Moment 2: ", cogMoment2)
-    #println("CoG Force: ", cogForce)
-
-    dv = cogForce/car.carParameters.mass.value + angularVelocity × velocity #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
-    dangularVelocity = cogMoment/car.carParameters.inertia.value
-    dx = [dv[1],dv[2],angularVelocity[3],dangularVelocity[3]]
-    return dx
-
-end
-
-
 function createSimplestSingleTrack()
 
     gearboxFront = createCTU25gearbox()
@@ -94,59 +15,115 @@ function createSimplestSingleTrack()
 
 
     drivetrain = Drivetrain(
-        [motorFront,motorRear],
+        [motorFront, motorRear],
         [gearboxFront, gearboxRear],
-        [tireFront,tireRear],
+        [tireFront, tireRear],
         createPepikCTU25())
 
     aero = createBasicAero()
     suspension = createDummySuspension()
     chassis = createCTU25chassis()
-    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520/2, 0, 0]))
-    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520/2, 0, 0]))
+    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520 / 2, 0, 0]))
+    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520 / 2, 0, 0]))
 
-    wheelAssemblyFront.tire = tireFront; wheelAssemblyFront.motor = motorFront; wheelAssemblyFront.gearbox = gearboxFront
-    wheelAssemblyRear.tire = tireRear; wheelAssemblyRear.motor = motorRear; wheelAssemblyRear.gearbox = gearboxRear
+    wheelAssemblyFront.tire = tireFront
+    wheelAssemblyFront.motor = motorFront
+    wheelAssemblyFront.gearbox = gearboxFront
+    wheelAssemblyRear.tire = tireRear
+    wheelAssemblyRear.motor = motorRear
+    wheelAssemblyRear.gearbox = gearboxRear
 
     for wa in [wheelAssemblyFront, wheelAssemblyRear]
         wa.tire.maxForce.value = wa.motor.torqueSpeedFunction(0.0) * wa.gearbox.ratio.value / wa.tire.radius.value
     end
 
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s");
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s");
-    
+    velocity = carParameter{Vector{carVar}}([15.0, 0.0, 0.0], "Speed X", "m/s")
+    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s")
+
     mass = carParameter{carVar}(280.0, "Mass", "kg")
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
     CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
-    velocity = carParameter{Vector{carVar}}([15.0,0.0,0.0],"Speed X","m/s")
-    powerLimit = carParameter{carVar}(80000.0,"PowerLimit","W")
-    psi = carParameter{carVar}(0.0,"heading","rad")
-    n = carParameter{carVar}(0.0,"Distance from centerline","m")
-    nControls = carParameter{carVar}(3.0,"number of controlled parameters","-")
+    powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
+    psi = carParameter{carVar}(0.0, "heading", "rad")
+    n = carParameter{carVar}(0.0, "Distance from centerline", "m")
+    nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2")
-    nStates = carParameter{carVar}(6.0,"number of car states","-")
-    s = carParameter{carVar}(1.0,"longitudinal position on track","-")
+    nStates = carParameter{carVar}(6.0, "number of car states", "-")
+    s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
 
 
-    function controlMapping(car, controls)
-        car.drivetrain.motors[1].torque.value = controls[1]  
-        car.drivetrain.motors[2].torque.value = controls[2]#   causes writing variableRef to Float64
-        car.wheelAssemblies[1].steeringAngle.value = controls[3]
+    function simplestSingleTrack(track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
+        vel = velocity.value
+        angVel = angularVelocity.value
 
+        gbFront = drivetrain.gearboxes[1]
+        gbRear = drivetrain.gearboxes[2]
+
+        # Transformation of velocities from cog to wheels
+        wheelAssemblyFront.setPivotVelocity(angVel, vel)
+        wheelAssemblyRear.setPivotVelocity(angVel, vel)
+
+        #Steer the wheels
+        wheelAssemblyFront.setTireSpeeds(drivetrain.tires[1])
+        wheelAssemblyRear.setTireSpeeds(drivetrain.tires[2])
+
+        #gearing of forces from motor to tire
+        gbFront.torqueIn.value = drivetrain.motors[1].torque.value
+        gbFront.f()
+
+        gbRear.torqueIn.value = drivetrain.motors[2].torque.value
+        gbRear.f()
+
+        #tire forces
+        drivetrain.tires[1].tireFunction(gbFront.torqueOut.value, optiModel)
+        drivetrain.tires[2].tireFunction(gbRear.torqueOut.value, optiModel)
+
+        if !isnothing(optiModel)
+            drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel)
+            drivetrain.motors[2].constraints(drivetrain.motors[2].torque.value, optiModel)
+            wheelAssemblyFront.constraints(optiModel)
+            wheelAssemblyRear.constraints(optiModel)
+            chassis.hitbox(n.value, track, optiModel)
+            drivetrain.tires[1].tireConstraints(optiModel)
+            drivetrain.tires[2].tireConstraints(optiModel)
+        end
+
+        # calculate Fz on tires
+        drivetrain.tires[1].forces.value[3] = 0.5 * mass.value * 9.81
+        drivetrain.tires[2].forces.value[3] = 0.5 * mass.value * 9.81
+
+        wheelAssemblyFront.setPivotForce(drivetrain.tires[1])
+        wheelAssemblyRear.setPivotForce(drivetrain.tires[2])
+
+        cogMoment1 = wheelAssemblyFront.pivot2CoG(drivetrain.tires[1].forces.value)
+        cogMoment2 = wheelAssemblyRear.pivot2CoG(drivetrain.tires[2].forces.value)
+
+        cogForce = wheelAssemblyFront.forces.value .+ wheelAssemblyRear.forces.value
+        cogMoment = cogMoment1 + cogMoment2
+
+        dv = cogForce / mass.value + angVel × vel
+        dangularVelocity = cogMoment / inertia.value
+        dx = [dv[1], dv[2], angVel[3], dangularVelocity[3]]
+        return dx
     end
-    function stateMapping(car, states)
-        car.carParameters.velocity.value = [states[1], states[2], 0.0]
-        car.carParameters.psi.value = states[3]
-        car.carParameters.angularVelocity.value = [0.0, 0.0, states[4]]
-        #if length(states) ==6 ## this can probably be removed
-            car.carParameters.n.value = states[5]
-            car.carParameters.s.value = states[6]
-        #end
-    return car
+
+
+    function controlMapping(controls)
+        drivetrain.motors[1].torque.value = controls[1]
+        drivetrain.motors[2].torque.value = controls[2]
+        wheelAssemblyFront.steeringAngle.value = controls[3]
     end
-    
+
+    function stateMapping(states)
+        velocity.value = [states[1], states[2], 0.0]
+        psi.value = states[3]
+        angularVelocity.value = [0.0, 0.0, states[4]]
+        n.value = states[5]
+        s.value = states[6]
+    end
+
     p = CarParameters(
         mass,
         inertia,
@@ -169,12 +146,12 @@ function createSimplestSingleTrack()
         p,
         controlMapping,
         stateMapping,
-        f->(0.0),
+        f -> (0.0),
         drivetrain,
         aero,
         suspension,
         chassis,
-        [wheelAssemblyFront,wheelAssemblyRear],
+        [wheelAssemblyFront, wheelAssemblyRear],
     )
     return afto
 end

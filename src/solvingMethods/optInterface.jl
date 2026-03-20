@@ -97,8 +97,8 @@ function carODE_path(car::Car, track::Track, k::Union{Int64,Float64},
     u::AbstractVector, x::AbstractVector,
     model::Union{JuMP.Model,Nothing}=nothing)
     #car.mapping(car,u,x)
-    car.controlMapping(car, u)
-    car.stateMapping(car, x)
+    car.controlMapping(u)
+    car.stateMapping(x)
     dzds = time2path(car, track, k, model) #time2path(s,instantCarParams,track,car)
     return dzds
 end;
@@ -123,7 +123,7 @@ end;
 #here I need to define transfomation of ODE with respect to time to ODE with respect to path
 function time2path(car::Car, track::Track, k::Union{Int64,Float64}, model::Union{Nothing,JuMP.Model})
     #track.mapping(track,instantTrack,s)
-    dxdt = car.carFunction(car, track, model)
+    dxdt = car.carFunction(track, model)
     v_x = car.carParameters.velocity.value[1]
     v_y = car.carParameters.velocity.value[2]
     psi = car.carParameters.psi.value

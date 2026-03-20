@@ -1,10 +1,6 @@
 using Revise
 using SLapSim
 
-
-
-
-
 function createTwintrack()
 
     gearboxFL = createCTU25gearbox()
@@ -94,8 +90,6 @@ function createTwintrack()
         angularVelocity = car.carParameters.angularVelocity.value
         tireFL = car.drivetrain.tires[1]
         tireFR = car.drivetrain.tires[2]
-
-
 
         # Transformation of velocities from cog to wheels
         for wa in car.wheelAssemblies

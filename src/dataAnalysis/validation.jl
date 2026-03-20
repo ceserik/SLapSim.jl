@@ -80,10 +80,10 @@ function carODE_globalFrame(du, x, p, t)
     #@infiltrate
     
     u = U.controls(time2s(t))
-    car.controlMapping(car, u)
-    car.stateMapping(car, x)
+    car.controlMapping(u)
+    car.stateMapping(x)
 
-    dx = car.carFunction(car, track, nothing)
+    dx = car.carFunction(track, nothing)
 
     ψ = x[3]
     rot = [cos(ψ) -sin(ψ);

@@ -32,7 +32,7 @@ include("components/chassis.jl")
 include("carModels/carDefinition.jl")
 include("carModels/massPointCar.jl")
 include("carModels/simpleSingleTrack.jl")
-include("carModels/simpleTwinTrack.jl")
+include("carModels/multiTrack.jl")
 
 #solving solvingMethods
 include("solvingMethods/massPointSolver.jl")
