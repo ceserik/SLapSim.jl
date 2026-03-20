@@ -33,9 +33,9 @@ function createCTU25gearbox()
     angularFrequencyOut = carParameter{carVar}(0.0,"velocity out","rad/s")
     loss = carParameter{carVar}(0.0,"loss","Watt")
 
-    function gearboxFunction() 
-        gearbox.torqueOut.value = gearbox.torqueIn.value * 11.46
-        gearbox.angularFrequencyOut.value = gearbox.angularFrequencyIn.value / 11.46
+    function gearboxFunction()
+        torqueOut.value = torqueIn.value * ratio.value
+        angularFrequencyOut.value = speedIn.value / ratio.value
     end
     
     gearbox = Gearbox(

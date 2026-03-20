@@ -11,8 +11,11 @@ mutable struct WheelAssembly
     setPivotForce::Function
     constraints::Function
     maxAngle::carParameter{carVar}
+    tire::Union{Tire, Nothing}
+    motor::Union{Motor, Nothing}
+    gearbox::Union{Gearbox, Nothing}
 end
-
+Base.show(io::IO, ::MIME"text/plain", obj::WheelAssembly) = prettyPrintComponent(io, obj)
 
 function createBasicWheelAssembly(position::Vector{carVar})
     steeringAngle = carParameter{carVar}(0.0,"steering angle","rad")
@@ -71,8 +74,10 @@ function createBasicWheelAssembly(position::Vector{carVar})
         setTireSpeeds,
         setPivotForce,
         constraints,
-        MaxSteeringAngle
-        
+        MaxSteeringAngle,
+        nothing,
+        nothing,
+        nothing,
     )
     return testWheelAssembly
 end

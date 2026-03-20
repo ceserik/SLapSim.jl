@@ -32,6 +32,7 @@ include("components/chassis.jl")
 include("carModels/carDefinition.jl")
 include("carModels/massPointCar.jl")
 include("carModels/simpleSingleTrack.jl")
+include("carModels/simpleTwinTrack.jl")
 
 #solving solvingMethods
 include("solvingMethods/massPointSolver.jl")
@@ -43,7 +44,7 @@ include("solvingMethods/collocation.jl")
 
 
 # Export public functions
-export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution
+export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack
 export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad, create_gauss_legendre
 #println("SLapSim module loaded")
 

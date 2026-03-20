@@ -21,6 +21,7 @@ include("carModels/carDefinition.jl")
 
 include("carModels/massPointCar.jl")
 include("carModels/simpleSingleTrack.jl")
+include("carModels/simpleTwinTrack.jl")
 include("carModels/massPointCar.jl")
 
 include("solvingMethods/optInterface.jl")

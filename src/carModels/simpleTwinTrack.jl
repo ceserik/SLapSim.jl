@@ -2,103 +2,90 @@ using Revise
 using SLapSim
 
 
-function simpleTwinTrack(
+function anyTrack(
     car::Car,
     track::Union{Track,Nothing}=nothing,
     k::Union{Int64,Nothing,Float64}=nothing,
     optiModel::Union{JuMP.Model,Nothing}=nothing)
-    # assign names for easier reading
-    T_FL = car.drivetrain.motors[1].torque.value
-    T_FR = car.drivetrain.motors[2].torque.value
-    T_RL = car.drivetrain.motors[3].torque.value
-    T_RR = car.drivetrain.motors[4].torque.value
     steeringAngle = car.wheelAssemblies[1].steeringAngle.value
-
-    gbFL = car.drivetrain.gearboxes[1]
-    gbFR = car.drivetrain.gearboxes[2]
-    gbRL = car.drivetrain.gearboxes[3]
-    gbRR = car.drivetrain.gearboxes[4]
-
     velocity = car.carParameters.velocity.value
     angularVelocity = car.carParameters.angularVelocity.value
-
     tireFL = car.drivetrain.tires[1]
     tireFR = car.drivetrain.tires[2]
-    tireRL = car.drivetrain.tires[3]
-    tireRR = car.drivetrain.tires[4]
 
 
 
     # Transformation of velocities from cog to wheels
-    car.wheelAssemblies[1].setPivotVelocity(angularVelocity,velocity)
-    car.wheelAssemblies[2].setPivotVelocity(angularVelocity,velocity)
-    car.wheelAssemblies[3].setPivotVelocity(angularVelocity,velocity)
-    car.wheelAssemblies[4].setPivotVelocity(angularVelocity,velocity)
+    for wa in car.wheelAssemblies
+        wa.setPivotVelocity(angularVelocity, velocity)
+    end
 
     #Steer the wheels
-    car.wheelAssemblies[1].setTireSpeeds(tireFL)
-    car.wheelAssemblies[2].setTireSpeeds(tireFR)
-    car.wheelAssemblies[3].setTireSpeeds(tireRL)
-    car.wheelAssemblies[4].setTireSpeeds(tireRR)
+    for i in eachindex(car.wheelAssemblies)
+        car.wheelAssemblies[i].setTireSpeeds(car.drivetrain.tires[i])
+    end
 
 
-    #gearing of forces from motor to tire, would be nice o have this in a loop
-    
-    gbFL.torqueIn.value = T_FL
-    gbFL.f()
+    #gearing of forces from motor to tire
+    for i in eachindex(car.drivetrain.gearboxes)
+        car.drivetrain.gearboxes[i].torqueIn.value = car.drivetrain.motors[i].torque.value
+        car.drivetrain.gearboxes[i].f()
+    end
 
-    gbFR.torqueIn.value = T_FR
-    gbFR.f()
-
-    gbRL.torqueIn.value = T_RL
-    gbRL.f()
-
-    gbFL.torqueIn.value = T_RR
-    gbRR.f()
+    # update tire maxForce from current motor speed
+    for wa in car.wheelAssemblies
+        if !isnothing(wa.motor) && !isnothing(wa.gearbox) && !isnothing(wa.tire)
+            wa.tire.maxForce.value = wa.motor.torqueSpeedFunction(wa.motor.angularFrequency.value) * wa.gearbox.ratio.value / wa.tire.radius.value
+        end
+    end
 
     #create constraints for motor
-    tireFL.tireFunction(gbFL.torqueOut.value,optiModel)
-    tireFR.tireFunction(gbFR.torqueOut.value,optiModel)
-    tireRL.tireFunction(gbRL.torqueOut.value,optiModel)
-    tireRR.tireFunction(gbRR.torqueOut.value,optiModel)
+    
+    for i in eachindex(car.drivetrain.tires)
+        car.drivetrain.tires[i].tireFunction(car.drivetrain.gearboxes[i].torqueOut.value, optiModel)
+    end
 
     
     if !isnothing(optiModel)
+
+        # TODO this has to be enfroced only for car parts which are controls
         # motor torque limit
         car.drivetrain.motors[3].constraints(torqueFR,optiModel)
         car.drivetrain.motors[4].constraints(torqueRear,optiModel)
 
         #steering angle
         car.wheelAssemblies[1].constraints(optiModel)
-        car.wheelAssemblies[2].constraints(optiModel)
+        #car.wheelAssemblies[2].constraints(optiModel)
         
-
         #hitbox
         car.chassis.hitbox(car.carParameters.n.value,track,optiModel)
 
-
-        tireFront.tireConstraints(optiModel)
-        tireRear.tireConstraints(optiModel)
+        for tire in car.drivetrain.tires
+            tire.tireConstraints(optiModel)
+        end
     end
     #tire Function, currently same as in bachelors thesis
     # calculate Fz on tires
     
 
-    car.drivetrain.tires[1].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
-    car.drivetrain.tires[2].forces.value[3] = 0.5 * car.carParameters.mass.value * 9.81
-
+    car.drivetrain.tires[1].forces.value[3] = 0.25 * car.carParameters.mass.value * 9.81
+    car.drivetrain.tires[2].forces.value[3] = 0.25 * car.carParameters.mass.value * 9.81
+    car.drivetrain.tires[3].forces.value[3] = 0.25 * car.carParameters.mass.value * 9.81
+    car.drivetrain.tires[4].forces.value[3] = 0.25 * car.carParameters.mass.value * 9.81
 
     
 
-    car.wheelAssemblies[1].setPivotForce(tireFront)
-    car.wheelAssemblies[2].setPivotForce(tireRear)
+    for i in eachindex(car.wheelAssemblies)
+        car.wheelAssemblies[i].setPivotForce(car.drivetrain.tires[i])
+    end
 
 
-    cogMoment1 = car.wheelAssemblies[1].pivot2CoG(tireFront.forces.value) # zero at the end is because vertcial force would cause car to spn around y
-    cogMoment2 = car.wheelAssemblies[2].pivot2CoG(tireRear.forces.value)
-
-    cogForce = car.wheelAssemblies[1].forces.value .+ car.wheelAssemblies[2].forces.value
-    cogMoment = cogMoment1 + cogMoment2
+    cogForce = zero(car.wheelAssemblies[1].forces.value)
+    cogMoment = zero(car.wheelAssemblies[1].pivot2CoG(car.drivetrain.tires[1].forces.value))
+    for i in eachindex(car.wheelAssemblies)
+        cogForce = cogForce .+ car.wheelAssemblies[i].forces.value
+        cogMoment = cogMoment + car.wheelAssemblies[i].pivot2CoG(car.drivetrain.tires[i].forces.value)
+    end
 
 
     #enforce hitbox
@@ -116,8 +103,8 @@ function simpleTwinTrack(
 end
 
 
-function createSimplestSingleTrack()
-
+function createTwintrack()
+    
     gearboxFL = createCTU25gearbox()
     gearboxFR = createCTU25gearbox()
     gearboxRL = createCTU25gearbox()
@@ -128,21 +115,10 @@ function createSimplestSingleTrack()
     motorRL = createFischerMotor()
     motorRR = createFischerMotor()
 
-    #get max motor torque for scaling
-    maxMotorTorqueFL = motorFL.torqueSpeedFunction(0.0) * gearboxFL.ratio.value
-    maxMotorTorqueFR = motorFR.torqueSpeedFunction(0.0) * gearboxFR.ratio.value
-
-    maxMotorTorqueRL = motorRL.torqueSpeedFunction(0.0) * gearboxRL.ratio.value
-    maxMotorTorqueRR = motorRR.torqueSpeedFunction(0.0) * gearboxRR.ratio.value
-    
-
-    
-    tireFL = createR20lin(maxMotorTorqueFL)
-    tireFR = createR20lin(maxMotorTorqueFR)
-    tireRL = createR20lin(maxMotorTorqueRL)
-    tireRR = createR20lin(maxMotorTorqueRR)
-
-
+    tireFL = createR20lin()
+    tireFR = createR20lin()
+    tireRL = createR20lin()
+    tireRR = createR20lin()
 
     drivetrain = Drivetrain(
         [motorFL,motorFR,motorRL,motorRR],
@@ -154,15 +130,19 @@ function createSimplestSingleTrack()
     suspension = createDummySuspension()
 
     chassis = createCTU25chassis()
-    wheelAssemblyFL = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value/2, chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
-    wheelAssemblyFR = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value/2, -chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
+    wheelAssemblyFL = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value/2, chassis.track.value/2, 0]))
+    wheelAssemblyFR = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value/2, -chassis.track.value/2, 0]))
+    wheelAssemblyRL = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value/2, chassis.track.value/2, 0]))
+    wheelAssemblyRR = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value/2, -chassis.track.value/2, 0]))
 
-    wheelAssemblyRL = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value/2, chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
-    wheelAssemblyRR = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value/2, -chassis.track.value/2, 0])) # wheelbase musi byt parameter!!!!
+    wheelAssemblyFL.tire = tireFL; wheelAssemblyFL.motor = motorFL; wheelAssemblyFL.gearbox = gearboxFL
+    wheelAssemblyFR.tire = tireFR; wheelAssemblyFR.motor = motorFR; wheelAssemblyFR.gearbox = gearboxFR
+    wheelAssemblyRL.tire = tireRL; wheelAssemblyRL.motor = motorRL; wheelAssemblyRL.gearbox = gearboxRL
+    wheelAssemblyRR.tire = tireRR; wheelAssemblyRR.motor = motorRR; wheelAssemblyRR.gearbox = gearboxRR
 
-
-    
-    
+    for wa in [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
+        wa.tire.maxForce.value = wa.motor.torqueSpeedFunction(0.0) * wa.gearbox.ratio.value / wa.tire.radius.value
+    end
 
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s");
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s");
@@ -216,7 +196,7 @@ function createSimplestSingleTrack()
     )
 
     afto = Car(
-        simplestSingleTrack,
+        anyTrack,
         p,
         controlMapping,
         stateMapping,
@@ -225,7 +205,7 @@ function createSimplestSingleTrack()
         aero,
         suspension,
         chassis,
-        [wheelAssemblyFront,wheelAssemblyRear],
+        [wheelAssemblyFL,wheelAssemblyFR,wheelAssemblyRL,wheelAssemblyRR],
     )
     return afto
 end

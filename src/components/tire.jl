@@ -12,40 +12,37 @@ mutable struct  Tire
     tireFunction::Function
     tireConstraints::Function
     maxSLipAngle::carParameter{carVar}
+    maxForce::carParameter{carVar}
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
 
 
 
-function createR20lin(maxTorque::Float64)
+function createR20lin()
     radius = carParameter{carVar}(0.205, "tire radius", "m")
     width = carParameter{carVar}(0.3, "tire width, wrong", "m")
     inertia = carParameter{carVar}(0.3, "tire width, wrong", "m")
     mass = carParameter{carVar}(1.0, "tire mass,wrong", "kg")
-    velocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "velocity", "m/s");
+    velocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "velocity", "m/s")
     angularFrequency = carParameter{carVar}(0.0, "angular velocity", "rad/s")
     forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Forces from tire x y z", "N")
     slipAngle = carParameter{carVar}(0.0, "slip angle", "rad")
     slipRatio = carParameter{carVar}(0.0, "slip ratio", "-")
-    maxSlipAngle = carParameter{carVar}( 5/180*pi, "max slip angle", "rad")
-    maxForce = maxTorque/radius.value
+    maxSlipAngle = carParameter{carVar}(5/180*pi, "max slip angle", "rad")
+    maxForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
 
-    function tireFunction(inTorque::carVar,optiModel::Union{JuMP.Model,Nothing}=nothing)
+    function tireFunction(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = 2*slipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
     end
 
-
     function tireConstraints(optiModel)
-        @constraint(optiModel, (tire.forces.value[2]/maxForce)^2 + (tire.forces.value[1]/maxForce)^2 <= (tire.forces.value[3]/maxForce)^2)
+        @constraint(optiModel, (forces.value[2]/maxForce.value)^2 + (forces.value[1]/maxForce.value)^2 <= (forces.value[3]/maxForce.value)^2)
         @constraint(optiModel, slipAngle.value/maxSlipAngle.value <=  5/180*pi/maxSlipAngle.value)
         @constraint(optiModel, slipAngle.value/maxSlipAngle.value >= -5/180*pi/maxSlipAngle.value)
     end
 
-
-
-    
     tire = Tire(
         radius,
         width,
@@ -58,6 +55,7 @@ function createR20lin(maxTorque::Float64)
         slipRatio,
         tireFunction,
         tireConstraints,
-        maxSlipAngle
+        maxSlipAngle,
+        maxForce,
     )
 end

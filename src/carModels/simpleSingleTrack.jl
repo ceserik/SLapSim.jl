@@ -93,12 +93,8 @@ function createSimplestSingleTrack()
     motorFront = createFischerMotor()
     motorRear = createFischerMotor()
 
-    #get max motor torque for scaling
-    maxMotorTorqueFront = motorFront.torqueSpeedFunction(0.0) * gearboxFront.ratio.value
-    maxMotorTorqueRear = motorRear.torqueSpeedFunction(0.0) * gearboxRear.ratio.value
-
-    tireFront = createR20lin(maxMotorTorqueFront)
-    tireRear = createR20lin(maxMotorTorqueRear)
+    tireFront = createR20lin()
+    tireRear = createR20lin()
 
 
     drivetrain = Drivetrain(
@@ -109,9 +105,16 @@ function createSimplestSingleTrack()
 
     aero = createBasicAero()
     suspension = createDummySuspension()
-    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520/2, 0, 0])) # wheelbase musi byt parameter!!!!
-    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520/2, 0, 0]))
     chassis = createCTU25chassis()
+    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520/2, 0, 0]))
+    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520/2, 0, 0]))
+
+    wheelAssemblyFront.tire = tireFront; wheelAssemblyFront.motor = motorFront; wheelAssemblyFront.gearbox = gearboxFront
+    wheelAssemblyRear.tire = tireRear; wheelAssemblyRear.motor = motorRear; wheelAssemblyRear.gearbox = gearboxRear
+
+    for wa in [wheelAssemblyFront, wheelAssemblyRear]
+        wa.tire.maxForce.value = wa.motor.torqueSpeedFunction(0.0) * wa.gearbox.ratio.value / wa.tire.radius.value
+    end
 
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s");
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s");
