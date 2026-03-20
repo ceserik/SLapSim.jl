@@ -83,7 +83,7 @@ function carODE_globalFrame(du, x, p, t)
     car.controlMapping(car, u)
     car.stateMapping(car, x)
 
-    dx = car.carFunction(car, track, 0, nothing)
+    dx = car.carFunction(car, track, nothing)
 
     ψ = x[3]
     rot = [cos(ψ) -sin(ψ);

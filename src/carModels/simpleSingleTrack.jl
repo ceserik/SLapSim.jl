@@ -2,11 +2,7 @@ using Revise
 using SLapSim
 
 
-function simplestSingleTrack(
-    car::Car,
-    track::Union{Track,Nothing}=nothing,
-    k::Union{Int64,Nothing,Float64}=nothing,
-    optiModel::Union{JuMP.Model,Nothing}=nothing)
+function simplestSingleTrack(car::Car, track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
     # assign names for easier reading
     torqueFront = car.drivetrain.motors[1].torque.value
     torqueRear = car.drivetrain.motors[2].torque.value
