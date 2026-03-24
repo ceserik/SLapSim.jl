@@ -9,9 +9,9 @@ function createSimplestSingleTrack()
 
     motorFront = createFischerMotor()
     motorRear = createFischerMotor()
-
-    tireFront = createR20lin()
-    tireRear = createR20lin()
+    
+    tireFront = createR20lin(motorFront,gearboxFront)
+    tireRear = createR20lin(motorRear,gearboxRear)
 
 
     drivetrain = Drivetrain(
@@ -26,16 +26,6 @@ function createSimplestSingleTrack()
     wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520 / 2, 0, 0]))
     wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520 / 2, 0, 0]))
 
-    wheelAssemblyFront.tire = tireFront
-    wheelAssemblyFront.motor = motorFront
-    wheelAssemblyFront.gearbox = gearboxFront
-    wheelAssemblyRear.tire = tireRear
-    wheelAssemblyRear.motor = motorRear
-    wheelAssemblyRear.gearbox = gearboxRear
-
-    for wa in [wheelAssemblyFront, wheelAssemblyRear]
-        wa.tire.maxForce.value = wa.motor.torqueSpeedFunction(0.0) * wa.gearbox.ratio.value / wa.tire.radius.value
-    end
 
     velocity = carParameter{Vector{carVar}}([15.0, 0.0, 0.0], "Speed X", "m/s")
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s")
@@ -62,13 +52,9 @@ function createSimplestSingleTrack()
         gbRear = drivetrain.gearboxes[2]
 
         # Transformation of velocities from cog to wheels
-        wheelAssemblyFront.setPivotVelocity(angVel, vel)
-        wheelAssemblyRear.setPivotVelocity(angVel, vel)
-
-        #Steer the wheels
-        wheelAssemblyFront.setTireSpeeds(drivetrain.tires[1])
-        wheelAssemblyRear.setTireSpeeds(drivetrain.tires[2])
-
+        wheelAssemblyFront.setVelocity(angVel,vel)
+        wheelAssemblyRear.setVelocity(angVel,vel)
+        
         #gearing of forces from motor to tire
         gbFront.torqueIn.value = drivetrain.motors[1].torque.value
         gbFront.f()

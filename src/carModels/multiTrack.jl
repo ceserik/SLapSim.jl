@@ -13,10 +13,10 @@ function createTwintrack()
     motorRL = createFischerMotor()
     motorRR = createFischerMotor()
 
-    tireFL = createR20lin()
-    tireFR = createR20lin()
-    tireRL = createR20lin()
-    tireRR = createR20lin()
+    tireFL = createR20lin(29.1) #WRRRRRONGGGGG
+    tireFR = createR20lin(29.1)
+    tireRL = createR20lin(29.1)
+    tireRR = createR20lin(29.1)
 
     drivetrain = Drivetrain(
         [motorFL, motorFR, motorRL, motorRR],
@@ -33,22 +33,6 @@ function createTwintrack()
     wheelAssemblyRL = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2, chassis.track.value / 2, 0]))
     wheelAssemblyRR = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2, -chassis.track.value / 2, 0]))
 
-    wheelAssemblyFL.tire = tireFL
-    wheelAssemblyFL.motor = motorFL
-    wheelAssemblyFL.gearbox = gearboxFL
-    wheelAssemblyFR.tire = tireFR
-    wheelAssemblyFR.motor = motorFR
-    wheelAssemblyFR.gearbox = gearboxFR
-    wheelAssemblyRL.tire = tireRL
-    wheelAssemblyRL.motor = motorRL
-    wheelAssemblyRL.gearbox = gearboxRL
-    wheelAssemblyRR.tire = tireRR
-    wheelAssemblyRR.motor = motorRR
-    wheelAssemblyRR.gearbox = gearboxRR
-
-    for wa in [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
-        wa.tire.maxForce.value = wa.motor.torqueSpeedFunction(0.0) * wa.gearbox.ratio.value / wa.tire.radius.value
-    end
 
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s")
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s")

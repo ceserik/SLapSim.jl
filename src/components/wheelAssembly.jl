@@ -1,83 +1,87 @@
 
 mutable struct WheelAssembly
     position::carParameter{Vector{carVar}}
-    velocity::carParameter{Vector{carVar}}
-    pivot2CoG::Function
+    velocityPivot::carParameter{Vector{carVar}}
+    velocityTire::carParameter{Vector{carVar}}
+    maxAngle::carParameter{carVar}
     steeringAngle::carParameter{carVar}
     forces::carParameter{Vector{carVar}}
-    setPivotVelocity::Function
-    rotZ::Function
-    setTireSpeeds::Function
-    setPivotForce::Function
+    torque::carParameter{Vector{carVar}}
     constraints::Function
-    maxAngle::carParameter{carVar}
-    tire::Union{Tire, Nothing}
-    motor::Union{Motor, Nothing}
-    gearbox::Union{Gearbox, Nothing}
+    setVelocity::Function
+    getTorque::Function
 end
 Base.show(io::IO, ::MIME"text/plain", obj::WheelAssembly) = prettyPrintComponent(io, obj)
 
 function createBasicWheelAssembly(position::Vector{carVar})
-    steeringAngle = carParameter{carVar}(0.0,"steering angle","rad")
-    MaxSteeringAngle = carParameter{carVar}(20/180*pi," max steering angle","rad")
-    forces = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Pivot forces","N N N")
-    velocity = carParameter{Vector{carVar}}([0.0,0.0,0.0],"Velocity at pivot","m/s")
-    position = carParameter{Vector{carVar}}(position,"Position from CoG","m m m")
+    steeringAngle = carParameter{carVar}(0.0, "steering angle", "rad")
+    maxAngle = carParameter{carVar}(20 / 180 * pi, " max steering angle", "rad")
+    forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Pivot forces", "N N N")
+    torque = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Generated torque on CoG", "N N N")
+    velocityPivot = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Velocity at pivot", "m/s")
+    velocityTire = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Velocity in tire frame", "m/s")
+    position = carParameter{Vector{carVar}}(position, "Position from CoG", "m m m")
     function rotZ(steering::carVar)
         out = [
             cos(steering) -sin(steering) 0;
-            sin(steering)  cos(steering) 0;
-            0           0          1
+            sin(steering) cos(steering) 0;
+            0 0 1
         ]
         return out
     end
 
     function rotZinv(steering::carVar)
         out = [
-            cos(steering)  sin(steering) 0;
-           -sin(steering)  cos(steering) 0;
-            0              0             1
+            cos(steering) sin(steering) 0;
+            -sin(steering) cos(steering) 0;
+            0 0 1
         ]
         return out
     end
     function constraints(optiModel::JuMP.Model)
-        @constraint(optiModel, steeringAngle.value/MaxSteeringAngle.value <= 20/180*pi/MaxSteeringAngle.value) 
-        @constraint(optiModel, steeringAngle.value/MaxSteeringAngle.value >= -20/180*pi/MaxSteeringAngle.value) 
+        @constraint(optiModel, steeringAngle.value / maxAngle.value <= 20 / 180 * pi / maxAngle.value)
+        @constraint(optiModel, steeringAngle.value / maxAngle.value >= -20 / 180 * pi / maxAngle.value)
     end
 
     function pivot2CoG(forces)
         #returns moments on cog from wheel forces
-        moments = cross(position.value, forces)
-        return moments
+        torque.value = cross(position.value, forces)
     end
 
-    function setPivotForce(tire::Tire)
-        forces.value = rotZinv(steeringAngle.value) * tire.forces.value
+    function setPivotForce(forcesIn)
+        forces.value = rotZinv(steeringAngle.value) * forcesIn
     end
 
-    function setPivotVelocity(angularVelocity,CoGvelocity)
+    function setPivotVelocity(angularVelocity, CoGvelocity)
         velocity.value = CoGvelocity + cross(angularVelocity, position.value) #CoG2wheelAssembly(velocity.value,angularVelocity)
     end
 
-    function setTireSpeeds(tire::Tire)
-        tire.velocity.value  = rotZ(steeringAngle.value) * velocity.value
+    function setTireSpeeds()
+        velocityTire.value = rotZ(steeringAngle.value) * velocity.value
+    end
+
+    function setVelocity(angularVelocity, velocity)
+        setPivotVelocity(angularVelocity, velocity)
+        setTireSpeeds()
+    end
+
+    function getTorque(forcesIn)
+        setPivotForce(forcesIn)
+        pivot2CoG(forcesIn)
+        setTireSpeeds()
     end
 
     testWheelAssembly = WheelAssembly(
         position,
-        velocity,
-        pivot2CoG,
+        velocityPivot,
+        velocityTire,
+        maxAngle,
         steeringAngle,
         forces,
-        setPivotVelocity,
-        rotZ,
-        setTireSpeeds,
-        setPivotForce,
+        torque,
         constraints,
-        MaxSteeringAngle,
-        nothing,
-        nothing,
-        nothing,
+        setVelocity,
+        getTorque
     )
     return testWheelAssembly
 end
