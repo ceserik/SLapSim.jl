@@ -1,4 +1,4 @@
-
+using Revise
 mutable struct WheelAssembly
     position::carParameter{Vector{carVar}}
     velocityPivot::carParameter{Vector{carVar}}
@@ -53,11 +53,11 @@ function createBasicWheelAssembly(position::Vector{carVar})
     end
 
     function setPivotVelocity(angularVelocity, CoGvelocity)
-        velocity.value = CoGvelocity + cross(angularVelocity, position.value) #CoG2wheelAssembly(velocity.value,angularVelocity)
+        velocityPivot.value = CoGvelocity + cross(angularVelocity, position.value) #CoG2wheelAssembly(velocity.value,angularVelocity)
     end
 
     function setTireSpeeds()
-        velocityTire.value = rotZ(steeringAngle.value) * velocity.value
+        velocityTire.value = rotZ(steeringAngle.value) * velocityPivot.value
     end
 
     function setVelocity(angularVelocity, velocity)
@@ -67,8 +67,7 @@ function createBasicWheelAssembly(position::Vector{carVar})
 
     function getTorque(forcesIn)
         setPivotForce(forcesIn)
-        pivot2CoG(forcesIn)
-        setTireSpeeds()
+        pivot2CoG(forces.value)
     end
 
     testWheelAssembly = WheelAssembly(

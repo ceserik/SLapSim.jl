@@ -55,16 +55,24 @@ function createSimplestSingleTrack()
         wheelAssemblyFront.setVelocity(angVel,vel)
         wheelAssemblyRear.setVelocity(angVel,vel)
         
+        #pass wheel assembly velocities to tires
+        drivetrain.tires[1].setVelocity(wheelAssemblyFront.velocityTire.value)
+        drivetrain.tires[2].setVelocity(wheelAssemblyRear.velocityTire.value)
+
         #gearing of forces from motor to tire
-        gbFront.torqueIn.value = drivetrain.motors[1].torque.value
-        gbFront.f()
+        gbFront.setTorque(drivetrain.motors[1].torque.value)
+        gbFront.compute()
 
-        gbRear.torqueIn.value = drivetrain.motors[2].torque.value
-        gbRear.f()
+        gbRear.setTorque(drivetrain.motors[2].torque.value)
+        gbRear.compute()
 
+                # calculate Fz on tires
+        drivetrain.tires[1].forces.value[3] = 0.5 * mass.value * 9.81
+        drivetrain.tires[2].forces.value[3] = 0.5 * mass.value * 9.81
+        
         #tire forces
-        drivetrain.tires[1].tireFunction(gbFront.torqueOut.value, optiModel)
-        drivetrain.tires[2].tireFunction(gbRear.torqueOut.value, optiModel)
+        drivetrain.tires[1].compute(gbFront.torqueOut.value, optiModel)
+        drivetrain.tires[2].compute(gbRear.torqueOut.value, optiModel)
 
         if !isnothing(optiModel)
             drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel)
@@ -76,18 +84,16 @@ function createSimplestSingleTrack()
             drivetrain.tires[2].tireConstraints(optiModel)
         end
 
-        # calculate Fz on tires
-        drivetrain.tires[1].forces.value[3] = 0.5 * mass.value * 9.81
-        drivetrain.tires[2].forces.value[3] = 0.5 * mass.value * 9.81
 
-        wheelAssemblyFront.setPivotForce(drivetrain.tires[1])
-        wheelAssemblyRear.setPivotForce(drivetrain.tires[2])
 
-        cogMoment1 = wheelAssemblyFront.pivot2CoG(drivetrain.tires[1].forces.value)
-        cogMoment2 = wheelAssemblyRear.pivot2CoG(drivetrain.tires[2].forces.value)
+        #propagate forces from tires to wheel assemblies to COG
+#        @infiltrate
+        wheelAssemblyFront.getTorque(drivetrain.tires[1].forces.value)
+        wheelAssemblyRear.getTorque(drivetrain.tires[2].forces.value)
 
         cogForce = wheelAssemblyFront.forces.value .+ wheelAssemblyRear.forces.value
-        cogMoment = cogMoment1 + cogMoment2
+        #@infiltrate
+        cogMoment = wheelAssemblyFront.torque.value + wheelAssemblyRear.torque.value
 
         dv = cogForce / mass.value + angVel × vel
         dangularVelocity = cogMoment / inertia.value

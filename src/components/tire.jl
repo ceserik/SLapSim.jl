@@ -9,8 +9,9 @@ mutable struct  Tire
     forces::carParameter{Vector{carVar}}
     slipAngle::carParameter{carVar}
     slipRatio::carParameter{carVar}
-    tireFunction::Function
+    compute::Function
     tireConstraints::Function
+    setVelocity::Function
     maxSLipAngle::carParameter{carVar}
     scalingForce::carParameter{carVar}
 end
@@ -32,7 +33,12 @@ function createR20lin(motor,gearbox)
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
 
-    function tireFunction(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
+    function setVelocity(velocityIn::Vector{carVar})
+        velocity.value = velocityIn
+    end
+
+
+    function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = 2*slipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
@@ -54,8 +60,9 @@ function createR20lin(motor,gearbox)
         forces,
         slipAngle,
         slipRatio,
-        tireFunction,
+        compute,
         tireConstraints,
+        setVelocity,
         maxSlipAngle,
         scalingForce,
     )

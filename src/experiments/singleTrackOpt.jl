@@ -1,5 +1,5 @@
 
-#using Revise
+using Revise
 using Infiltrator
 using SLapSim
 using GLMakie
