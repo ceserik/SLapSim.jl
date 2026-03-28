@@ -84,8 +84,8 @@ problem.model = model
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 segments = 100
 pol_order = 3
-optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
-#optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
+#optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
+optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
 problem.optiResult = optiResult_interp
 
 if 1 == 1

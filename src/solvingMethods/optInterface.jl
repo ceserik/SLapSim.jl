@@ -64,6 +64,12 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     # It would make sense to have here my custom interpolation function using gauss quadrature
     initialization = make_result_interpolation(x, u, s)
     println("done initialization")
+
+    fig_init = Figure()
+    ax_init = Axis(fig_init[1, 1], aspect=DataAspect(), title="Initialization")
+    plotCarPath_interpolated(track, initialization, ax_init)
+    display(GLMakie.Screen(), fig_init)
+
     return initialization
 end;
 
@@ -196,11 +202,11 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
     #xd = Gauss_radau.createConstraints(segments,initialization);
 
-    #Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
-    #xd = Gauss_legendre.createConstraints(segments,initialization);
-    segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
-    RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
-    xd = RKadaptive.createConstraints(segment_edges, initialization)
+    Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
+    xd = Gauss_legendre.createConstraints(segments,initialization);
+    #segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
+    #RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
+    #xd = RKadaptive.createConstraints(segment_edges, initialization)
     X = xd[2]
     U = xd[3]
     s_all = xd[4]
@@ -217,9 +223,9 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     #@constraint(model,diff(U[:,1]) .>=-1) #constraint on controls derivative
 
     #this has to have variable length to allow closed track
-    @constraint(model,-100 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 100) #constraint on controls derivative
-    @constraint(model,-100 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 100) #constraint on controls derivative
-    @constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
+    #@constraint(model,-100/2 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 100/2) #constraint on controls derivative
+    #@constraint(model,-100/2 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 100/2) #constraint on controls derivative
+    #@constraint(model,-1/2 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1/2) #constraint on controls derivative
     #@constraint(model,U[1,:].== U[2,:])
     @objective(model, Min, X[end, 6])
     optimize!(model)
@@ -228,8 +234,8 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     u = value.(U)
 
     # Interpolate using the LGR polynomial from the optimisation (Garg et al. 2010)
-    #out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
-    out_interp = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
+    out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
+    #out_interp = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
 
     out = Result(x, u[1:end-1, :], s_all)
     return out, out_interp
@@ -308,9 +314,9 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
         @objective(model, Min, X[end, 6])
 
-        #@constraint(model,-100 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 100) #constraint on controls derivative
-        #@constraint(model,-100 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 100) #constraint on controls derivative
-        #@constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
+        @constraint(model,-50 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 50) #constraint on controls derivative
+        @constraint(model,-50 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 50) #constraint on controls derivative
+        @constraint(model,-0.5 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 0.5) #constraint on controls derivative
 
         optimize!(model)
 

@@ -54,7 +54,7 @@ function createTwintrack()
         drivetrain.motors[1].torque.value = 0.0
         drivetrain.motors[2].torque.value = 0.0
         drivetrain.motors[3].torque.value = controls[1]
-        drivetrain.motors[4].torque.value = controls[1]
+        drivetrain.motors[4].torque.value = controls[2]
         wheelAssemblies[1].steeringAngle.value = controls[3]
         wheelAssemblies[2].steeringAngle.value = controls[3]
 
