@@ -23,8 +23,8 @@
         "ALL_MODULES_EXCEPT_MAIN",      
     ],
     "window.autoDetectColorScheme": true,
-    "workbench.preferredDarkColorTheme": "Default Dark Modern",
-    "workbench.preferredLightColorTheme": "Default Light+",
+    "workbench.preferredDarkColorTheme": "Dark Modern",
+    "workbench.preferredLightColorTheme": "Light+",
    // "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim/src",
     "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim",
     "latex-workshop.latex.recipes": [

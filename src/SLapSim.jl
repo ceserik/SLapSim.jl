@@ -24,9 +24,10 @@ include("components/motor.jl")
 include("components/tire.jl")
 include("components/accumulator.jl")
 include("components/aero.jl")
+include("components/chassis.jl")
 include("components/suspension.jl")
 include("components/wheelAssembly.jl")
-include("components/chassis.jl")
+
 
 # Car models (depend on components)
 include("carModels/carDefinition.jl")
@@ -44,8 +45,10 @@ include("solvingMethods/collocation.jl")
 
 
 # Export public functions
-export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack, createBasicWheelAssembly,figureEight
+export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack, createBasicWheelAssembly,figureEight, carParameter, CarParameters
 export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad, create_gauss_legendre
+export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
+export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
 #println("SLapSim module loaded")
 
 end # module
