@@ -18,7 +18,7 @@ function createLobattoIIIA(stage, f)
     tableau = TableauLobattoIIIA(stage)
     #tableau = TableauRunge()
     stages = tableau.s
-    function createDynamicConstraints(f, Xsize::Int64, Usize::Int64, iterpolationFunction, sampplingPoints::Vector{Float64}, model::JuMP.Model, X_init, U_init)
+    function createDynamicConstraints(f, Xsize::Int64, Usize::Int64, iterpolationFunction, sampplingPoints::AbstractVector{Float64}, model::JuMP.Model, X_init, U_init)
         # Ensure U_init has same number of node entries as X_init (extend last row if necessary)
         if size(U_init, 1) != size(X_init, 1)
 

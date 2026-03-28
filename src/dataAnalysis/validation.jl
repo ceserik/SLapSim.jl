@@ -167,7 +167,7 @@ end
 
 
 function plotCarStates_interp(result, stepsize)
-    s = collect(result.path[1]:stepsize:result.path[end])
+    s = result.path[1]:stepsize:result.path[end]
     #s  = result.path
     x = hcat(result.states.(s)...)'   # n_samples × nStates
     u = hcat(result.controls.(s)...)'  # n_samples × nControls

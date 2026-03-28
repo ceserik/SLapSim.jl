@@ -68,7 +68,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     ####
     N = Int(round((s_tmp[end] - s_tmp[1]) / ds))
     ds = (s_tmp[end] - s_tmp[1]) / N
-    s_traj = collect(LinRange(s_tmp[1], s_tmp[end], Int(N)))
+    s_traj = LinRange(s_tmp[1], s_tmp[end], Int(N))
     x_smpl = interp1(s_tmp, x_smpl, s_traj,"PCHIP") 
     y_smpl = interp1(s_tmp, y_smpl, s_traj,"PCHIP") 
     ###
@@ -170,10 +170,10 @@ end
 function plotTrackStates(track::Track)
     s = track.sampleDistances
     vals = track.fcurve.(s)              # vector of 4‑tuples: (x,y,theta,curvature)
-    x  = collect(getindex.(vals, 3))
-    y  = collect(getindex.(vals, 4))
-    th = collect(getindex.(vals, 2))
-    C  = collect(getindex.(vals, 1))
+    x  = getindex.(vals, 3)
+    y  = getindex.(vals, 4)
+    th = getindex.(vals, 2)
+    C  = getindex.(vals, 1)
 
     fig = Figure(resolution = (800, 900))
     ax1 = Axis(fig[1, 1], xlabel = "s", ylabel = "x", title = "x(s)")
@@ -273,9 +273,9 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     thc = getindex.(vals, 2)
 
     # ignore 4th component or collect it similarly with getindex.(vals,4)   
-    xc = collect(xc)
-    yc = collect(yc)
-    thc = collect(thc)
+    xc =  xc
+    yc =  yc
+    thc = thc
 
     # lane limits (broadcast to match shapes)
 

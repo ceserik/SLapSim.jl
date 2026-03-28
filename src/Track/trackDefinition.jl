@@ -44,7 +44,7 @@ function simpleTrack(;
     straight2 = fill(0.0001, straight_length2)
     
     # Combine segments into full track
-    curvature = [straight; collect(clothoid); circle;straight2]
+    curvature = [straight; clothoid; circle;straight2]
     
     # Create and return track instance
     return Track(
@@ -139,7 +139,7 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     y_smpl_R2 = R2 * sin.(t2[2:end])
     
     # Straight section
-    y_smpl_straight1 = collect(-l_straight:-1)
+    y_smpl_straight1 = -l_straight:-1
     x_smpl_straight1 = fill(-2*R1, length(y_smpl_straight1))
     
     # Combine all segments

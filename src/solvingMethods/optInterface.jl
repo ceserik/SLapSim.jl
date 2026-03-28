@@ -62,7 +62,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     u[:, 3] = steering
 
     # It would make sense to have here my custom interpolation function using gauss quadrature
-    initialization = make_result_interpolation(x, u, collect(s))
+    initialization = make_result_interpolation(x, u, s)
     return initialization
 end;
 
