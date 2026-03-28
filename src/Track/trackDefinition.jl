@@ -181,6 +181,50 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     return track
 end
 
+function figureEight(vis::Bool = false, ds::Float64 = 0.5)
+    w_l = 5.0  # Width of the track [m]
+    w_r = 5.0  # Width of the track [m]
+    rho = 1.225
+    μ = 1.0
+
+    w_x = 50.0  # width of the track along x axis
+    w_y = 30.0  # width of the track along y axis
+    t = collect(0:0.01:2π)
+    X = w_x * cos.(t)
+    Y = w_y * sin.(2 * t)
+
+    track = Track(
+        [0.0],      # curvature
+        fill(rho, length(X)),
+        fill(μ, length(X)),
+        [1.0],      # sampleDistances
+        trackMapping,
+        X,
+        Y,
+        [0.0],      # theta
+        fill(w_r, length(X)),
+        fill(w_l, length(X)),
+        [0.0],      # inclination
+        [0.0],      # slope
+        s -> (0.0), # fcurve
+        [0.0]       # s
+    )
+
+    smooth_factor = 1e2
+    smooth_by_OCP(track, smooth_factor, ds, true)
+
+    track.widthR = fill(w_r, length(track.x))
+    track.widthL = fill(w_l, length(track.x))
+    track.rho    = fill(rho, length(track.x))
+    track.μ      = fill(μ,   length(track.x))
+
+    if vis == 1
+        plotTrack(track)
+    end
+
+    return track
+end
+
 # Example extension: add method to get track length
 Base.length(track::Track) = length(track.curvature)
 

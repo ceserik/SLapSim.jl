@@ -39,32 +39,6 @@ end
 
 make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s::Vector{Float64}) = make_result_interpolation(x, u, s, s)
 
-function initializeSolution(car::Car, track::Track, sampleDistances::Vector{Float64})
-    span2 = [sampleDistances[1], sampleDistances[end]]
-    x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
-    steeringP = 10
-    velocityP = 3
-    vref = 2
-
-    prob = ODEProblem(carODE_path_initialization, x0, span2, [car, track, steeringP, velocityP, vref])
-    sol = OrdinaryDiffEq.solve(prob, Tsit5(), saveat=sampleDistances, reltol=1e-5, abstol=1e-5)
-
-    x = hcat(sol.u...)'
-    s = sol.t
-    steering = x[:, 5] .* steeringP
-    torque = (vref .- x[:, 1]) * velocityP
-
-    u = zeros(length(sampleDistances), Int64(car.carParameters.nControls.value))
-    u[:, 1] = torque
-    u[:, 3] = steering
-
-    initialization = Result(
-        x,
-        u[1:end-1, :],
-        s
-    )
-    return initialization
-end;
 
 function initializeSolution_interpolation(car::Car, track::Track, segments::Int64)
 
@@ -80,7 +54,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
 
     x = hcat(sol.u...)'
     s = sol.t
-    steering = x[:, 5] .* steeringP
+    steering = -x[:, 5] .* steeringP
     torque = (vref .- x[:, 1]) * velocityP
     #@infiltrate
     u = zeros(segments, Int64(car.carParameters.nControls.value))
@@ -113,7 +87,7 @@ function carODE_path_initialization(du, x, p, s)
     velocityP = p[4]
     vref = p[5]
 
-    control = [(vref - x[1]) * velocityP, 0.0, x[5] * steeringP]
+    control = [(vref - x[1]) * velocityP, 0.0, -x[5] * steeringP]
     dx = carODE_path(car, track, s, control, x, nothing) # carF must return a vector matching length(x)
     du .= dx
 end;
@@ -232,9 +206,9 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     segment_edges = xd[5]
 
     @constraint(model, X[1:end, 1] .>= 0) #vx
-    @constraint(model, X[1, 1] .>= 5) #vx
+    @constraint(model, X[1, 1] .>= 2) #vx
     @constraint(model, X[1, 2] .== 0) # intial vy
-    @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
+    #@constraint(model, X[1, 3] .== track.theta[1]) # intial heading
     @constraint(model, X[1, 6] .>= 0) # final time
     @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
 
@@ -331,6 +305,10 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         @constraint(model, X[1, 6] .>= 0) # final time
         @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
         @objective(model, Min, X[end, 6])
+
+        #@constraint(model,-100 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 100) #constraint on controls derivative
+        #@constraint(model,-100 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 100) #constraint on controls derivative
+        #@constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
 
         optimize!(model)
 

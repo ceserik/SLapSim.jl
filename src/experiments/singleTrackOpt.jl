@@ -61,9 +61,9 @@ problem = Problem_config(0, 0, 0, 0)
 
 car = createSimplestSingleTrack()
 problem.car = car
+#track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
-
-path = "tracks/FSCZ.kml"
+#path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
 track = doubleTurn(false,0.5)
 #track = skidpad(false)
@@ -77,8 +77,8 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 100
-pol_order = 2
+segments = 20
+pol_order = 3
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
 problem.optiResult = optiResult_interp

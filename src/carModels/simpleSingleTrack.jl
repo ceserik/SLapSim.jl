@@ -66,7 +66,7 @@ function createSimplestSingleTrack()
         gbRear.setTorque(drivetrain.motors[2].torque.value)
         gbRear.compute()
 
-                # calculate Fz on tires
+        # calculate Fz on tires
         drivetrain.tires[1].forces.value[3] = 0.5 * mass.value * 9.81
         drivetrain.tires[2].forces.value[3] = 0.5 * mass.value * 9.81
         
@@ -95,7 +95,7 @@ function createSimplestSingleTrack()
         #@infiltrate
         cogMoment = wheelAssemblyFront.torque.value + wheelAssemblyRear.torque.value
 
-        dv = cogForce / mass.value + angVel × vel
+        dv = cogForce / mass.value - angVel × vel
         dangularVelocity = cogMoment / inertia.value
         dx = [dv[1], dv[2], angVel[3], dangularVelocity[3]]
         return dx

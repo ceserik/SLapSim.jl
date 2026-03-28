@@ -40,7 +40,7 @@ function createR20lin(motor,gearbox)
 
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
-        forces.value[2] = 2*slipAngle.value * forces.value[3]
+        forces.value[2] = 2*slipAngle.value/maxSlipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
     end
 
