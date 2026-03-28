@@ -24,18 +24,18 @@ carParameter{Vector{T}}(v::Vector{<:Real}, name::String, unit::String) where T =
     carParameter{Vector{T}}(Vector{T}(v), name, unit)
 
 mutable struct CarParameters
-    mass::carParameter{T} where T
-    inertia::carParameter{T} where T
-    motorForce::carParameter{T} where T
-    CL::carParameter{T} where T
-    CD::carParameter{T} where T
-    velocity::carParameter{T} where T
-    angularVelocity::carParameter{T} where T
-    psi::carParameter{T} where T
-    n::carParameter{T} where T
-    powerLimit::carParameter{T} where T
-    lateralForce::carParameter{T} where T
-    nControls::carParameter{T} where T
-    nStates::carParameter{T} where T
-    s::carParameter{T} where T
+    mass::carParameter{carVar}
+    inertia::carParameter{carVar}
+    motorForce::carParameter{carVar}
+    CL::carParameter{carVar}
+    CD::carParameter{carVar}
+    velocity::carParameter{Vector{carVar}}
+    angularVelocity::carParameter{Vector{carVar}}
+    psi::carParameter{carVar}
+    n::carParameter{carVar}
+    powerLimit::carParameter{carVar}
+    lateralForce::carParameter{carVar}
+    nControls::carParameter{carVar}
+    nStates::carParameter{carVar}
+    s::carParameter{carVar}
 end
