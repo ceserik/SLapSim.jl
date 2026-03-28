@@ -13,7 +13,6 @@ function createSimplestSingleTrack()
     tireFront = createR20lin(motorFront,gearboxFront)
     tireRear = createR20lin(motorRear,gearboxRear)
 
-
     drivetrain = Drivetrain(
         [motorFront, motorRear],
         [gearboxFront, gearboxRear],
@@ -25,7 +24,6 @@ function createSimplestSingleTrack()
     chassis = createCTU25chassis()
     wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520 / 2, 0, 0]))
     wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520 / 2, 0, 0]))
-
 
     velocity = carParameter{Vector{carVar}}([15.0, 0.0, 0.0], "Speed X", "m/s")
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s")
@@ -84,15 +82,11 @@ function createSimplestSingleTrack()
             drivetrain.tires[2].tireConstraints(optiModel)
         end
 
-
-
         #propagate forces from tires to wheel assemblies to COG
-#        @infiltrate
         wheelAssemblyFront.getTorque(drivetrain.tires[1].forces.value)
         wheelAssemblyRear.getTorque(drivetrain.tires[2].forces.value)
 
         cogForce = wheelAssemblyFront.forces.value .+ wheelAssemblyRear.forces.value
-        #@infiltrate
         cogMoment = wheelAssemblyFront.torque.value + wheelAssemblyRear.torque.value
 
         dv = cogForce / mass.value - angVel × vel
@@ -100,7 +94,6 @@ function createSimplestSingleTrack()
         dx = [dv[1], dv[2], angVel[3], dangularVelocity[3]]
         return dx
     end
-
 
     function controlMapping(controls::AbstractVector)
         drivetrain.motors[1].torque.value = controls[1]

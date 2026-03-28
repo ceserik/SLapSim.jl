@@ -17,8 +17,6 @@ mutable struct  Tire{F1,F2,F3}
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
 
-
-
 function createR20lin(motor,gearbox)
     radius = carParameter{carVar}(0.205, "tire radius", "m")
     width = carParameter{carVar}(0.3, "tire width, wrong", "m")
@@ -37,17 +35,16 @@ function createR20lin(motor,gearbox)
         velocity.value = velocityIn
     end
 
-
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = 2*slipAngle.value/maxSlipAngle.value * forces.value[3]
         forces.value[1] = inTorque/radius.value
     end
 
-    function tireConstraints(optiModel)
-        @constraint(optiModel, (forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2 <= (forces.value[3]/scalingForce.value)^2)
-        @constraint(optiModel, slipAngle.value/maxSlipAngle.value <=  5/180*pi/maxSlipAngle.value)
-        @constraint(optiModel, slipAngle.value/maxSlipAngle.value >= -5/180*pi/maxSlipAngle.value)
+    function tireConstraints(model=nothing)
+        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (forces.value[3]/scalingForce.value)^2, model)
+        lessContraint(slipAngle.value/maxSlipAngle.value, 5/180*pi/maxSlipAngle.value, model)
+        greaterContraint(slipAngle.value/maxSlipAngle.value, -5/180*pi/maxSlipAngle.value, model)
     end
 
     tire = Tire(

@@ -38,9 +38,9 @@ function createBasicWheelAssembly(position::Vector{carVar})
         ]
         return out
     end
-    function constraints(optiModel::JuMP.Model)
-        @constraint(optiModel, steeringAngle.value / maxAngle.value <= 20 / 180 * pi / maxAngle.value)
-        @constraint(optiModel, steeringAngle.value / maxAngle.value >= -20 / 180 * pi / maxAngle.value)
+    function constraints(model=nothing)
+        lessContraint(steeringAngle.value / maxAngle.value, 20 / 180 * pi / maxAngle.value, model)
+        greaterContraint(steeringAngle.value / maxAngle.value, -20 / 180 * pi / maxAngle.value, model)
     end
 
     function pivot2CoG(forces)

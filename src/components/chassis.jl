@@ -11,11 +11,9 @@ function createCTU25chassis()
     wheelbase = carParameter{carVar}(1.525,"wheelbase","m")
     track = carParameter{carVar}(1.2,"track","m")
 
-    function hitbox(n::carVar,track::Union{Track,Nothing},model::Union{JuMP.Model,Nothing})
-        if !isnothing(model)
-            @constraint(model,n >= -track.widthR[1])
-            @constraint(model,n <= track.widthL[1])
-        end
+    function hitbox(n::carVar,track::Union{Track,Nothing},model=nothing)
+        greaterContraint(n, -track.widthR[1], model)
+        lessContraint(n, track.widthL[1], model)
     end
 
     chassis = Chassis(
