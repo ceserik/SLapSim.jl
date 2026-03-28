@@ -56,7 +56,8 @@ update_theme!(
 
 GLMakie.closeall()
 
-problem = Problem_config(0, 0, 0, 0)
+problem = Problem_config(nothing, nothing, nothing, nothing)
+
 
 
 car = createSimplestSingleTrack()

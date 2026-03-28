@@ -1,10 +1,10 @@
-mutable struct Motor
+mutable struct Motor{F1,F2}
     torque::carParameter{carVar}
     angularFrequency::carParameter{carVar}
     mass::carParameter{carVar}
     loss::carParameter{carVar}
-    torqueSpeedFunction::Function #mapping speed to max torque
-    constraints::Function
+    torqueSpeedFunction::F1 #mapping speed to max torque
+    constraints::F2
 end
 
 

@@ -16,9 +16,9 @@ end
 
 
 mutable struct Problem_config
-    car
-    track
-    model
+    car::Union{Nothing, Car}
+    track::Union{Nothing, Track}
+    model::Union{Nothing, JuMP.Model}
     optiResult
 end
 

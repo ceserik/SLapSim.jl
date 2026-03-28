@@ -1,7 +1,7 @@
 using Revise
-mutable struct Chassis
+mutable struct Chassis{F1}
     mass::carParameter{carVar}
-    hitbox::Function
+    hitbox::F1
     wheelbase::carParameter{carVar}
     track::carParameter{carVar}
 end

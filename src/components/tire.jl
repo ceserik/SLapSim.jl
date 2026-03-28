@@ -1,5 +1,5 @@
 using Revise
-mutable struct  Tire
+mutable struct  Tire{F1,F2,F3}
     radius::carParameter{carVar}
     width::carParameter{carVar}
     inertia::carParameter{carVar}
@@ -9,9 +9,9 @@ mutable struct  Tire
     forces::carParameter{Vector{carVar}}
     slipAngle::carParameter{carVar}
     slipRatio::carParameter{carVar}
-    compute::Function
-    tireConstraints::Function
-    setVelocity::Function
+    compute::F1
+    tireConstraints::F2
+    setVelocity::F3
     maxSLipAngle::carParameter{carVar}
     scalingForce::carParameter{carVar}
 end
