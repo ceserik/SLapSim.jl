@@ -198,13 +198,17 @@ end
 #This function applies states and control from optimisation result and using Tsit5 predicts next states, the difference 
 #between states from optimisation and states from Tsit5 simulation is compared and used as output.
 
-function getErrors(problem)
+function getErrors(problem; pol_order::Int=1)
     s = problem.optiResult.path
     n = length(s)
     error_vector = zeros(Float64, n)
-    for i = 1:n-1
-        error = getError([s[i], s[i+1]],problem) #I am not sure that this is correct, it has too many points
-        error_vector[i] = error
+    for i = 1:pol_order:n-pol_order
+        segment_span = [s[i], s[i+pol_order]]
+        error = getError(segment_span, problem)
+        segmentLength = s[i+pol_order] - s[i]
+        for j = 0:pol_order-1
+            error_vector[i+j] = error / segmentLength
+        end
         print("\rError evaluation: $i/$(n-1)")
     end
     println()
@@ -220,7 +224,7 @@ function getError(s, problem)
     ode(du, x, p, s) = du .= carODE_path(p[1], p[2], s, p[3](s), x, nothing)
     prob = ODEProblem(ode, x0, (s[1], s[2]), (problem.car, problem.track, problem.optiResult.controls))
     
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-5, abstol=1e-5)
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-6, abstol=1e-6)
     final_states_time_sim = sol.u[end]
     final_states_optimized= problem.optiResult.states(s[2])
     #@infiltrate

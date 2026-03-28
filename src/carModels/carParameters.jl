@@ -4,9 +4,9 @@ mutable struct carParameter{T}
     name::String
     unit::String
     size::Tuple{Int,Int}  # To store dimensions of the value (1,1) for scalar, (n,1) for vector, (n,m) for matrix
-    
+    role::Symbol  # :control, :state, :static, :tunable
 end
-function carParameter{T}(value::T, name::String, unit::String) where T
+function carParameter{T}(value::T, name::String, unit::String, role::Symbol=:static) where T
     if isa(value, AbstractArray)
         size_tuple = (length(value), 1)  # For vectors, treat as (n,1)
         if ndims(value) == 2
@@ -15,8 +15,8 @@ function carParameter{T}(value::T, name::String, unit::String) where T
     else
         size_tuple = (1, 1)  # For scalars
     end
-    
-    return carParameter{T}(value, name, unit, size_tuple)
+
+    return carParameter{T}(value, name, unit, size_tuple, role)
 end
 
 # Convenience constructor for vector carParameters

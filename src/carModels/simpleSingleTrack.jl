@@ -10,8 +10,8 @@ function createSimplestSingleTrack()
     motorFront = createFischerMotor()
     motorRear = createFischerMotor()
     
-    tireFront = createR20lin(motorFront,gearboxFront)
-    tireRear = createR20lin(motorRear,gearboxRear)
+    tireFront = createR20lin_double(motorFront,gearboxFront)
+    tireRear  = createR20lin_double(motorRear,gearboxRear)
 
     drivetrain = Drivetrain(
         [motorFront, motorRear],

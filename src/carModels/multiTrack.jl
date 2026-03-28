@@ -1,5 +1,5 @@
 using Revise
-
+using SLapSim
 function createTwintrack()
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s")
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "angular velocity", "rad/s")
@@ -51,29 +51,32 @@ function createTwintrack()
     wheelAssemblies = [wheelAssemblyFL,wheelAssemblyFR,wheelAssemblyRL,wheelAssemblyRR]
 
     function controlMapping(controls::AbstractVector)
+        drivetrain.motors[1].torque.value = 0.0
+        drivetrain.motors[2].torque.value = 0.0
         drivetrain.motors[3].torque.value = controls[1]
         drivetrain.motors[4].torque.value = controls[1]
-        wheelAssemblies[1].steeringAngle.value = controls[2]
-        wheelAssemblies[2].steeringAngle.value = controls[2]
+        wheelAssemblies[1].steeringAngle.value = controls[3]
+        wheelAssemblies[2].steeringAngle.value = controls[3]
 
     end
-    
+
     function stateMapping(states::AbstractVector)
-        carParameters.velocity.value = [states[1], states[2], 0.0]
-        carParameters.psi.value = states[3]
-        carParameters.angularVelocity.value = [0.0, 0.0, states[4]]
-        carParameters.n.value = states[5]
-        carParameters.s.value = states[6]
+        #@infiltrate
+        velocity.value .= [states[1], states[2], 0.0]
+        psi.value = states[3]
+        angularVelocity.value .= [0.0, 0.0, states[4]]
+        n.value = states[5]
+        s.value = states[6]
         return car
     end
 
-    function anyTrack(track::Union{Track,Nothing}=nothing, k::Union{Int64,Nothing,Float64}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
+    function anyTrack(track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
 
-        velocity = car.carParameters.velocity.value
-        angularVelocity = car.carParameters.angularVelocity.value
+        #velocity = car.carParameters.velocity.value
+        #angularVelocity = car.carParameters.angularVelocity.value
         # Transformation of velocities from cog to wheels and steering
         for wa in car.wheelAssemblies
-            wa.setVelocity(angularVelocity, velocity)
+            wa.setVelocity(angularVelocity.value, velocity.value)
         end
 
         for i in eachindex(drivetrain.tires)
@@ -125,9 +128,9 @@ function createTwintrack()
         end
 
 
-        dv = cogForce / car.carParameters.mass.value + angularVelocity × velocity #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
+        dv = cogForce / car.carParameters.mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
         dangularVelocity = cogMoment / car.carParameters.inertia.value
-        dx = [dv[1], dv[2], angularVelocity[3], dangularVelocity[3]]
+        dx = [dv[1], dv[2], angularVelocity.value[3], dangularVelocity[3]]
         return dx
 
     end

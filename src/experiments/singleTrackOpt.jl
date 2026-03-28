@@ -12,6 +12,7 @@ include("../dataAnalysis/validation.jl")
 include("../solvingMethods/myCollocation.jl")
 include("../solvingMethods/collocation.jl")
 include("../solvingMethods/adaptiveRK.jl")
+include("../carModels/multiTrack.jl")
 #include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = Sys.islinux()
@@ -61,10 +62,12 @@ problem = Problem_config(nothing, nothing, nothing, nothing)
 
 
 
-car = createSimplestSingleTrack()
+#car = createSimplestSingleTrack()
+car = createTwintrack()
 problem.car = car
-track = figureEight(true, 2.0)
-#track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
+#track = figureEight(true, 2.0)
+#track = singleTurn(50.0,5.0,true) 
+track = doubleTurn(true,2.0)
 path = "tracks/FSCZ.kml"
 #htrack = kml2track(path, false, true)
 #track = doubleTurn(false,0.5)
@@ -81,8 +84,8 @@ problem.model = model
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 segments = 100
 pol_order = 3
-#optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
-optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
+optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
+#optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
 problem.optiResult = optiResult_interp
 
 if 1 == 1

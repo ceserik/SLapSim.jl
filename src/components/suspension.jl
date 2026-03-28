@@ -78,7 +78,7 @@ function createSimpleSuspension()
     end
 
     function calculate()
-        totalWeight = chassis.mass.value
+        totalWeight = chassis.mass.value*9.81
         frontRatio = 1 - chassis.CoG_X_pos.value
         rearRatio = chassis.CoG_X_pos.value
         leftRatio = 1 - chassis.CoG_Y_pos.value

@@ -41,7 +41,7 @@ make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}
 
 
 function initializeSolution_interpolation(car::Car, track::Track, segments::Int64)
-
+    println("started initialization")
     x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
     steeringP = 10
     velocityP = 3
@@ -63,6 +63,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
 
     # It would make sense to have here my custom interpolation function using gauss quadrature
     initialization = make_result_interpolation(x, u, s)
+    println("done initialization")
     return initialization
 end;
 
@@ -216,9 +217,9 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     #@constraint(model,diff(U[:,1]) .>=-1) #constraint on controls derivative
 
     #this has to have variable length to allow closed track
-    #@constraint(model,-100 .<= diff(U[1:end-1,1]./diff(X[:,6])) .<= 100) #constraint on controls derivative
-    #@constraint(model,-100 .<= diff(U[1:end-1,2]./diff(X[:,6])) .<= 100) #constraint on controls derivative
-    #@constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
+    @constraint(model,-100 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 100) #constraint on controls derivative
+    @constraint(model,-100 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 100) #constraint on controls derivative
+    @constraint(model,-1 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1) #constraint on controls derivative
     #@constraint(model,U[1,:].== U[2,:])
     @objective(model, Min, X[end, 6])
     optimize!(model)
@@ -247,7 +248,7 @@ function refineMesh(problem,segment_edges,s_all)
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-3
+    error_threshold = 1e-1
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion

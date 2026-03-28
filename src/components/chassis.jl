@@ -15,8 +15,8 @@ function createCTU25chassis()
     CoG_X_pos = carParameter{carVar}(0.5,"ratio of CoG on front","m")
     CoG_Y_pos = carParameter{carVar}(0.5,"ratio of CoG on left","m")
     function hitbox(n::carVar,track::Union{Track,Nothing},model=nothing)
-        greaterContraint(n, -track.widthR[1], model)
-        lessContraint(n, track.widthL[1], model)
+        greaterContraint(n, -track.widthR[1]+0.6, model)
+        lessContraint(n, track.widthL[1]-0.6, model)
     end
 
     chassis = Chassis(
