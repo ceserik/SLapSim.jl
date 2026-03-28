@@ -203,11 +203,11 @@ function getErrors(problem)
     n = length(s)
     error_vector = zeros(Float64, n)
     for i = 1:n-1
-        
-        error = getError([s[i], s[i+1]],problem)
+        error = getError([s[i], s[i+1]],problem) #I am not sure that this is correct, it has too many points
         error_vector[i] = error
-        #println(error)
+        print("\rError evaluation: $i/$(n-1)")
     end
+    println()
     error_vector[end] = error_vector[end-1]
     itp = linear_interpolation(s, error_vector)
     return itp
@@ -245,7 +245,7 @@ function plotCarStates2(result)
     display(GLMakie.Screen(), fig)  # This creates a new window
 end
 
-function plotErrorsOnTrack2D(problem; axis=nothing, colormap=:viridis, itp=nothing)
+function plotErrorsOnTrack2D(problem; axis=nothing, colormap=:turbo, itp=nothing)
     track = problem.track
     if itp === nothing
         itp = getErrors(problem)          # interpolation from getErrors
@@ -283,7 +283,7 @@ function plotErrorsOnTrack2D(problem; axis=nothing, colormap=:viridis, itp=nothi
 end
 
 
-function plot_on_path(problem,itp,legend; axis=nothing, colormap=:viridis)
+function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo)
     track = problem.track
 
     #itp = getErrors(problem)              # interpolation from getErrors

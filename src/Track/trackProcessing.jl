@@ -56,6 +56,7 @@ function naiveProcessing(track::Track)
 end
 
 function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
+    println("Smoothing Track")
     x_smpl = track.x
     y_smpl = track.y
 

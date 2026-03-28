@@ -37,6 +37,7 @@ update_theme!(
     fontsize = 11,
     fonts = (; regular = "Latin Modern Roman", bold = "Latin Modern Roman Bold"),
     palette = (color = Makie.to_colormap(:tab10),),
+    colormap = :turbo,
     Axis = (
         titlesize = 13,
         xlabelsize = 12,
@@ -62,11 +63,11 @@ problem = Problem_config(nothing, nothing, nothing, nothing)
 
 car = createSimplestSingleTrack()
 problem.car = car
-#track = figureEight(true, 2.0)
+track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true) track = doubleTurn(true,2.0)
-#path = "tracks/FSCZ.kml"
+path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
-track = doubleTurn(false,0.5)
+#track = doubleTurn(false,0.5)
 #track = skidpad(false)
 problem.track = track
 #Number of transcription points
@@ -78,7 +79,7 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 20
+segments = 100
 pol_order = 3
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")

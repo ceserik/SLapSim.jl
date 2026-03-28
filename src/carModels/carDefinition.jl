@@ -17,7 +17,7 @@ function greaterContraint(a,b,model=nothing)
     return a
 end
 
-function equalConstraint(a,b)
+function equalConstraint(a,b,model=nothing)
     if isnothing(model)
         a = b
     else

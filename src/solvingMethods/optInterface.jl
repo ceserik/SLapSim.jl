@@ -247,7 +247,7 @@ function refineMesh(problem,segment_edges,s_all)
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-1
+    error_threshold = 1e-3
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
@@ -258,7 +258,7 @@ function refineMesh(problem,segment_edges,s_all)
             clear = 0
         end
     end
-    fig = plot(segment_errors)
+    fig = plot(segment_errors, axis=(; yscale=log10))
     lines!(fig.axis, [1, length(segment_errors)], [error_threshold, error_threshold], color=:red, linewidth=2)
     display(fig)
     sleep(1)   # give the backend time to render
@@ -292,6 +292,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         clear = 1
         iterations += 1
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
+        println("creating constraints")
         xd = RKadaptive.createConstraints(segment_edges, initialization)
         X = xd[2]
         U = xd[3]
