@@ -72,15 +72,15 @@ function createSimplestSingleTrack()
         drivetrain.tires[1].compute(gbFront.torqueOut.value, optiModel)
         drivetrain.tires[2].compute(gbRear.torqueOut.value, optiModel)
 
-        if !isnothing(optiModel)
-            drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel)
-            drivetrain.motors[2].constraints(drivetrain.motors[2].torque.value, optiModel)
-            wheelAssemblyFront.constraints(optiModel)
-            wheelAssemblyRear.constraints(optiModel)
-            chassis.hitbox(n.value, track, optiModel)
-            drivetrain.tires[1].tireConstraints(optiModel)
-            drivetrain.tires[2].tireConstraints(optiModel)
-        end
+        #if !isnothing(optiModel) ||1==1
+        drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel)
+        drivetrain.motors[2].constraints(drivetrain.motors[2].torque.value, optiModel)
+        wheelAssemblyFront.constraints(optiModel)
+        wheelAssemblyRear.constraints(optiModel)
+        chassis.hitbox(n.value, track, optiModel)
+        drivetrain.tires[1].tireConstraints(optiModel)
+        drivetrain.tires[2].tireConstraints(optiModel)
+        #end
 
         #propagate forces from tires to wheel assemblies to COG
         wheelAssemblyFront.getTorque(drivetrain.tires[1].forces.value)
