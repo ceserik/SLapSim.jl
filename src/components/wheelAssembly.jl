@@ -1,5 +1,5 @@
 using Revise
-mutable struct WheelAssembly
+mutable struct WheelAssembly{F1,F2,F3}
     position::carParameter{Vector{carVar}}
     velocityPivot::carParameter{Vector{carVar}}
     velocityTire::carParameter{Vector{carVar}}
@@ -7,9 +7,9 @@ mutable struct WheelAssembly
     steeringAngle::carParameter{carVar}
     forces::carParameter{Vector{carVar}}
     torque::carParameter{Vector{carVar}}
-    constraints::Function
-    setVelocity::Function
-    getTorque::Function
+    constraints::F1
+    setVelocity::F2
+    getTorque::F3
 end
 Base.show(io::IO, ::MIME"text/plain", obj::WheelAssembly) = prettyPrintComponent(io, obj)
 
