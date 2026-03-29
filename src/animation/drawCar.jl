@@ -75,9 +75,18 @@ Animate the car driving along the track using simulation results.
 Uses Observables for fast redraw — plot objects are created once, only data is updated.
 """
 function animateCar(track::Track, result, car::Car; fps=30, speedup=1.0)
-    fig = Figure(size=(1200, 800))
-    ax = Axis(fig[1, 1], aspect=DataAspect(), title="Car Animation")
+    fig = Figure()
+    ax = Axis(fig[1, 1], aspect=DataAspect())
     plotTrack(track, b_plotStartEnd=false, ax=ax)
+
+    # Timer as text on the axis (top-right corner, in data coords updated each frame)
+    x_timer = maximum(track.x)
+    y_timer = maximum(track.y)
+    time_obs = Observable("t = 0.000 s")
+    text!(ax, x_timer, y_timer; text=time_obs, fontsize=16, align=(:right, :top))
+
+    colsize!(fig.layout, 1, Aspect(1, 1.0))
+    resize_to_layout!(fig)
 
     # ── Create all Observables once ──
     wb = car.chassis.wheelbase.value
@@ -162,6 +171,9 @@ function animateCar(track::Track, result, car::Car; fps=30, speedup=1.0)
         # Update trail
         push!(trail_obs[], Point2f(cx, cy))
         notify(trail_obs)
+
+        # Update timer
+        time_obs[] = "t = $(round(state[6]; digits=3)) s"
 
         # Timing
         if i < n_frames
