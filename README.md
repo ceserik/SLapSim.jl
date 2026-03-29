@@ -1,12 +1,24 @@
-# Scalable Laptime Simulator
-One simulator for multiple complexities of vehicle models
+# SLapSim.jl
+
+SLapSim.jl is a Julia package for simulating ...
 
 ## Demo
 
-[Demo video (MP4)](https://private-user-images.githubusercontent.com/33375779/571032799-0fbb19f6-cd7c-4648-a6b1-a0b04c9184ed.mp4?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzQ4MTcwNzAsIm5iZiI6MTc3NDgxNjc3MCwicGF0aCI6Ii8zMzM3NTc3OS81NzEwMzI3OTktMGZiYjE5ZjYtY2Q3Yy00NjQ4LWE2YjEtYTBiMDRjOTE4NGVkLm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAzMjklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMzI5VDIwMzkzMFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTVkNzYzMjcwYWRiNGRlZTY4N2Y2ZGFjMDZmZGJkYTljYTI1YjM3MzYxM2QxMWQxY2RhMTU0ZDBjYmI2ZDcxMzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.F4AoQqtl8Ou3jJa6XeTexGYga4hgmCGiWEjjANQoVnw)
+Watch our demo video: [Demo Video](https://github.com/user-attachments/assets/0fbb19f6-cd7c-4648-a6b1-a0b04c9184ed)
 
-(If the player doesn’t render inline on the GitHub repo homepage, click the link above to open the video.)
+## Installation
 
-### Local video
+To install SLapSim.jl, use Julia's package manager:
 
-<video src="twintrack.mp4" controls></video>
+```julia
+using Pkg
+Pkg.add("SLapSim")
+```
+
+## Usage
+
+```julia
+using SLapSim
+
+# Example code
+...
