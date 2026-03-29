@@ -119,15 +119,21 @@ end
 """
     plot_parameters(snapshots, car, keys...; fig=nothing)
 
-Plot one or more parameters vs path distance. Uses the car's carParameter
-`.name` and `.unit` fields for axis labels and legends.
-
-Each key is a string like "drivetrain.tires[1].forces" or a Pair like
-"drivetrain.tires[1].forces" => 1 to select a vector index.
+Plot parameters vs path distance. Each argument creates one subplot row.
+To overlay multiple parameters on the same axis, pass them as a Vector.
 
 Examples:
-    plot_parameters(snapshots, car, "drivetrain.tires[1].slipAngle")
-    plot_parameters(snapshots, car, "drivetrain.tires[1].forces" => 1, "drivetrain.tires[2].forces" => 1)
+    # Each on its own axis:
+    plot_parameters(snapshots, car, "drivetrain.tires[1].slipAngle", "drivetrain.tires[2].slipAngle")
+
+    # Grouped on same axis:
+    plot_parameters(snapshots, car, ["drivetrain.tires[1].forces" => 1, "drivetrain.tires[2].forces" => 1])
+
+    # Mixed:
+    plot_parameters(snapshots, car,
+        ["drivetrain.tires[3].forces" => 1, "drivetrain.tires[4].forces" => 1],
+        "drivetrain.tires[1].slipAngle",
+    )
 """
 function plot_parameters(snapshots::Vector{CarSnapshot}, car::Car, keys...; fig=nothing)
     if fig === nothing
@@ -136,39 +142,71 @@ function plot_parameters(snapshots::Vector{CarSnapshot}, car::Car, keys...; fig=
 
     params = collect_carParameters(car)
 
-    nplots = length(keys)
-    axes = [Axis(fig[i, 1], ylabel=_make_ylabel(keys[i], params)) for i in 1:nplots]
+    # Normalize: wrap bare keys into single-element vectors
+    groups = [k isa AbstractVector ? k : [k] for k in keys]
+
+    nplots = length(groups)
+    axes = [Axis(fig[i, 1], ylabel=_make_ylabel(first(groups[i]), params)) for i in 1:nplots]
     linkxaxes!(axes...)
     axes[end].xlabel = "path [m]"
 
-    for (i, key) in enumerate(keys)
-        if key isa Pair
-            param_key, idx = key
-            s, vals = get_scalar_values(snapshots, param_key, idx)
-            p = get(params, param_key, nothing)
-            label = p !== nothing ? "$(p.name)[$idx]" : "$(param_key)[$idx]"
-        else
-            s, raw = get_values(snapshots, key)
-            if first(raw) isa AbstractVector
-                for j in eachindex(first(raw))
-                    vals_j = Float64[r[j] for r in raw]
-                    lines!(axes[i], s, vals_j, label="[$j]")
-                end
-                axislegend(axes[i], position=:rt)
-                continue
-            else
-                vals = Float64.(raw)
-                p = get(params, key, nothing)
-                label = p !== nothing ? p.name : key
-            end
+    for (i, group) in enumerate(groups)
+        for key in group
+            _plot_key!(axes[i], snapshots, params, key)
         end
-        lines!(axes[i], s, vals, label=label)
         axislegend(axes[i], position=:rt)
     end
 
     display(GLMakie.Screen(), fig)
     return fig
 end
+
+function _plot_key!(ax, snapshots, params, key)
+    param_key = key isa Pair ? key[1] : key
+    prefix = _component_prefix(param_key)
+
+    if key isa Pair
+        _, idx = key
+        s, vals = get_scalar_values(snapshots, param_key, idx)
+        p = get(params, param_key, nothing)
+        label = p !== nothing ? "$(prefix)$(p.name) $(_xyz(idx)) [$(p.unit)]" : "$(param_key) $(_xyz(idx))"
+        lines!(ax, s, vals, label=label, linewidth=4)
+    else
+        s, raw = get_values(snapshots, key)
+        if first(raw) isa AbstractVector
+            p = get(params, key, nothing)
+            pname = p !== nothing ? p.name : key
+            punit = p !== nothing ? " [$(p.unit)]" : ""
+            for j in eachindex(first(raw))
+                vals_j = Float64[r[j] for r in raw]
+                lines!(ax, s, vals_j, label="$(prefix)$(pname) $(_xyz(j))$(punit)", linewidth=4)
+            end
+        else
+            vals = Float64.(raw)
+            p = get(params, key, nothing)
+            label = p !== nothing ? "$(prefix)$(p.name) [$(p.unit)]" : key
+            lines!(ax, s, vals, label=label, linewidth=4)
+        end
+    end
+end
+
+"""Extract the parent component identifier from a key path, e.g.
+"drivetrain.tires[3].forces" -> "tires[3] "
+"drivetrain.motors[1].torque" -> "motors[1] "
+"""
+function _component_prefix(key::String)
+    parts = split(key, ".")
+    # Find the last part that contains an index like [3]
+    for i in length(parts)-1:-1:1
+        if occursin(r"\[\d+\]", parts[i])
+            return string(parts[i]) * " "
+        end
+    end
+    return ""
+end
+
+const _XYZ_LABELS = ["X", "Y", "Z"]
+_xyz(i::Int) = i <= length(_XYZ_LABELS) ? _XYZ_LABELS[i] : "[$i]"
 
 function _make_ylabel(key, params)
     param_key = key isa Pair ? key[1] : key

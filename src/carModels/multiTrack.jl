@@ -1,8 +1,8 @@
 using Revise
 using SLapSim
 function createTwintrack()
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "translational velocity", "m/s")
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "angular velocity", "rad/s")
+    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s")
+    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s")
 
     mass = carParameter{carVar}(280.0, "Mass", "kg")
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")

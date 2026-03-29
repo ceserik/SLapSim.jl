@@ -13,6 +13,7 @@ include("../solvingMethods/myCollocation.jl")
 include("../solvingMethods/collocation.jl")
 include("../solvingMethods/adaptiveRK.jl")
 include("../carModels/multiTrack.jl")
+include("../dataAnalysis/carSnapshot.jl")
 #include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = Sys.islinux()
@@ -153,5 +154,9 @@ if 1 == 1
     sampling_density = get_sampling_density(optiResult_interp.path)
     plot_on_path(problem,sampling_density,"sampling density")
 
-    animateCarDual(track, optiResult, car; speedup=0.2, view_radius=5.0)
+    animateCarDual(track, optiResult, car; speedup=1, view_radius=5.0)
+    snapshots = snapshot_car(car, optiResult_interp, track)
+    plot_parameters(snapshots, car,
+    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],
+    "wheelAssemblies[1].steeringAngle")
 end
