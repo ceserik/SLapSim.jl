@@ -12,7 +12,7 @@ function createTwintrack()
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
     psi = carParameter{carVar}(0.0, "heading", "rad")
     n = carParameter{carVar}(0.0, "Distance from centerline", "m")
-    nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
+    nControls = carParameter{carVar}(2.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2")
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
     s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
@@ -54,9 +54,9 @@ function createTwintrack()
         drivetrain.motors[1].torque.value = 0.0
         drivetrain.motors[2].torque.value = 0.0
         drivetrain.motors[3].torque.value = controls[1]
-        drivetrain.motors[4].torque.value = controls[2]
-        wheelAssemblies[1].steeringAngle.value = controls[3]
-        wheelAssemblies[2].steeringAngle.value = controls[3]
+        drivetrain.motors[4].torque.value = controls[1]
+        wheelAssemblies[1].steeringAngle.value = controls[2]
+        wheelAssemblies[2].steeringAngle.value = controls[2]
 
     end
 

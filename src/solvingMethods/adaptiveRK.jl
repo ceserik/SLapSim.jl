@@ -9,12 +9,18 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
         X = Matrix{VariableRef}(undef, totalPoints, nStates)
         U = Matrix{VariableRef}(undef, totalPoints, nControls)
 
+        # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
+        x_lb = [0.5, -20.0, -2π, -5.0, -10.0, 0.0]
+        x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
+        u_lb = [-29.0, -20/180*π]
+        u_ub = [ 29.0,  20/180*π]
+
         for i = 1:totalPoints
             for j = 1:nStates
-                X[i, j] = @variable(model)
+                X[i, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
             end
             for j = 1:nControls
-                U[i, j] = @variable(model)
+                U[i, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
             end
         end
 

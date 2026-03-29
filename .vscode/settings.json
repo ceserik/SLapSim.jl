@@ -23,7 +23,7 @@
         "ALL_MODULES_EXCEPT_MAIN",      
     ],
     "window.autoDetectColorScheme": true,
-    "workbench.preferredDarkColorTheme": "VS Code Dark",
+    "workbench.preferredDarkColorTheme": "Dark Modern",
     "workbench.preferredLightColorTheme": "Visual Studio Light",
    // "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim/src",
     "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim",

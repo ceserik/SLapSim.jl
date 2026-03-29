@@ -27,7 +27,7 @@ function timeSimulation(car::Car, result, track)
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
 
-    sol = OrdinaryDiffEq.solve(prob, Tsit5(),tstops=timeVector)
+    sol = OrdinaryDiffEq.solve(prob,  Rodas4(autodiff = AutoFiniteDiff()),tstops=timeVector)
     return sol
 end
 
@@ -68,7 +68,7 @@ function timeSimulation_interpolated(car::Car, result, track)
     end
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-    sol = OrdinaryDiffEq.solve(prob, Tsit5(), tstops = t_unique, saveat = t_unique, callback = cb)
+    sol = OrdinaryDiffEq.solve(prob,  Rodas4(autodiff = AutoFiniteDiff()), tstops = t_unique, saveat = t_unique, callback = cb)
     return sol
 end
 
@@ -207,7 +207,7 @@ function getErrors(problem; pol_order::Int=1)
         error = getError(segment_span, problem)
         segmentLength = s[i+pol_order] - s[i]
         for j = 0:pol_order-1
-            error_vector[i+j] = error / segmentLength
+            error_vector[i+j] = error #/ segmentLength
         end
         print("\rError evaluation: $i/$(n-1)")
     end

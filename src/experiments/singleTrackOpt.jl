@@ -68,9 +68,9 @@ car = createTwintrack()
 problem.car = car
 #track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true) 
-track = doubleTurn(true,2.0)
+#track = doubleTurn(true,0.2)
 path = "tracks/FSCZ.kml"
-#htrack = kml2track(path, false, true)
+track = kml2track(path, false, true)
 #track = doubleTurn(false,0.5)
 #track = skidpad(false)
 problem.track = track
@@ -83,8 +83,8 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 100
-pol_order = 3
+segments = 500
+pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
 problem.optiResult = optiResult_interp
@@ -127,8 +127,8 @@ if 1 == 1
     # 2x2 grid of plots, each plot gets its own colorbar to the right
     plots = [
         (s -> optiResult_interp.controls(s)[1], "moment_front"),
-        (s -> optiResult_interp.controls(s)[2], "moment_rear"),
-        (s -> optiResult_interp.controls(s)[3], "steering"),
+        (s -> optiResult_interp.controls(s)[1], "moment_rear"),
+        (s -> optiResult_interp.controls(s)[2], "steering"),
         (s -> error_itp(s), "error"),
     ]
 
@@ -154,7 +154,7 @@ if 1 == 1
     sampling_density = get_sampling_density(optiResult_interp.path)
     plot_on_path(problem,sampling_density,"sampling density")
 
-    animateCarDual(track, optiResult, car; speedup=1, view_radius=5.0)
+    animateCarDual(track, optiResult_interp, car; speedup=1, view_radius=5.0,cam_offset=3.0, savepath="animation.mp4")
     snapshots = snapshot_car(car, optiResult_interp, track)
     plot_parameters(snapshots, car,
     ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],

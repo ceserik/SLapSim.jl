@@ -97,8 +97,9 @@ function createSimplestSingleTrack()
 
     function controlMapping(controls::AbstractVector)
         drivetrain.motors[1].torque.value = controls[1]
-        drivetrain.motors[2].torque.value = controls[2]
-        wheelAssemblyFront.steeringAngle.value = controls[3]
+        wheelAssemblyFront.steeringAngle.value = controls[2]
+        drivetrain.motors[2].torque.value = controls[3]
+        
     end
 
     function stateMapping(states::AbstractVector)

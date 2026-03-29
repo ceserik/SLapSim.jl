@@ -42,15 +42,21 @@ make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}
 
 function initializeSolution_interpolation(car::Car, track::Track, segments::Int64)
     println("started initialization")
-    x0 = [2.0, 0.0, track.theta[1], 0.0, 0, 0.0]
+    vref = 10
     steeringP = 10
     velocityP = 3
-    vref = 2
+    x0 = [vref, 0.0, track.theta[1], 0.0, 0, 0.0]
     sampling_distances = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments)
     span2 = [sampling_distances[1], sampling_distances[end]]
     #@infiltrate
     prob = ODEProblem(carODE_path_initialization, x0, span2, [car, track, steeringP, velocityP, vref])
-    sol = OrdinaryDiffEq.solve(prob, Tsit5(), saveat=sampling_distances, reltol=1e-5, abstol=1e-5)
+    s_end = span2[2]
+    cb = FunctionCallingCallback(; funcat=range(span2[1], span2[2], length=101)) do u, s, integrator
+        pct = round(100 * (s - span2[1]) / (s_end - span2[1]), digits=0)
+        print("\r  Initialization: $(Int(pct))% (s=$(round(s, digits=2))/$(round(s_end, digits=2)))")
+    end
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), saveat=sampling_distances, reltol=1e-3, abstol=1e-3, callback=cb)
+    println()
 
     x = hcat(sol.u...)'
     s = sol.t
@@ -59,7 +65,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     #@infiltrate
     u = zeros(segments, Int64(car.carParameters.nControls.value))
     u[:, 1] = torque
-    u[:, 3] = steering
+    u[:, 2] = steering
 
     # It would make sense to have here my custom interpolation function using gauss quadrature
     initialization = make_result_interpolation(x, u, s)
@@ -69,6 +75,14 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     ax_init = Axis(fig_init[1, 1], aspect=DataAspect(), title="Initialization")
     plotCarPath_interpolated(track, initialization, ax_init)
     display(GLMakie.Screen(), fig_init)
+
+    labels = ["vx", "vy", "ψ", "ψ̇", "n", "t"]
+    fig_states = Figure()
+    for j in 1:size(x, 2)
+        ax = Axis(fig_states[j, 1], ylabel=labels[j])
+        lines!(ax, s, x[:, j], linewidth=2)
+    end
+    display(GLMakie.Screen(), fig_states)
 
     return initialization
 end;
@@ -94,7 +108,7 @@ function carODE_path_initialization(du, x, p, s)
     velocityP = p[4]
     vref = p[5]
 
-    control = [(vref - x[1]) * velocityP, 0.0, -x[5] * steeringP]
+    control = [(vref - x[1]) * velocityP, -x[5] * steeringP]
     dx = carODE_path(car, track, s, control, x, nothing) # carF must return a vector matching length(x)
     du .= dx
 end;
@@ -199,11 +213,11 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     nStates = Int64(car.carParameters.nStates.value)
     initialization = initializeSolution_interpolation(car, track, 200)
 
-    #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
-    #xd = Gauss_radau.createConstraints(segments,initialization);
+    Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
+    xd = Gauss_radau.createConstraints(segments,initialization);
 
-    Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
-    xd = Gauss_legendre.createConstraints(segments,initialization);
+    #Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
+    #xd = Gauss_legendre.createConstraints(segments,initialization);
     #segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
     #RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
     #xd = RKadaptive.createConstraints(segment_edges, initialization)
@@ -234,7 +248,8 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     u = value.(U)
 
     # Interpolate using the LGR polynomial from the optimisation (Garg et al. 2010)
-    out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
+    #out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
+    out_interp = Gauss_radau.createInterpolator(x, u, s_all, segment_edges)
     #out_interp = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
 
     out = Result(x, u[1:end-1, :], s_all)
@@ -307,23 +322,27 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         segment_edges = xd[5]
 
         @constraint(model, X[1:end, 1] .>= 0) #vx
-        @constraint(model, X[1, 1] .>= 5) #vx
+        @constraint(model, X[1, 1] .>= 2) #vx
         @constraint(model, X[1, 2] .== 0) # intial vy
         @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
         @constraint(model, X[1, 6] .>= 0) # final time
         @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
         @objective(model, Min, X[end, 6])
 
-        @constraint(model,-50 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 50) #constraint on controls derivative
-        @constraint(model,-50 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 50) #constraint on controls derivative
-        @constraint(model,-0.5 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 0.5) #constraint on controls derivative
+        #@constraint(model,-50 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 50) #constraint on controls derivative
+        #@constraint(model,-50 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 50) #constraint on controls derivative
+        #@constraint(model,-0.5 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 0.5) #constraint on controls derivative
 
+        println("Variables: $(num_variables(model)), Constraints: $(num_constraints(model; count_variable_in_set_constraints=true))")
+        set_optimizer_attribute(model, "max_iter", 3000)
+        set_optimizer_attribute(model, "print_level", 5)
         optimize!(model)
+        println("Termination: ", termination_status(model), " | Objective: ", objective_value(model))
 
         x = value.(X)
         u = value.(U)
         problem.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
-        initialization = make_result_interpolation(x, u, s_all)
+        #initialization = make_result_interpolation(x, u, s_all) # uncomment to use previous result as initialization
 
         (segment_edges,clear,segment_errors) = refineMesh(problem,segment_edges,s_all,)
 

@@ -1,4 +1,15 @@
 using Revise
+using Interpolations
+
+function _unique_path(path)
+    isfile(path) || return path
+    base, ext = splitext(path)
+    i = 1
+    while isfile("$(base)_$i$ext")
+        i += 1
+    end
+    return "$(base)_$i$ext"
+end
 
 # ─────────────────── Shared geometry helpers ──────────────────────────────────
 
@@ -73,7 +84,7 @@ end
 
 Set up one animation panel (axis with car observables). Returns a NamedTuple of observables.
 """
-function _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr)
+function _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr; cam_offset=2)
     track_center_obs = nothing
     track_left_obs = nothing
     track_right_obs = nothing
@@ -86,7 +97,7 @@ function _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, 
         lines!(ax, track_left_obs; color=:black, linewidth=1)
         lines!(ax, track_right_obs; color=:black, linewidth=1)
         xlims!(ax, -view_radius, view_radius)
-        ylims!(ax, -view_radius, view_radius)
+        ylims!(ax, -view_radius + cam_offset, view_radius + cam_offset)
     else
         plotTrack(track, b_plotStartEnd=false, ax=ax)
     end
@@ -215,12 +226,12 @@ Animate the car driving along the track.
 - `follow_car=false` (default): global frame, full track visible.
 - `follow_car=true`: camera follows the car, showing a window of `view_radius` around it.
 """
-function animateCar(track::Track, result, car::Car; fps=30, speedup=1.0, follow_car=false, view_radius=10.0)
+function animateCar(track::Track, result, car::Car; fps=30, speedup=1.0, follow_car=false, view_radius=10.0, cam_offset=0.0)
     xc, yc, thc, xl, yl, xr, yr = _precompute_track(track)
 
     fig = Figure()
     ax = Axis(fig[1, 1], aspect=DataAspect())
-    panel = _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr)
+    panel = _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr; cam_offset)
 
     time_obs = Observable("t = 0.000 s")
     timer_pos = Point2f(follow_car ? view_radius * 0.95 : maximum(track.x),
@@ -240,7 +251,7 @@ end
 
 Animate with two views side by side: global frame (left) and follow-car frame (right).
 """
-function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, view_radius=10.0)
+function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, view_radius=10.0, savepath=nothing, cam_offset=0.0)
     xc, yc, thc, xl, yl, xr, yr = _precompute_track(track)
 
     fig = Figure(size=(1400, 700))
@@ -248,14 +259,86 @@ function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, vie
     ax_follow = Axis(fig[1, 2], aspect=DataAspect(), title="Car Frame")
 
     panel_global = _setup_panel(ax_global, track, car, false, view_radius, xc, yc, thc, xl, yl, xr, yr)
-    panel_follow = _setup_panel(ax_follow, track, car, true,  view_radius, xc, yc, thc, xl, yl, xr, yr)
+    panel_follow = _setup_panel(ax_follow, track, car, true,  view_radius, xc, yc, thc, xl, yl, xr, yr; cam_offset)
 
     time_obs = Observable("t = 0.000 s")
     Label(fig[2, 1:2], time_obs; fontsize=20, halign=:center)
     rowsize!(fig.layout, 2, Fixed(30))
 
-    display(GLMakie.Screen(), fig)
+    panels = [panel_global, panel_follow]
 
-    _animate_loop!(fig, [panel_global, panel_follow], track, result, car, speedup, time_obs, xc, yc, xl, yl, xr, yr, view_radius)
+    if savepath !== nothing
+        savepath = _unique_path(savepath)
+
+        # Build uniform time grid for smooth playback
+        s_path = result.path
+        times = [result.states isa AbstractMatrix ? result.states[i, 6] : result.states(s_path[i])[6] for i in eachindex(s_path)]
+        times = accumulate(max, times)  # enforce monotonicity
+        unique_mask = [true; diff(times) .> 0]
+        t_unique = times[unique_mask]
+        s_unique = s_path[unique_mask]
+        time2s = extrapolate(interpolate((t_unique,), s_unique, Gridded(Linear())), Flat())
+
+        t_start, t_end = t_unique[1], t_unique[end]
+        dt = 1.0 / fps
+        t_uniform = collect(t_start:dt/speedup:t_end)
+
+        record(fig, savepath; framerate=fps) do io
+            for t in t_uniform
+                s = time2s(t)
+                state = result.states(s)
+                ctrl = result.controls(s)
+
+                car.stateMapping(state)
+                car.controlMapping(ctrl)
+                car.carFunction(track, nothing)
+
+                ψ = state[3]
+                n_val = state[5]
+                fc = track.fcurve(s)
+                theta = fc[2]
+                cx = fc[3] - n_val * sin(theta)
+                cy = fc[4] + n_val * cos(theta)
+
+                for panel in panels
+                    _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
+                end
+                time_obs[] = "t = $(round(t; digits=3)) s"
+                recordframe!(io)
+            end
+        end
+        println("Animation saved to $savepath")
+    else
+        display(GLMakie.Screen(), fig)
+        _animate_loop!(fig, panels, track, result, car, speedup, time_obs, xc, yc, xl, yl, xr, yr, view_radius)
+    end
     return fig
+end
+
+function _update_frame!(panels, track, result, car, time_obs, i, is_matrix, xc, yc, xl, yl, xr, yr, view_radius)
+    if is_matrix
+        state = result.states[i, :]
+        ctrl = result.controls[min(i, size(result.controls, 1)), :]
+        s = result.path[i]
+    else
+        s = result.path[i]
+        state = result.states(s)
+        ctrl = result.controls(s)
+    end
+
+    car.stateMapping(state)
+    car.controlMapping(ctrl)
+    car.carFunction(track, nothing)
+
+    ψ = state[3]
+    n = state[5]
+    fc = track.fcurve(s)
+    theta = fc[2]
+    cx = fc[3] - n * sin(theta)
+    cy = fc[4] + n * cos(theta)
+
+    for panel in panels
+        _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
+    end
+    time_obs[] = "t = $(round(state[6]; digits=3)) s"
 end

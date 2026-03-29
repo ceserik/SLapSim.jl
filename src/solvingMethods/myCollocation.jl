@@ -36,12 +36,18 @@ function createLobattoIIIA(stage, f)
         X = Matrix{VariableRef}(undef, totalPoints, Xsize)
         U = Matrix{VariableRef}(undef, totalPoints, Usize)
 
+        # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
+        x_lb = [0.5, -20.0, -2π, -5.0, -10.0, 0.0]
+        x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
+        u_lb = [-29.0, -20/180*π]
+        u_ub = [ 29.0,  20/180*π]
+
         for i = 1:totalPoints
             for j = 1:Xsize
-                X[i, j] = @variable(model)
+                X[i, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
             end
             for j = 1:Usize
-                U[i, j] = @variable(model)
+                U[i, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
             end
         end
 
@@ -305,16 +311,22 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             kl, w = gausslegendre(pol_order)
         end
 
+        # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
+        x_lb = [0.5, -20.0, -2π, -5.0, -10.0, 0.0]
+        x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
+        u_lb = [-29.0, -20/180*π]
+        u_ub = [ 29.0,  20/180*π]
+
         # Create X variables
         for i = 1:size(X, 1)
             for j = 1:nStates
-                X[i, j] = @variable(model)
+                X[i, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
             end
         end
-        
+
         for i = 1:size(U, 1)
             for j = 1:nControls
-                U[i, j] = @variable(model)
+                U[i, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
             end
         end
 
@@ -443,21 +455,17 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             all_nodes
         end
 
-        function control_interp_zoh(s)
-            u_idx = -1
-            for i in eachindex(u_positions)
-                if u_positions[i] >= s
-                    u_idx = i
-                    break
-                end
-            end
-            if u_idx == -1
-                u_idx = length(u_positions)
-            end
-            return U_vals[u_idx, :]
+        function control_interp(s)
+            seg   = find_segment(s)
+            h     = segment_edges[seg+1] - segment_edges[seg]
+            τ     = 2 * (s - segment_edges[seg]) / h - 1
+            i0    = (seg - 1) * u_stride + 1
+            i_end = i0 + u_stride - 1
+            u_seg = U_vals[i0:i_end, :]
+            return [_bary_eval(ctrl_nodes, w_ctrl, u_seg[:, k], τ) for k in 1:size(u_seg, 2)]
         end
 
-        return Result_interpolation(state_interp, control_interp_zoh, all_nodes)
+        return Result_interpolation(state_interp, control_interp, all_nodes)
     end
 
     GaussMethod = Collocation(

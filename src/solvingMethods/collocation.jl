@@ -90,16 +90,22 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
         FX = Matrix{NonlinearExpr}(undef, pol_order, nStates)
 
         #this creation of cariables is very clumsy, buut when they are crated interlaced(like this), the hessian an lagrangian are diagonal banded matrices
+        # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
+        x_lb = [0.5, -20.0, -2π, -5.0, -10.0, 0.0]
+        x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
+        u_lb = [-29.0, -20/180*π]
+        u_ub = [ 29.0,  20/180*π]
+
         for i = 1:segments*(pol_order+1)+1
             for j = 1:nStates
-                X[i, j] = @variable(model)
+                X[i, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
             end
 
             if mod(i - 1, pol_order + 1) != 0
                 for j = 1:nControls
                     seg = div(i - 1, pol_order + 1)
                     k = mod(i - 1, pol_order + 1)
-                    U[seg*pol_order+k, j] = @variable(model)
+                    U[seg*pol_order+k, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
                 end
             end
         end
@@ -181,31 +187,19 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
             return [_bary_eval(τ, w, x_seg[:, k], τ_eval) for k in 1:size(x_seg, 2)]
         end
 
-        u_positions = zeros(segments * pol_order)
-        for i in 1:segments
-            x_start = (i - 1) * x_stride + 1
-            u_base  = (i - 1) * pol_order
-            for j in 1:pol_order
-                u_positions[u_base + j] = all_s[x_start + j]
-            end
+        w_u = barycentric_weights(nodes_LG)
+
+        function control_interp(s)
+            seg = find_segment(s)
+            h = segment_edges[seg+1] - segment_edges[seg]
+            τ_eval = 2 * (s - segment_edges[seg]) / h - 1
+            i0 = (seg - 1) * u_stride + 1
+            i_end = i0 + pol_order - 1
+            u_seg = U_vals[i0:i_end, :]
+            return [_bary_eval(nodes_LG, w_u, u_seg[:, k], τ_eval) for k in 1:size(u_seg, 2)]
         end
 
-        function control_interp_zoh(s)
-            u_idx = -1
-            for i in eachindex(u_positions)
-                if u_positions[i] >= s
-                    u_idx = i
-                    break
-                end
-            end
-            if u_idx == -1
-                u_idx = length(u_positions)
-            end
-            return U_vals[u_idx, :]
-        end
-
-
-        return Result_interpolation(state_interp, control_interp_zoh, all_s)
+        return Result_interpolation(state_interp, control_interp, all_s)
     end
 
     GaussMethod = Collocation(
