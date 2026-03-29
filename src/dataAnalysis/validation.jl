@@ -224,7 +224,7 @@ function getError(s, problem)
     ode(du, x, p, s) = du .= carODE_path(p[1], p[2], s, p[3](s), x, nothing)
     prob = ODEProblem(ode, x0, (s[1], s[2]), (problem.car, problem.track, problem.optiResult.controls))
     
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-6, abstol=1e-6)
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-5, abstol=1e-5)
     final_states_time_sim = sol.u[end]
     final_states_optimized= problem.optiResult.states(s[2])
     #@infiltrate

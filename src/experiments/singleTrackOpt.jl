@@ -16,7 +16,7 @@ include("../carModels/multiTrack.jl")
 include("../dataAnalysis/carSnapshot.jl")
 #include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
-detect = Sys.islinux()
+detect = false#Sys.islinux()
 if detect
     x = "kreadconfig6"
     option1 = "--key"
@@ -156,7 +156,6 @@ if 1 == 1
 
     animateCarDual(track, optiResult_interp, car; speedup=1, view_radius=5.0,cam_offset=3.0, savepath="animation.mp4")
     snapshots = snapshot_car(car, optiResult_interp, track)
-    plot_parameters(snapshots, car,
-    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],
-    "wheelAssemblies[1].steeringAngle")
+    #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
+    plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
 end
