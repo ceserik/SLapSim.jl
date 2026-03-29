@@ -1,6 +1,12 @@
 using Revise
 using Interpolations
 
+function _fmt_time(t)
+    s = string(round(t; digits=3))
+    d = length(s) - findlast('.', s)
+    return "t = " * s * "0"^(3 - d) * " s"
+end
+
 function _unique_path(path)
     isfile(path) || return path
     base, ext = splitext(path)
@@ -209,7 +215,7 @@ function _animate_loop!(fig, panels, track, result, car, speedup, time_obs, xc, 
             _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
         end
 
-        time_obs[] = "t = $(round(state[6]; digits=3)) s"
+        time_obs[] = _fmt_time(state[6])
 
         if i < n_frames
             t_current = state[6]
@@ -252,9 +258,10 @@ end
 Animate with two views side by side: global frame (left) and follow-car frame (right).
 """
 function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, view_radius=10.0, savepath=nothing, cam_offset=0.0)
+    println("starting animation")
     xc, yc, thc, xl, yl, xr, yr = _precompute_track(track)
-
-    fig = Figure(size=(1400, 700))
+    #fig = Figure(size=(3840, 2160))
+    fig = Figure(size=(1920, 1080))
     ax_global = Axis(fig[1, 1], aspect=DataAspect(), title="Global")
     ax_follow = Axis(fig[1, 2], aspect=DataAspect(), title="Car Frame")
 
@@ -283,8 +290,9 @@ function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, vie
         dt = 1.0 / fps
         t_uniform = collect(t_start:dt/speedup:t_end)
 
-        record(fig, savepath; framerate=fps) do io
-            for t in t_uniform
+        n_total = length(t_uniform)
+        record(fig, savepath; framerate=fps, compression=5) do io
+            for (i, t) in enumerate(t_uniform)
                 s = time2s(t)
                 state = result.states(s)
                 ctrl = result.controls(s)
@@ -303,10 +311,12 @@ function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, vie
                 for panel in panels
                     _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
                 end
-                time_obs[] = "t = $(round(t; digits=3)) s"
+                time_obs[] = _fmt_time(t)
                 recordframe!(io)
+                print("\rRendering: $i / $n_total frames")
             end
         end
+        println()
         println("Animation saved to $savepath")
     else
         display(GLMakie.Screen(), fig)
@@ -340,5 +350,5 @@ function _update_frame!(panels, track, result, car, time_obs, i, is_matrix, xc, 
     for panel in panels
         _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
     end
-    time_obs[] = "t = $(round(state[6]; digits=3)) s"
+    time_obs[] = _fmt_time(state[6])
 end

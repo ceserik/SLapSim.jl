@@ -69,7 +69,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
 
     # It would make sense to have here my custom interpolation function using gauss quadrature
     initialization = make_result_interpolation(x, u, s)
-    println("done initialization")
+   #println("done initialization")
 
     fig_init = Figure()
     ax_init = Axis(fig_init[1, 1], aspect=DataAspect(), title="Initialization")

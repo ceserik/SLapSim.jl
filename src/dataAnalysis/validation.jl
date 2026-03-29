@@ -60,11 +60,12 @@ function timeSimulation_interpolated(car::Car, result, track)
     p[4] = time2s
 
     labels = ["Vx", "Vy", "ψ", "ψ̇", "X", "Y"]
-    println(rpad("t", 8), join(rpad.(labels, 10)))
-    println("-"^75)
+    header = rpad("t", 8) * join(rpad.(labels, 10))
+    println(header)
+    println("-"^length(header))
     cb = FunctionCallingCallback(; funcat = t_unique) do u, t, integrator
         vals = join(rpad.(round.(u, digits=4), 10))
-        println("$(rpad(round(t,digits=3), 8))$vals")
+        print("\r$(rpad(round(t,digits=3), 8))$vals")
     end
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
