@@ -153,5 +153,5 @@ if 1 == 1
     sampling_density = get_sampling_density(optiResult_interp.path)
     plot_on_path(problem,sampling_density,"sampling density")
 
-
+    animateCarDual(track, optiResult, car; speedup=0.2, view_radius=5.0)
 end

@@ -30,22 +30,11 @@ function createCTU25chassis()
     return chassis
 end
 
-"""
-    draw!(ax, chassis::Chassis, x, y, ψ)
-
-Draw the chassis body as a rectangle centered at (x,y) with heading ψ.
-"""
-function draw!(ax, chassis::Chassis, x, y, ψ)
-    wb = chassis.wheelbase.value
-    tw = chassis.track.value
-    c = _rect_corners(x, y, wb + 0.2, tw + 0.1, ψ)
-    poly!(ax, Point2f.(eachrow(c)); color=:transparent, strokecolor=:steelblue, strokewidth=2)
-end
 
 function setup_observables!(ax, chassis::Chassis)
     dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
     obs = Observable(dummy)
-    poly!(ax, obs; color=:transparent, strokecolor=:steelblue, strokewidth=2)
+    poly!(ax, obs; color=:transparent, strokecolor=:transparent, strokewidth=0.5)
     return obs
 end
 

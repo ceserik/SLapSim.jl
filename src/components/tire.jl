@@ -114,38 +114,6 @@ function createR20lin(motor,gearbox)
     )
 end
 
-"""
-    draw!(ax, tire::Tire, wx, wy, θ; force_scale=1/1000)
-
-Draw a tire as a filled rectangle at world position (wx,wy) with total orientation θ
-(car heading + steering angle). Also draws the friction ellipse and resulting force vector.
-`force_scale` converts force [N] to drawing units [m].
-"""
-function draw!(ax, tire::Tire, wx, wy, θ; force_scale=1/1000)
-    r = tire.radius.value
-    w = tire.width.value * 0.8
-    c = _rect_corners(wx, wy, 2r, w, θ)
-    poly!(ax, Point2f.(eachrow(c)); color=:black, strokecolor=:gray30, strokewidth=1)
-
-    R = _rotmat2d(θ)
-    Fz = tire.forces.value[3]
-
-    # Friction ellipse (circle with radius Fz, scaled)
-    n_pts = 40
-    ellipse_r = abs(Fz) * force_scale
-    angles = range(0, 2π, length=n_pts + 1)
-    ellipse_pts = [Point2f(R * [ellipse_r * cos(a); ellipse_r * sin(a)] .+ [wx, wy]) for a in angles]
-    lines!(ax, ellipse_pts; color=(:gray, 0.5), linewidth=1, linestyle=:dash)
-
-    # Force vector (Fx, Fy in tire frame → rotated to global)
-    Fx = tire.forces.value[1]
-    Fy = tire.forces.value[2]
-    f_global = R * [Fx; Fy] .* force_scale
-    if norm(f_global) > 1e-6
-        arrows2d!(ax, [wx], [wy], [f_global[1]], [f_global[2]];
-                  color=:green, shaftwidth=1.5, tipwidth=6, tiplength=6)
-    end
-end
 
 const _N_ELLIPSE_PTS = 41
 const _ELLIPSE_ANGLES = range(0, 2π, length=_N_ELLIPSE_PTS)
@@ -160,7 +128,7 @@ function setup_observables!(ax, tire::Tire)
 
     force_pos_obs = Observable([Point2f(0, 0)])
     force_dir_obs = Observable([Point2f(0, 0)])
-    arrows2d!(ax, force_pos_obs, force_dir_obs; color=:green, shaftwidth=1.5, tipwidth=6, tiplength=6)
+    arrows2d!(ax, force_pos_obs, force_dir_obs; color=:green, shaftwidth=4, tipwidth=8, tiplength=8)
 
     return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
 end
