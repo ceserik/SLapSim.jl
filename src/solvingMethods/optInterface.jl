@@ -108,7 +108,7 @@ function carODE_path_initialization(du, x, p, s)
     velocityP = p[4]
     vref = p[5]
 
-    control = [(vref - x[1]) * velocityP, -x[5] * steeringP]
+    control = [(vref - x[1]) * velocityP, -x[5] * steeringP, 0.0]
     dx = carODE_path(car, track, s, control, x, nothing) # carF must return a vector matching length(x)
     du .= dx
 end;
@@ -322,7 +322,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         segment_edges = xd[5]
 
         @constraint(model, X[1:end, 1] .>= 0) #vx
-        @constraint(model, X[1, 1] .>= 2) #vx
+        @constraint(model, X[1, 1] .== 10) #vx
         @constraint(model, X[1, 2] .== 0) # intial vy
         @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
         @constraint(model, X[1, 6] .>= 0) # final time

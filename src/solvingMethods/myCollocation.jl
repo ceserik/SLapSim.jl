@@ -311,8 +311,8 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
         # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
         x_lb = [0.5, -20.0, -2π, -5.0, -10.0, 0.0]
         x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
-        u_lb = [-29.0, -20/180*π]
-        u_ub = [ 29.0,  20/180*π]
+        u_lb = [-29.0, -20/180*π, -29.0]
+        u_ub = [ 29.0,  20/180*π,  29.0]
 
         # Create X variables
         for i = 1:size(X, 1)
