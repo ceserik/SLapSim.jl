@@ -69,59 +69,104 @@ function _rect_points(cx, cy, w, h, θ)
 end
 
 """
-    animateCar(track::Track, result, car::Car; fps=30, speedup=1.0)
+    _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr)
 
-Animate the car driving along the track using simulation results.
-Uses Observables for fast redraw — plot objects are created once, only data is updated.
+Set up one animation panel (axis with car observables). Returns a NamedTuple of observables.
 """
-function animateCar(track::Track, result, car::Car; fps=30, speedup=1.0)
-    fig = Figure()
-    ax = Axis(fig[1, 1], aspect=DataAspect())
-    plotTrack(track, b_plotStartEnd=false, ax=ax)
+function _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr)
+    track_center_obs = nothing
+    track_left_obs = nothing
+    track_right_obs = nothing
 
-    # Timer as text on the axis (top-right corner, in data coords updated each frame)
-    x_timer = maximum(track.x)
-    y_timer = maximum(track.y)
-    time_obs = Observable("t = 0.000 s")
-    text!(ax, x_timer, y_timer; text=time_obs, fontsize=16, align=(:right, :top))
-
-    colsize!(fig.layout, 1, Aspect(1, 1.0))
-    resize_to_layout!(fig)
-
-    # ── Create all Observables once ──
-    wb = car.chassis.wheelbase.value
-    tw = car.chassis.track.value
-    dummy_pts = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
-
-    # Chassis
-    chassis_obs = Observable(dummy_pts)
-    poly!(ax, chassis_obs; color=(:steelblue, 0.3), strokecolor=:steelblue, strokewidth=2)
-
-    # Tires (one Observable per wheel)
-    tire_obs = [Observable(dummy_pts) for _ in car.wheelAssemblies]
-    for obs in tire_obs
-        poly!(ax, obs; color=:black, strokecolor=:gray30, strokewidth=1)
+    if follow_car
+        track_center_obs = Observable(Point2f.(xc, yc))
+        track_left_obs   = Observable(Point2f.(xl, yl))
+        track_right_obs  = Observable(Point2f.(xr, yr))
+        lines!(ax, track_center_obs; linestyle=:dash, linewidth=1)
+        lines!(ax, track_left_obs; color=:black, linewidth=1)
+        lines!(ax, track_right_obs; color=:black, linewidth=1)
+        xlims!(ax, -view_radius, view_radius)
+        ylims!(ax, -view_radius, view_radius)
+    else
+        plotTrack(track, b_plotStartEnd=false, ax=ax)
     end
 
-    # Front wing
-    front_wing_obs = Observable(dummy_pts)
-    poly!(ax, front_wing_obs; color=:red, strokecolor=:darkred, strokewidth=1.5)
+    # Each component sets up its own observables
+    chassis_obs = setup_observables!(ax, car.chassis)
+    wa_obs = [setup_observables!(ax, wa, car.drivetrain.tires[i]) for (i, wa) in enumerate(car.wheelAssemblies)]
+    aero_obs = setup_observables!(ax, car.aero)
 
-    # Rear wing
-    rear_wing_obs = Observable(dummy_pts)
-    poly!(ax, rear_wing_obs; color=:red, strokecolor=:darkred, strokewidth=1.5)
-
-    # CoG marker
     cog_obs = Observable([Point2f(0, 0)])
     scatter!(ax, cog_obs; color=:yellow, markersize=8, marker=:cross, strokewidth=1.5, strokecolor=:black)
 
-    # Trail
     trail_obs = Observable(Point2f[])
     lines!(ax, trail_obs; color=(:dodgerblue, 0.5), linewidth=2)
 
-    display(GLMakie.Screen(), fig)
+    return (chassis=chassis_obs, wheel_assemblies=wa_obs, aero=aero_obs,
+            cog=cog_obs, trail=trail_obs,
+            track_center=track_center_obs, track_left=track_left_obs, track_right=track_right_obs,
+            trail_global=Point2f[], follow=follow_car)
+end
 
-    # ── Precompute all frames ──
+"""
+    _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
+
+Update one panel's observables for the current frame.
+Reads steering angles and forces directly from the car struct (set by controlMapping/carFunction).
+"""
+function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
+    wb = car.chassis.wheelbase.value
+    tw = car.chassis.track.value
+
+    if panel.follow
+        Rcam = _rotmat2d(π/2 - ψ)
+        car_pos = [cx, cy]
+
+        panel.track_center[] = [Point2f(Rcam * ([xc[k], yc[k]] - car_pos)) for k in eachindex(xc)]
+        panel.track_left[]   = [Point2f(Rcam * ([xl[k], yl[k]] - car_pos)) for k in eachindex(xl)]
+        panel.track_right[]  = [Point2f(Rcam * ([xr[k], yr[k]] - car_pos)) for k in eachindex(xr)]
+
+        car_ψ = π/2
+        update_observables!(panel.chassis, car.chassis, 0.0, 0.0, car_ψ)
+        for (j, wa) in enumerate(car.wheelAssemblies)
+            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], 0.0, 0.0, car_ψ)
+        end
+        update_observables!(panel.aero, car.aero, 0.0, 0.0, car_ψ, wb, tw)
+
+        panel.cog[] = [Point2f(0, 0)]
+
+        push!(panel.trail_global, Point2f(cx, cy))
+        panel.trail[] = [Point2f(Rcam * ([p[1], p[2]] - car_pos)) for p in panel.trail_global]
+    else
+        update_observables!(panel.chassis, car.chassis, cx, cy, ψ)
+        for (j, wa) in enumerate(car.wheelAssemblies)
+            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], cx, cy, ψ)
+        end
+        update_observables!(panel.aero, car.aero, cx, cy, ψ, wb, tw)
+
+        panel.cog[] = [Point2f(cx, cy)]
+
+        push!(panel.trail[], Point2f(cx, cy))
+        notify(panel.trail)
+    end
+end
+
+# ── Precompute track boundaries (shared by all animation functions) ──
+function _precompute_track(track)
+    s_track = track.sampleDistances
+    vals = track.fcurve.(s_track)
+    xc  = getindex.(vals, 3)
+    yc  = getindex.(vals, 4)
+    thc = getindex.(vals, 2)
+    xl = xc .- track.widthL .* sin.(thc)
+    yl = yc .+ track.widthL .* cos.(thc)
+    xr = xc .+ track.widthR .* sin.(thc)
+    yr = yc .- track.widthR .* cos.(thc)
+    return xc, yc, thc, xl, yl, xr, yr
+end
+
+# ── Animation loop (shared) ──
+function _animate_loop!(fig, panels, track, result, car, speedup, time_obs, xc, yc, xl, yl, xr, yr, view_radius)
     is_matrix = result.states isa AbstractMatrix
     n_frames = is_matrix ? size(result.states, 1) : length(result.path)
 
@@ -136,56 +181,81 @@ function animateCar(track::Track, result, car::Car; fps=30, speedup=1.0)
             ctrl = result.controls(s)
         end
 
+        # Update car struct — sets all internal parameters, forces, steering, etc.
+        car.stateMapping(state)
+        car.controlMapping(ctrl)
+        car.carFunction(track, nothing)
+
         ψ = state[3]
         n = state[5]
-        steering = length(ctrl) >= 3 ? ctrl[3] : 0.0
 
         fc = track.fcurve(s)
         theta = fc[2]
         cx = fc[3] - n * sin(theta)
         cy = fc[4] + n * cos(theta)
 
-        R = _rotmat2d(ψ)
-
-        # Update chassis
-        chassis_obs[] = _rect_points(cx, cy, wb + 0.2, tw + 0.1, ψ)
-
-        # Update tires
-        for (j, wa) in enumerate(car.wheelAssemblies)
-            tire = car.drivetrain.tires[j]
-            pos_local = wa.position.value[1:2]
-            gp = R * pos_local .+ [cx, cy]
-            steer = j <= 2 ? steering : 0.0
-            tire_obs[j][] = _rect_points(gp[1], gp[2], 2 * tire.radius.value, tire.width.value * 0.8, ψ + steer)
+        for panel in panels
+            _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
         end
 
-        # Update wings
-        fc_pos = R * [wb / 2 + 0.15; 0.0] .+ [cx, cy]
-        front_wing_obs[] = _rect_points(fc_pos[1], fc_pos[2], 0.05, tw + 0.3, ψ)
-        rc_pos = R * [-wb / 2 - 0.15; 0.0] .+ [cx, cy]
-        rear_wing_obs[] = _rect_points(rc_pos[1], rc_pos[2], 0.05, tw + 0.2, ψ)
-
-        # Update CoG
-        cog_obs[] = [Point2f(cx, cy)]
-
-        # Update trail
-        push!(trail_obs[], Point2f(cx, cy))
-        notify(trail_obs)
-
-        # Update timer
         time_obs[] = "t = $(round(state[6]; digits=3)) s"
 
-        # Timing
         if i < n_frames
             t_current = state[6]
-            if is_matrix
-                t_next = result.states[i + 1, 6]
-            else
-                t_next = result.states(result.path[i + 1])[6]
-            end
+            t_next = is_matrix ? result.states[i + 1, 6] : result.states(result.path[i + 1])[6]
             sleep(max(0.0, (t_next - t_current) / speedup))
         end
     end
+end
 
+"""
+    animateCar(track::Track, result, car::Car; fps=30, speedup=1.0, follow_car=false, view_radius=10.0)
+
+Animate the car driving along the track.
+- `follow_car=false` (default): global frame, full track visible.
+- `follow_car=true`: camera follows the car, showing a window of `view_radius` around it.
+"""
+function animateCar(track::Track, result, car::Car; fps=30, speedup=1.0, follow_car=false, view_radius=10.0)
+    xc, yc, thc, xl, yl, xr, yr = _precompute_track(track)
+
+    fig = Figure()
+    ax = Axis(fig[1, 1], aspect=DataAspect())
+    panel = _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr)
+
+    time_obs = Observable("t = 0.000 s")
+    timer_pos = Point2f(follow_car ? view_radius * 0.95 : maximum(track.x),
+                        follow_car ? view_radius * 0.9  : maximum(track.y))
+    text!(ax, timer_pos; text=time_obs, fontsize=16, align=(:right, :top))
+
+    colsize!(fig.layout, 1, Aspect(1, 1.0))
+    resize_to_layout!(fig)
+    display(GLMakie.Screen(), fig)
+
+    _animate_loop!(fig, [panel], track, result, car, speedup, time_obs, xc, yc, xl, yl, xr, yr, view_radius)
+    return fig
+end
+
+"""
+    animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, view_radius=10.0)
+
+Animate with two views side by side: global frame (left) and follow-car frame (right).
+"""
+function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, view_radius=10.0)
+    xc, yc, thc, xl, yl, xr, yr = _precompute_track(track)
+
+    fig = Figure(size=(1400, 700))
+    ax_global = Axis(fig[1, 1], aspect=DataAspect(), title="Global")
+    ax_follow = Axis(fig[1, 2], aspect=DataAspect(), title="Car Frame")
+
+    panel_global = _setup_panel(ax_global, track, car, false, view_radius, xc, yc, thc, xl, yl, xr, yr)
+    panel_follow = _setup_panel(ax_follow, track, car, true,  view_radius, xc, yc, thc, xl, yl, xr, yr)
+
+    time_obs = Observable("t = 0.000 s")
+    Label(fig[2, 1:2], time_obs; fontsize=20, halign=:center)
+    rowsize!(fig.layout, 2, Fixed(30))
+
+    display(GLMakie.Screen(), fig)
+
+    _animate_loop!(fig, [panel_global, panel_follow], track, result, car, speedup, time_obs, xc, yc, xl, yl, xr, yr, view_radius)
     return fig
 end

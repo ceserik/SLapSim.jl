@@ -39,5 +39,18 @@ function draw!(ax, chassis::Chassis, x, y, ψ)
     wb = chassis.wheelbase.value
     tw = chassis.track.value
     c = _rect_corners(x, y, wb + 0.2, tw + 0.1, ψ)
-    poly!(ax, Point2f.(eachrow(c)); color=(:steelblue, 0.3), strokecolor=:steelblue, strokewidth=2)
+    poly!(ax, Point2f.(eachrow(c)); color=:transparent, strokecolor=:steelblue, strokewidth=2)
+end
+
+function setup_observables!(ax, chassis::Chassis)
+    dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
+    obs = Observable(dummy)
+    poly!(ax, obs; color=:transparent, strokecolor=:steelblue, strokewidth=2)
+    return obs
+end
+
+function update_observables!(obs, chassis::Chassis, x, y, ψ)
+    wb = chassis.wheelbase.value
+    tw = chassis.track.value
+    obs[] = _rect_points(x, y, wb + 0.2, tw + 0.1, ψ)
 end

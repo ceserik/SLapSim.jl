@@ -34,3 +34,20 @@ function draw!(ax, aero::Aero, x, y, ψ, wheelbase, trackwidth)
     c = _rect_corners(rc[1], rc[2], 0.05, trackwidth + 0.2, ψ)
     poly!(ax, Point2f.(eachrow(c)); color=:red, strokecolor=:darkred, strokewidth=1.5)
 end
+
+function setup_observables!(ax, aero::Aero)
+    dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
+    front_obs = Observable(dummy)
+    rear_obs  = Observable(dummy)
+    poly!(ax, front_obs; color=:red, strokecolor=:darkred, strokewidth=1.5)
+    poly!(ax, rear_obs;  color=:red, strokecolor=:darkred, strokewidth=1.5)
+    return (front=front_obs, rear=rear_obs)
+end
+
+function update_observables!(obs, aero::Aero, x, y, ψ, wheelbase, trackwidth)
+    R = _rotmat2d(ψ)
+    fc = R * [wheelbase / 2 + 0.15; 0.0] .+ [x, y]
+    obs.front[] = _rect_points(fc[1], fc[2], 0.05, trackwidth + 0.3, ψ)
+    rc = R * [-wheelbase / 2 - 0.15; 0.0] .+ [x, y]
+    obs.rear[] = _rect_points(rc[1], rc[2], 0.05, trackwidth + 0.2, ψ)
+end
