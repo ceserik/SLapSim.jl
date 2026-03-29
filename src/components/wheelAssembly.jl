@@ -84,3 +84,17 @@ function createBasicWheelAssembly(position::Vector{carVar})
     )
     return testWheelAssembly
 end
+
+"""
+    draw!(ax, wa::WheelAssembly, tire::Tire, x, y, ψ)
+
+Draw the wheel assembly by drawing its tire at the correct global position.
+Uses the assembly's position offset and steering angle, plus the car's CoG (x,y) and heading ψ.
+"""
+function draw!(ax, wa::WheelAssembly, tire::Tire, x, y, ψ)
+    R = _rotmat2d(ψ)
+    pos_local = wa.position.value[1:2]
+    global_pos = R * pos_local .+ [x, y]
+    total_angle = ψ + wa.steeringAngle.value
+    draw!(ax, tire, global_pos[1], global_pos[2], total_angle)
+end

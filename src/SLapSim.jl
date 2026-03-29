@@ -39,6 +39,7 @@ include("carModels/multiTrack.jl")
 include("solvingMethods/massPointSolver.jl")
 include("solvingMethods/optInterface.jl")
 
+include("animation/drawCar.jl")
 include("dataAnalysis/validation.jl")
 include("solvingMethods/myCollocation.jl")
 include("solvingMethods/collocation.jl")
@@ -49,6 +50,7 @@ export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml
 export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad, create_gauss_legendre
 export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
 export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
+export drawCar!, animateCar, draw!
 #println("SLapSim module loaded")
 
 end # module

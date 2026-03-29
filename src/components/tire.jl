@@ -63,6 +63,7 @@ function createR20lin_double(motor,gearbox)
         maxSlipAngle,
         scalingForce,
     )
+    return tire
 end
 
 function createR20lin(motor,gearbox)
@@ -111,4 +112,17 @@ function createR20lin(motor,gearbox)
         maxSlipAngle,
         scalingForce,
     )
+end
+
+"""
+    draw!(ax, tire::Tire, wx, wy, θ)
+
+Draw a tire as a filled rectangle at world position (wx,wy) with total orientation θ
+(car heading + steering angle).
+"""
+function draw!(ax, tire::Tire, wx, wy, θ)
+    r = tire.radius.value
+    w = tire.width.value * 0.8
+    c = _rect_corners(wx, wy, 2r, w, θ)
+    poly!(ax, Point2f.(eachrow(c)); color=:black, strokecolor=:gray30, strokewidth=1)
 end

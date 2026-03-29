@@ -29,3 +29,15 @@ function createCTU25chassis()
     )
     return chassis
 end
+
+"""
+    draw!(ax, chassis::Chassis, x, y, ψ)
+
+Draw the chassis body as a rectangle centered at (x,y) with heading ψ.
+"""
+function draw!(ax, chassis::Chassis, x, y, ψ)
+    wb = chassis.wheelbase.value
+    tw = chassis.track.value
+    c = _rect_corners(x, y, wb + 0.2, tw + 0.1, ψ)
+    poly!(ax, Point2f.(eachrow(c)); color=(:steelblue, 0.3), strokecolor=:steelblue, strokewidth=2)
+end
