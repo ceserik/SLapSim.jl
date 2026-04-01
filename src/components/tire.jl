@@ -114,6 +114,53 @@ function createR20lin(motor,gearbox)
     )
 end
 
+function createBusTire(motor,gearbox)
+    radius = carParameter{carVar}(0.5, "tire radius", "m")
+    width = carParameter{carVar}(0.315, "tire width", "m")
+    inertia = carParameter{carVar}(5.0, "tire inertia", "kg*m^2")
+    mass = carParameter{carVar}(50.0, "tire mass", "kg")
+    velocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "velocity", "m/s")
+    angularFrequency = carParameter{carVar}(0.0, "angular velocity", "rad/s")
+    forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Tire Force", "N")
+    slipAngle = carParameter{carVar}(0.0, "Slip angle", "rad")
+    slipRatio = carParameter{carVar}(0.0, "slip ratio", "-")
+    maxSlipAngle = carParameter{carVar}(8/180*pi, "max slip angle", "rad")
+    scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
+    scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
+
+    function setVelocity(velocityIn::Vector{carVar})
+        velocity.value = velocityIn
+    end
+
+    function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
+        slipAngle.value = -atan(velocity.value[2], velocity.value[1])
+        forces.value[2] = 1*slipAngle.value/maxSlipAngle.value * forces.value[3]
+        forces.value[1] = inTorque/radius.value
+    end
+
+    function tireConstraints(model=nothing)
+        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (forces.value[3]/scalingForce.value)^2, model)
+        lessContraint(slipAngle.value/maxSlipAngle.value, 8/180*pi/maxSlipAngle.value, model)
+        greaterContraint(slipAngle.value/maxSlipAngle.value, -8/180*pi/maxSlipAngle.value, model)
+    end
+
+    tire = Tire(
+        radius,
+        width,
+        inertia,
+        mass,
+        velocity,
+        angularFrequency,
+        forces,
+        slipAngle,
+        slipRatio,
+        compute,
+        tireConstraints,
+        setVelocity,
+        maxSlipAngle,
+        scalingForce,
+    )
+end
 
 const _N_ELLIPSE_PTS = 41
 const _ELLIPSE_ANGLES = range(0, 2π, length=_N_ELLIPSE_PTS)
@@ -133,19 +180,21 @@ function setup_observables!(ax, tire::Tire)
     return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
 end
 
-function update_observables!(obs, tire::Tire, wx, wy, θ; force_scale=1/1000)
+function update_observables!(obs, tire::Tire, wx, wy, θ; force_scale=1/1000, circle_radius=1.5)
     r = tire.radius.value
     w = tire.width.value * 0.8
     obs.rect[] = _rect_points(wx, wy, 2r, w, θ)
 
     R = _rotmat2d(θ)
     Fz = tire.forces.value[3]
-    ellipse_r = abs(Fz) * force_scale
+    ellipse_r = abs(Fz) > 0 ? circle_radius : 0.0
     obs.ellipse[] = [Point2f(R * [ellipse_r * cos(a); ellipse_r * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
 
     Fx = tire.forces.value[1]
     Fy = tire.forces.value[2]
-    f_global = R * [Fx; Fy] .* force_scale
+    # scale force arrows so they fit within the circle
+    f_scale = abs(Fz) > 0 ? circle_radius / abs(Fz) : force_scale
+    f_global = R * [Fx; Fy] .* f_scale
     obs.force_pos[] = [Point2f(wx, wy)]
     obs.force_dir[] = [Point2f(f_global[1], f_global[2])]
 end

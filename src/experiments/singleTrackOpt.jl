@@ -13,6 +13,7 @@ include("../solvingMethods/myCollocation.jl")
 include("../solvingMethods/collocation.jl")
 include("../solvingMethods/adaptiveRK.jl")
 include("../carModels/multiTrack.jl")
+include("../carModels/bus.jl")
 include("../dataAnalysis/carSnapshot.jl")
 #include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
@@ -64,13 +65,14 @@ problem = Problem_config(nothing, nothing, nothing, nothing)
 
 
 #car = createSimplestSingleTrack()
-car = createTwintrack()
+#car = createTwintrack()
+car = createBus()
 problem.car = car
 #track = figureEight(true, 2.0)
-#track = singleTurn(50.0,5.0,true) 
-#track = doubleTurn(true,0.2)
+#track = singleTurn(50.0,5.0,true)
+track = doubleTurn(true,0.1)
 path = "tracks/FSCZ.kml"
-track = kml2track(path, false, true)
+#track = kml2track(path, false, true)
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
@@ -83,7 +85,7 @@ model = JuMP.Model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 500
+segments = 30
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
@@ -116,7 +118,10 @@ if 1 == 1
     println(UnicodePlots.spy(jacobian))
     println("hessian")
     println(UnicodePlots.spy(H_star))
-    GLMakie.spy(rotr90(jacobian))
+    fig_jac = Figure()
+    ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
+    spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
+    display(GLMakie.Screen(), fig_jac)
 
     error_itp = getErrors(problem)
     plot(error_itp(optiResult_interp.path))

@@ -18,6 +18,17 @@ function createBasicAero()
 
 end
 
+function createBusAero()
+    CL = carParameter{carVar}(0.0,"Lift coeffcient","-")
+    CD = carParameter{carVar}(6.0,"Drag coeffcient","-")
+    CoP = carParameter{carVar}(0.5,"Cener of pressure on front","-")
+    aero = Aero(
+        CL,
+        CD,
+        CoP
+    )
+    return aero
+end
 
 function setup_observables!(ax, aero::Aero)
     dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)

@@ -24,7 +24,7 @@
     ],
     "window.autoDetectColorScheme": true,
     "workbench.preferredDarkColorTheme": "Dark Modern",
-    "workbench.preferredLightColorTheme": "Visual Studio Light",
+    "workbench.preferredLightColorTheme": "Light Modern",
    // "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim/src",
     "julia.environmentPath": "/home/Riso/.julia/dev/SLapSim",
     "latex-workshop.latex.recipes": [

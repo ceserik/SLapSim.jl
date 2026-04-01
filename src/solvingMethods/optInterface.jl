@@ -44,7 +44,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     println("started initialization")
     vref = 10
     steeringP = 10
-    velocityP = 3
+    velocityP = 3 * car.carParameters.mass.value / 280.0
     x0 = [vref, 0.0, track.theta[1], 0.0, 0, 0.0]
     sampling_distances = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments)
     span2 = [sampling_distances[1], sampling_distances[end]]
@@ -55,7 +55,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
         pct = round(100 * (s - span2[1]) / (s_end - span2[1]), digits=0)
         print("\r  Initialization: $(Int(pct))% (s=$(round(s, digits=2))/$(round(s_end, digits=2)))")
     end
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), saveat=sampling_distances, reltol=1e-3, abstol=1e-3, callback=cb)
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), saveat=sampling_distances, reltol=1e-1, abstol=1e-1, callback=cb)
     println()
 
     x = hcat(sol.u...)'
@@ -269,7 +269,7 @@ function refineMesh(problem,segment_edges,s_all)
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-1
+    error_threshold = 1e-2
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
@@ -336,6 +336,8 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         println("Variables: $(num_variables(model)), Constraints: $(num_constraints(model; count_variable_in_set_constraints=true))")
         set_optimizer_attribute(model, "max_iter", 3000)
         set_optimizer_attribute(model, "print_level", 5)
+        set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
+        set_optimizer_attribute(model, "mu_strategy", "adaptive")
         optimize!(model)
         println("Termination: ", termination_status(model), " | Objective: ", objective_value(model))
 
