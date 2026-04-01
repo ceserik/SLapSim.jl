@@ -8,6 +8,7 @@ One simulator for multiple complexities of vehicle models
 
 [Demo video (MP4)](https://github.com/user-attachments/assets/51457aef-2960-4be0-aa33-9bc9c3a62891)
 
-Bus with front and rear steering
+# Bus with front and rear steering
+
 [Demo video (MP4)](https://github.com/user-attachments/assets/692bd5fc-defc-4955-b364-a33a24b91b82)
 
