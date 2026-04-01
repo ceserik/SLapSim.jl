@@ -1,18 +1,27 @@
-mutable struct Aero
+mutable struct Aero{F1}
     CL::carParameter{carVar}
     CD::carParameter{carVar}
     CoP::carParameter{carVar}
+    compute::F1
 end
 #Base.show(io::IO, ::MIME"text/plain", obj) = prettyPrintComponent(io, obj)
+
+const RHO_SEA_LEVEL = 1.225
 
 function createBasicAero()
     CL = carParameter{carVar}(-5.0,"Lift coeffcient","-")
     CD = carParameter{carVar}(2.0,"Drag coeffcient","-")
     CoP = carParameter{carVar}(0.5,"Cener of pressure on front","-")
+    function compute(vx, rho=RHO_SEA_LEVEL)
+        downforce = 0.5 * rho * CL.value * vx^2
+        drag = -0.5 * rho * CD.value * vx^2
+        return (downforce=downforce, drag=drag)
+    end
     aero = Aero(
         CL,
         CD,
-        CoP
+        CoP,
+        compute
     )
     return aero
 

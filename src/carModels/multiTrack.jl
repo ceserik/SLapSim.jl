@@ -91,7 +91,10 @@ function createTwintrack()
 
 
 
-        forces = suspension.calculate()
+        rho = isnothing(track) ? RHO_SEA_LEVEL : track.rho[1]
+        aeroForces = aero.compute(velocity.value[1], rho)
+
+        forces = suspension.calculate(aeroForces.downforce, aero.CoP.value)
         for i in eachindex(forces)
             drivetrain.tires[i].forces.value[3] = forces[i]
         end
@@ -126,7 +129,7 @@ function createTwintrack()
             cogForce = cogForce .+ car.wheelAssemblies[i].forces.value
             cogMoment = cogMoment + car.wheelAssemblies[i].torque.value
         end
-
+        cogForce = cogForce .+ [aeroForces.drag, 0.0, 0.0]
 
         dv = cogForce / car.carParameters.mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
         dangularVelocity = cogMoment / car.carParameters.inertia.value

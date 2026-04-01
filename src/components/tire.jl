@@ -132,13 +132,14 @@ function setup_observables!(ax, tire::Tire)
     return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
 end
 
-function update_observables!(obs, tire::Tire, wx, wy, θ; force_scale=1/1000, circle_radius=1.5)
+function update_observables!(obs, tire::Tire, wx, wy, θ; force_scale=1/1000)
     r = tire.radius.value
     w = tire.width.value * 0.8
     obs.rect[] = _rect_points(wx, wy, 2r, w, θ)
 
     R = _rotmat2d(θ)
     Fz = tire.forces.value[3]
+    circle_radius = 3 * r
     ellipse_r = abs(Fz) > 0 ? circle_radius : 0.0
     obs.ellipse[] = [Point2f(R * [ellipse_r * cos(a); ellipse_r * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
 

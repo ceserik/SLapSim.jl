@@ -122,7 +122,10 @@ function createBus()
             car.drivetrain.gearboxes[i].compute()
         end
 
-        forces = suspension.calculate()
+        rho = isnothing(track) ? RHO_SEA_LEVEL : track.rho[1]
+        aeroForces = aero.compute(velocity.value[1], rho)
+
+        forces = suspension.calculate(aeroForces.downforce, aero.CoP.value)
         for i in eachindex(forces)
             drivetrain.tires[i].forces.value[3] = forces[i]
         end
@@ -155,6 +158,7 @@ function createBus()
             cogMoment = cogMoment + car.wheelAssemblies[i].torque.value
         end
 
+        cogForce = cogForce .+ [aeroForces.drag, 0.0, 0.0]
         dv = cogForce / car.carParameters.mass.value - angularVelocity.value × velocity.value
         dangularVelocity = cogMoment / car.carParameters.inertia.value
         dx = [dv[1], dv[2], angularVelocity.value[3], dangularVelocity[3]]

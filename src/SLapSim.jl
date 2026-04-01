@@ -9,7 +9,7 @@ using Debugger
 using FastGaussQuadrature
 using Infiltrator
 
-const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
+const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr,JuMP.QuadExpr}
 #const carVar = Union{JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
 
 # Include files in dependency order
@@ -51,7 +51,7 @@ export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml
 export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad, create_gauss_legendre
 export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
 export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
-export createBus
+export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
 export drawCar!, animateCar, animateCarDual, draw!
 #println("SLapSim module loaded")
 

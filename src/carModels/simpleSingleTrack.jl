@@ -64,9 +64,12 @@ function createSimplestSingleTrack()
         gbRear.setTorque(drivetrain.motors[2].torque.value)
         gbRear.compute()
 
-        # calculate Fz on tires
-        drivetrain.tires[1].forces.value[3] = 0.5 * mass.value * 9.81
-        drivetrain.tires[2].forces.value[3] = 0.5 * mass.value * 9.81
+        rho = isnothing(track) ? RHO_SEA_LEVEL : track.rho[1]
+        aeroForces = aero.compute(velocity.value[1], rho)
+
+        # calculate Fz on tires (weight + downforce, split 50/50 for single track)
+        drivetrain.tires[1].forces.value[3] = 0.5 * mass.value * 9.81 + aeroForces.downforce * aero.CoP.value
+        drivetrain.tires[2].forces.value[3] = 0.5 * mass.value * 9.81 + aeroForces.downforce * (1 - aero.CoP.value)
         
         #tire forces
         drivetrain.tires[1].compute(gbFront.torqueOut.value, optiModel)
@@ -86,7 +89,7 @@ function createSimplestSingleTrack()
         wheelAssemblyFront.getTorque(drivetrain.tires[1].forces.value)
         wheelAssemblyRear.getTorque(drivetrain.tires[2].forces.value)
 
-        cogForce = wheelAssemblyFront.forces.value .+ wheelAssemblyRear.forces.value
+        cogForce = wheelAssemblyFront.forces.value .+ wheelAssemblyRear.forces.value .+ [aeroForces.drag, 0.0, 0.0]
         cogMoment = wheelAssemblyFront.torque.value + wheelAssemblyRear.torque.value
 
         dv = cogForce / mass.value - angVel × vel
