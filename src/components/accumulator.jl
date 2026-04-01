@@ -33,26 +33,3 @@ function createPepikCTU25()
     )
     return ACP
 end
-
-function createBusAccumulator()
-    capacity = carParameter{carVar}(200.0,"ACP capacity","kWh")
-    maxPower = carParameter{carVar}(300.0,"max Power out","kW")
-    minPower = carParameter{carVar}(300.0,"min Power out","kW")
-    voltage  = carParameter{carVar}(650.0,"Voltage","V")
-    current  = carParameter{carVar}(0.0,"Current","A")
-    SoC = carParameter{carVar}(100.0,"State of Charge","%")
-    mass = carParameter{carVar}(1500.0,"mass","kg")
-    resistance = carParameter{carVar}(0.005,"Internal Resistance","ohm")
-
-    ACP = Accumulator(
-        capacity,
-        maxPower,
-        minPower,
-        voltage,
-        current,
-        SoC,
-        mass,
-        resistance
-    )
-    return ACP
-end

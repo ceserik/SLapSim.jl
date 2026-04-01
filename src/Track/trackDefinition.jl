@@ -124,9 +124,9 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     rho = 1.225
     μ = 1
 
-    R1 = 25.0   # radius of the first turn [m]
-    R2 = 20.0   # radius of the second turn [m]
-    l_straight = 40.0  # length of the straight at the beginning of the track [m]
+    R1 = 5.0  # radius of the first turn [m]
+    R2 = 6.0   # radius of the second turn [m]
+    l_straight = 20.0  # length of the straight at the beginning of the track [m]
     
     # First turn (semicircle from pi to 0)
     t1 = LinRange(π, 0, 100)

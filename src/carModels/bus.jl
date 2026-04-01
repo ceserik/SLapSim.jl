@@ -12,7 +12,7 @@ function createBus()
     powerLimit = carParameter{carVar}(300000.0, "PowerLimit", "W")
     psi = carParameter{carVar}(0.0, "heading", "rad")
     n = carParameter{carVar}(0.0, "Distance from centerline", "m")
-    nControls = carParameter{carVar}(2.0, "number of controlled parameters", "-")
+    nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(30000.0, "Inertia", "kg*m^2")
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
     s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
@@ -20,40 +20,54 @@ function createBus()
     # rear axle spacing: 1.3m between the two rear axles
     rearAxleSpacing = 1.3
 
-    # 6 gearboxes: FL, FR, RL1, RR1, RL2, RR2
-    gearboxFL  = createBusGearbox()
-    gearboxFR  = createBusGearbox()
-    gearboxRL1 = createBusGearbox()
-    gearboxRR1 = createBusGearbox()
-    gearboxRL2 = createBusGearbox()
-    gearboxRR2 = createBusGearbox()
+    # 6 gearboxes from formula, override ratio
+    gearboxes = [createCTU25gearbox() for _ in 1:6]
+    for gb in gearboxes
+        gb.ratio.value = 6.0
+    end
 
-    # 6 motors
-    motorFL  = createBusMotor()
-    motorFR  = createBusMotor()
-    motorRL1 = createBusMotor()
-    motorRR1 = createBusMotor()
-    motorRL2 = createBusMotor()
-    motorRR2 = createBusMotor()
+    # 6 motors from formula with bus torque limit
+    motors = [createFischerMotor(1000.0) for _ in 1:6]
+    for m in motors
+        m.mass.value = 120.0
+    end
 
-    # 6 tires
-    tireFL  = createBusTire(motorFL, gearboxFL)
-    tireFR  = createBusTire(motorFR, gearboxFR)
-    tireRL1 = createBusTire(motorRL1, gearboxRL1)
-    tireRR1 = createBusTire(motorRR1, gearboxRR1)
-    tireRL2 = createBusTire(motorRL2, gearboxRL2)
-    tireRR2 = createBusTire(motorRR2, gearboxRR2)
+    # 6 tires from formula, override dimensions
+    tires = [createR20lin(motors[i], gearboxes[i]) for i in 1:6]
+    for t in tires
+        t.radius.value = 0.5
+        t.width.value = 0.315
+        t.inertia.value = 5.0
+        t.mass.value = 50.0
+        t.maxSLipAngle.value = 8/180*pi
+        t.scalingForce.value = motors[1].torqueSpeedFunction(0.0) * gearboxes[1].ratio.value / 0.5
+    end
 
-    drivetrain = Drivetrain(
-        [motorFL, motorFR, motorRL1, motorRR1, motorRL2, motorRR2],
-        [gearboxFL, gearboxFR, gearboxRL1, gearboxRR1, gearboxRL2, gearboxRR2],
-        [tireFL, tireFR, tireRL1, tireRR1, tireRL2, tireRR2],
-        createBusAccumulator())
+    # accumulator from formula, override capacity
+    accu = createPepikCTU25()
+    accu.capacity.value = 200.0
+    accu.maxPower.value = 300.0
+    accu.minPower.value = 300.0
+    accu.voltage.value = 650.0
+    accu.mass.value = 1500.0
 
-    aero = createBusAero()
+    drivetrain = Drivetrain(motors, gearboxes, tires, accu)
+
+    # aero from formula, override for bus (no downforce, high drag)
+    aero = createBasicAero()
+    aero.CL.value = 0.0
+    aero.CD.value = 6.0
+
+    # suspension - use simple suspension but returns 6 forces for double rear axle
     suspension = createBusSuspension()
 
-    chassis = createBusChassis()
+    # chassis from formula, override dimensions
+    chassis = createCTU25chassis()
+    chassis.mass.value = 12000.0
+    chassis.wheelbase.value = 6.0
+    chassis.track.value = 2.1
+    chassis.CoG_X_pos.value = 0.45
+
     suspension.setInput(chassis)
 
     # wheel positions: front axle, rear axle 1, rear axle 2
@@ -69,16 +83,19 @@ function createBus()
 
     function controlMapping(controls::AbstractVector)
         # front motors off
-        drivetrain.motors[1].torque.value = 0.0
-        drivetrain.motors[2].torque.value = 0.0
+        drivetrain.motors[1].torque.value = controls[1]
+        drivetrain.motors[2].torque.value = controls[1]
         # rear motors - all 4 rear wheels get same torque (controls[1])
         drivetrain.motors[3].torque.value = controls[1]
         drivetrain.motors[4].torque.value = controls[1]
-        #drivetrain.motors[5].torque.value = controls[1]
-        #drivetrain.motors[6].torque.value = controls[1]
+        drivetrain.motors[5].torque.value = controls[1]
+        drivetrain.motors[6].torque.value = controls[1]
         # front steering only
         wheelAssemblies[1].steeringAngle.value = controls[2]
         wheelAssemblies[2].steeringAngle.value = controls[2]
+
+        wheelAssemblies[5].steeringAngle.value = controls[3]
+        wheelAssemblies[6].steeringAngle.value = controls[3]
     end
 
     function stateMapping(states::AbstractVector)

@@ -55,7 +55,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
         pct = round(100 * (s - span2[1]) / (s_end - span2[1]), digits=0)
         print("\r  Initialization: $(Int(pct))% (s=$(round(s, digits=2))/$(round(s_end, digits=2)))")
     end
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), saveat=sampling_distances, reltol=1e-1, abstol=1e-1, callback=cb)
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), saveat=sampling_distances, reltol=1e-4, abstol=1e-4, callback=cb)
     println()
 
     x = hcat(sol.u...)'
@@ -269,7 +269,7 @@ function refineMesh(problem,segment_edges,s_all)
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-2
+    error_threshold = 1e-1
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion

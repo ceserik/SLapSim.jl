@@ -31,27 +31,6 @@ function createCTU25chassis()
 end
 
 
-function createBusChassis()
-    mass = carParameter{carVar}(12000.0,"mass","kg")
-    wheelbase = carParameter{carVar}(6.0,"wheelbase","m")
-    track = carParameter{carVar}(2.1,"track","m")
-    CoG_X_pos = carParameter{carVar}(0.45,"ratio of CoG on front","m")
-    CoG_Y_pos = carParameter{carVar}(0.5,"ratio of CoG on left","m")
-    function hitbox(n::carVar,track::Union{Track,Nothing},model=nothing)
-        greaterContraint(n, -track.widthR[1]+1.4, model)
-        lessContraint(n, track.widthL[1]-1.4, model)
-    end
-
-    chassis = Chassis(
-        mass,
-        hitbox,
-        wheelbase,
-        track,
-        CoG_X_pos,
-        CoG_Y_pos
-    )
-    return chassis
-end
 
 function setup_observables!(ax, chassis::Chassis)
     dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)

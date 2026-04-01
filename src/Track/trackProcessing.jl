@@ -176,7 +176,7 @@ function plotTrackStates(track::Track)
     th = getindex.(vals, 2)
     C  = getindex.(vals, 1)
 
-    fig = Figure(resolution = (800, 900))
+    fig = Figure(size = (800, 900))
     ax1 = Axis(fig[1, 1], xlabel = "s", ylabel = "x", title = "x(s)")
     ax2 = Axis(fig[2, 1], xlabel = "s", ylabel = "y", title = "y(s)")
     ax3 = Axis(fig[3, 1], xlabel = "s", ylabel = "theta", title = "theta(s)")

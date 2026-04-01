@@ -43,8 +43,8 @@ function createR20lin_double(motor,gearbox)
 
     function tireConstraints(model=nothing)
         lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (forces.value[3]/scalingForce.value)^2, model)
-        lessContraint(slipAngle.value/maxSlipAngle.value, 5/180*pi/maxSlipAngle.value, model)
-        greaterContraint(slipAngle.value/maxSlipAngle.value, -5/180*pi/maxSlipAngle.value, model)
+        lessContraint(slipAngle.value/maxSlipAngle.value, maxSlipAngle.value/maxSlipAngle.value, model)
+        greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
     end
 
     tire = Tire(
@@ -92,56 +92,8 @@ function createR20lin(motor,gearbox)
 
     function tireConstraints(model=nothing)
         lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (forces.value[3]/scalingForce.value)^2, model)
-        lessContraint(slipAngle.value/maxSlipAngle.value, 5/180*pi/maxSlipAngle.value, model)
-        greaterContraint(slipAngle.value/maxSlipAngle.value, -5/180*pi/maxSlipAngle.value, model)
-    end
-
-    tire = Tire(
-        radius,
-        width,
-        inertia,
-        mass,
-        velocity,
-        angularFrequency,
-        forces,
-        slipAngle,
-        slipRatio,
-        compute,
-        tireConstraints,
-        setVelocity,
-        maxSlipAngle,
-        scalingForce,
-    )
-end
-
-function createBusTire(motor,gearbox)
-    radius = carParameter{carVar}(0.5, "tire radius", "m")
-    width = carParameter{carVar}(0.315, "tire width", "m")
-    inertia = carParameter{carVar}(5.0, "tire inertia", "kg*m^2")
-    mass = carParameter{carVar}(50.0, "tire mass", "kg")
-    velocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "velocity", "m/s")
-    angularFrequency = carParameter{carVar}(0.0, "angular velocity", "rad/s")
-    forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Tire Force", "N")
-    slipAngle = carParameter{carVar}(0.0, "Slip angle", "rad")
-    slipRatio = carParameter{carVar}(0.0, "slip ratio", "-")
-    maxSlipAngle = carParameter{carVar}(8/180*pi, "max slip angle", "rad")
-    scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
-    scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
-
-    function setVelocity(velocityIn::Vector{carVar})
-        velocity.value = velocityIn
-    end
-
-    function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
-        slipAngle.value = -atan(velocity.value[2], velocity.value[1])
-        forces.value[2] = 1*slipAngle.value/maxSlipAngle.value * forces.value[3]
-        forces.value[1] = inTorque/radius.value
-    end
-
-    function tireConstraints(model=nothing)
-        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (forces.value[3]/scalingForce.value)^2, model)
-        lessContraint(slipAngle.value/maxSlipAngle.value, 8/180*pi/maxSlipAngle.value, model)
-        greaterContraint(slipAngle.value/maxSlipAngle.value, -8/180*pi/maxSlipAngle.value, model)
+        lessContraint(slipAngle.value/maxSlipAngle.value, maxSlipAngle.value/maxSlipAngle.value, model)
+        greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
     end
 
     tire = Tire(
