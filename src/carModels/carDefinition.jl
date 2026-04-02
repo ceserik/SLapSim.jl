@@ -72,6 +72,9 @@ end
 
 
 
+Base.show(io::IO, ::MIME"text/plain", obj::Car) = prettyPrintComponent(io, obj)
+Base.show(io::IO, ::MIME"text/plain", obj::Drivetrain) = prettyPrintComponent(io, obj)
+
 """
 Generic pretty printing for car components.
 Usage: import this function and add:
@@ -79,7 +82,7 @@ Usage: import this function and add:
 """
 function prettyPrintComponent(io::IO, obj; indent::Int=0)
     # List of types that should get pretty printing
-    pretty_print_types = [Tire, Motor, Gearbox, Chassis, Drivetrain, Car2, WheelAssembly, CarParameters]
+    pretty_print_types = [Tire, Motor, Gearbox, Chassis, Drivetrain, Car, Car2, WheelAssembly, CarParameters]
 
     # Handle types that shouldn't get pretty printing
     if !any(T -> obj isa T, pretty_print_types)
@@ -96,8 +99,9 @@ function prettyPrintComponent(io::IO, obj; indent::Int=0)
     if fieldcount(T) > 0
         max_width = maximum(length(string(field)) for field in fieldnames(T))
         for field in fieldnames(T)
-            field_str = rpad(string(field), max_width)
             value = getfield(obj, field)
+            value isa Function && continue
+            field_str = rpad(string(field), max_width)
             if any(PT -> value isa PT, pretty_print_types)
                 print(io, "$(inner)$(field_str) = ")
                 prettyPrintComponent(io, value; indent=indent+1)

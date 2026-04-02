@@ -14,6 +14,7 @@ mutable struct  Tire{F1,F2,F3,F4,F5}
     setVelocity::F3
     maxSLipAngle::carParameter{carVar}
     scalingForce::carParameter{carVar}
+    frictionCoefficient::carParameter{carVar}
     setupObservables::F4
     updateObservables::F5
 end
@@ -32,6 +33,7 @@ function createR20lin_double(motor,gearbox)
     maxSlipAngle = carParameter{carVar}(5/180*pi, "max slip angle", "rad")
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
+    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
 
     function setVelocity(velocityIn::Vector{carVar})
         velocity.value = velocityIn
@@ -39,12 +41,12 @@ function createR20lin_double(motor,gearbox)
 
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
-        forces.value[2] = 2*slipAngle.value/maxSlipAngle.value * forces.value[3]
+        forces.value[2] = 2*slipAngle.value/maxSlipAngle.value * forces.value[3] * frictionCoefficient.value
         forces.value[1] = inTorque/radius.value
     end
 
     function tireConstraints(model=nothing)
-        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (forces.value[3]/scalingForce.value)^2, model)
+        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (frictionCoefficient.value * forces.value[3]/scalingForce.value)^2, model)
         lessContraint(slipAngle.value/maxSlipAngle.value, maxSlipAngle.value/maxSlipAngle.value, model)
         greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
     end
@@ -87,6 +89,7 @@ function createR20lin_double(motor,gearbox)
         setVelocity,
         maxSlipAngle,
         scalingForce,
+        frictionCoefficient,
         setupObservables,
         updateObservables,
     )
@@ -106,6 +109,7 @@ function createR20lin(motor,gearbox)
     maxSlipAngle = carParameter{carVar}(5/180*pi, "max slip angle", "rad")
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
+    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
 
     function setVelocity(velocityIn::Vector{carVar})
         velocity.value = velocityIn
@@ -113,14 +117,14 @@ function createR20lin(motor,gearbox)
 
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
-        forces.value[2] = 1*slipAngle.value/maxSlipAngle.value * forces.value[3]
+        forces.value[2] = 1*slipAngle.value/maxSlipAngle.value * forces.value[3] * frictionCoefficient.value
         forces.value[1] = inTorque/radius.value
     end
 
     function tireConstraints(model=nothing)
-        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (forces.value[3]/scalingForce.value)^2, model)
-        lessContraint(slipAngle.value/maxSlipAngle.value, maxSlipAngle.value/maxSlipAngle.value, model)
-        greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
+        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (frictionCoefficient.value * forces.value[3]/scalingForce.value)^2, model)
+        #lessContraint(slipAngle.value/maxSlipAngle.value, maxSlipAngle.value/maxSlipAngle.value, model)
+        #greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
     end
 
     function setupObservables(ax)
@@ -161,6 +165,7 @@ function createR20lin(motor,gearbox)
         setVelocity,
         maxSlipAngle,
         scalingForce,
+        frictionCoefficient,
         setupObservables,
         updateObservables,
     )

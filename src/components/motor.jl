@@ -6,7 +6,7 @@ mutable struct Motor{F1,F2}
     torqueSpeedFunction::F1 #mapping speed to max torque
     constraints::F2
 end
-
+Base.show(io::IO, ::MIME"text/plain", obj::Motor) = prettyPrintComponent(io, obj)
 
 function createFischerMotor(maxTorqueVal::Float64=29.0)
     torque = carParameter{carVar}(0.0,"motor torque","Nm")

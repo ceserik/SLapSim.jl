@@ -6,6 +6,7 @@ using GLMakie
 import MathOptInterface as MOI
 using UnoSolver
 using UnicodePlots
+using DiffOpt
 #Infiltrator.clear_disabled!()
 include("../solvingMethods/optInterface.jl")
 include("../dataAnalysis/validation.jl")
@@ -17,7 +18,7 @@ include("../carModels/bus.jl")
 include("../dataAnalysis/carSnapshot.jl")
 #include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
-detect = false#Sys.islinux()
+detect = Sys.islinux()
 if detect
     x = "kreadconfig6"
     option1 = "--key"
@@ -60,13 +61,13 @@ update_theme!(
 
 GLMakie.closeall()
 
-problem = Problem_config(nothing, nothing, nothing, nothing)
+problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
 
 #car = createSimplestSingleTrack()
-#car = createTwintrack()
-car = createBus()
+car = createTwintrack()
+#car = createBus()
 problem.car = car
 #track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true)
@@ -81,11 +82,11 @@ problem.track = track
 #initialization = initializeSolution(car,track,sampleDistances)
 #UnoSolver.Optimizer
 
-model = JuMP.Model(Ipopt.Optimizer)
+model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 30
+segments = 40
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
@@ -163,4 +164,5 @@ if 1 == 1
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
+    sensitivityAnalysis(problem)
 end

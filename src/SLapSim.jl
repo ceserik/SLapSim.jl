@@ -2,7 +2,7 @@ module SLapSim
 using Revise
 using GLMakie
 using LinearAlgebra
-using JuMP, Ipopt, Zygote
+using JuMP, Ipopt, Zygote, DiffOpt
 using ControlSystemsBase
 using OrdinaryDiffEq
 using Debugger
@@ -39,6 +39,7 @@ include("carModels/bus.jl")
 #solving solvingMethods
 include("solvingMethods/massPointSolver.jl")
 include("solvingMethods/optInterface.jl")
+include("solvingMethods/transcriptionUtils.jl")
 
 include("animation/drawCar.jl")
 include("dataAnalysis/validation.jl")
@@ -52,6 +53,7 @@ export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, int
 export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
 export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
 export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
+export setParameters, resetParameters, sensitivityAnalysis
 export drawCar!, animateCar, animateCarDual, draw!
 #println("SLapSim module loaded")
 

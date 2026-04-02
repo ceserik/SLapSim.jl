@@ -4,7 +4,7 @@ function createTwintrack()
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s")
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s")
 
-    mass = carParameter{carVar}(280.0, "Mass", "kg")
+    mass = carParameter{carVar}(280.0, "Mass", "kg",:tunable)
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
     CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
@@ -13,7 +13,7 @@ function createTwintrack()
     psi = carParameter{carVar}(0.0, "heading", "rad")
     n = carParameter{carVar}(0.0, "Distance from centerline", "m")
     nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
-    inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2")
+    inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2",:tunable)
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
     s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
 
@@ -131,8 +131,8 @@ function createTwintrack()
         end
         cogForce = cogForce .+ [aeroForces.drag, 0.0, 0.0]
 
-        dv = cogForce / car.carParameters.mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
-        dangularVelocity = cogMoment / car.carParameters.inertia.value
+        dv = cogForce ./ car.carParameters.mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
+        dangularVelocity = cogMoment ./ car.carParameters.inertia.value
         dx = [dv[1], dv[2], angularVelocity.value[3], dangularVelocity[3]]
         return dx
 

@@ -20,6 +20,7 @@ mutable struct Problem_config
     track::Union{Nothing, Track}
     model::Union{Nothing, JuMP.Model}
     optiResult
+    params
 end
 
 struct Result_interpolation
@@ -315,6 +316,10 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         iterations += 1
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
         println("creating constraints")
+
+        #Add parameters
+        (params, tunables) = setParameters(car,model)
+        problem.params = params
         xd = RKadaptive.createConstraints(segment_edges, initialization)
         X = xd[2]
         U = xd[3]
@@ -343,14 +348,18 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
 
         x = value.(X)
         u = value.(U)
+        problem.model = model
+        problem.params = params
         problem.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
         #initialization = make_result_interpolation(x, u, s_all) # uncomment to use previous result as initialization
 
+        resetParameters(tunables)
         (segment_edges,clear,segment_errors) = refineMesh(problem,segment_edges,s_all,)
 
-        model = JuMP.Model(Ipopt.Optimizer)
-        
-        
+        if clear == 0
+            model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
+        end
+
         println("Sum of all errors: ", sum(segment_errors))
 
 
