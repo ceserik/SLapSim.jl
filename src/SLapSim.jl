@@ -39,7 +39,7 @@ include("carModels/bus.jl")
 #solving solvingMethods
 include("solvingMethods/massPointSolver.jl")
 include("solvingMethods/optInterface.jl")
-include("solvingMethods/transcriptionUtils.jl")
+include("dataAnalysis/sensitivityAnalysis.jl")
 
 include("animation/drawCar.jl")
 include("dataAnalysis/validation.jl")

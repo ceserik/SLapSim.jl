@@ -65,8 +65,8 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
 
-#car = createSimplestSingleTrack()
-car = createTwintrack()
+car = createSimplestSingleTrack()
+#car = createTwintrack()
 #car = createBus()
 problem.car = car
 #track = figureEight(true, 2.0)
@@ -86,7 +86,7 @@ model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 40
+segments = 500
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
