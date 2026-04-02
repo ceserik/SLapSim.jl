@@ -174,9 +174,9 @@ function setup_observables!(ax, wa::WheelAssembly, tire::Tire)
     return setup_observables!(ax, tire)
 end
 
-function update_observables!(obs, wa::WheelAssembly, tire::Tire, x, y, ψ; force_scale=1/1000)
+function update_observables!(obs, wa::WheelAssembly, tire::Tire, x, y, ψ, Fz_static)
     R = _rotmat2d(ψ)
     global_pos = R * wa.position.value[1:2] .+ [x, y]
     total_angle = ψ + wa.steeringAngle.value
-    update_observables!(obs, tire, global_pos[1], global_pos[2], total_angle; force_scale=force_scale)
+    update_observables!(obs, tire, global_pos[1], global_pos[2], total_angle, Fz_static)
 end

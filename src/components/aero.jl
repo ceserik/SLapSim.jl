@@ -13,7 +13,7 @@ function createBasicAero()
     CD = carParameter{carVar}(2.0,"Drag coeffcient","-")
     CoP = carParameter{carVar}(0.5,"Cener of pressure on front","-")
     function compute(vx, rho=RHO_SEA_LEVEL)
-        downforce = 0.5 * rho * CL.value * vx^2
+        downforce = -0.5 * rho * CL.value * vx^2
         drag = -0.5 * rho * CD.value * vx^2
         return (downforce=downforce, drag=drag)
     end

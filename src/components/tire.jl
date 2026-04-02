@@ -132,22 +132,15 @@ function setup_observables!(ax, tire::Tire)
     return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
 end
 
-function update_observables!(obs, tire::Tire, wx, wy, θ; force_scale=1/1000)
+function update_observables!(obs, tire::Tire, wx, wy, θ, Fz_static)
     r = tire.radius.value
-    w = tire.width.value * 0.8
-    obs.rect[] = _rect_points(wx, wy, 2r, w, θ)
-
+    s = 4r / Fz_static
     R = _rotmat2d(θ)
-    Fz = tire.forces.value[3]
-    circle_radius = 3 * r
-    ellipse_r = abs(Fz) > 0 ? circle_radius : 0.0
-    obs.ellipse[] = [Point2f(R * [ellipse_r * cos(a); ellipse_r * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
 
-    Fx = tire.forces.value[1]
-    Fy = tire.forces.value[2]
-    # scale force arrows so they fit within the circle
-    f_scale = abs(Fz) > 0 ? circle_radius / abs(Fz) : force_scale
-    f_global = R * [Fx; Fy] .* f_scale
+    obs.rect[] = _rect_points(wx, wy, 2r, tire.width.value * 0.8, θ)
+    obs.ellipse[] = [Point2f(R * [abs(tire.forces.value[3]) * s * cos(a); abs(tire.forces.value[3]) * s * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
+
+    f_global = R * tire.forces.value[1:2] .* s
     obs.force_pos[] = [Point2f(wx, wy)]
     obs.force_dir[] = [Point2f(f_global[1], f_global[2])]
 end

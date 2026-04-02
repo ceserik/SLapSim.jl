@@ -79,8 +79,8 @@ function createSimpleSuspension()
 
     function calculate(downforce=0.0, CoP=0.5)
         totalLoad = chassis.mass.value * 9.81 + downforce
-        frontRatio = 1 - chassis.CoG_X_pos.value
-        rearRatio = chassis.CoG_X_pos.value
+        frontRatio = chassis.CoG_X_pos.value
+        rearRatio = 1 - chassis.CoG_X_pos.value
         leftRatio = 1 - chassis.CoG_Y_pos.value
         rightRatio = chassis.CoG_Y_pos.value
         weightFront = chassis.mass.value * 9.81 * frontRatio
@@ -128,8 +128,8 @@ function createBusSuspension()
     end
 
     function calculate(downforce=0.0, CoP=0.5)
-        frontRatio = 1 - chassis.CoG_X_pos.value
-        rearRatio = chassis.CoG_X_pos.value
+        frontRatio = chassis.CoG_X_pos.value
+        rearRatio = 1 - chassis.CoG_X_pos.value
         leftRatio = 1 - chassis.CoG_Y_pos.value
         rightRatio = chassis.CoG_Y_pos.value
         weightFront = chassis.mass.value * 9.81 * frontRatio

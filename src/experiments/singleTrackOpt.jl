@@ -65,8 +65,8 @@ problem = Problem_config(nothing, nothing, nothing, nothing)
 
 
 #car = createSimplestSingleTrack()
-#car = createTwintrack()
-car = createBus()
+car = createTwintrack()
+#car = createBus()
 problem.car = car
 #track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true)

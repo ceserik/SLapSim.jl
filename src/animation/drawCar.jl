@@ -134,6 +134,7 @@ Reads steering angles and forces directly from the car struct (set by controlMap
 function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
     wb = car.chassis.wheelbase.value
     tw = car.chassis.track.value
+    Fz_static = car.chassis.mass.value * 9.81 / length(car.wheelAssemblies)
 
     if panel.follow
         Rcam = _rotmat2d(π/2 - ψ)
@@ -146,7 +147,7 @@ function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_rad
         car_ψ = π/2
         update_observables!(panel.chassis, car.chassis, 0.0, 0.0, car_ψ)
         for (j, wa) in enumerate(car.wheelAssemblies)
-            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], 0.0, 0.0, car_ψ)
+            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], 0.0, 0.0, car_ψ, Fz_static)
         end
         update_observables!(panel.aero, car.aero, 0.0, 0.0, car_ψ, wb, tw)
 
@@ -157,7 +158,7 @@ function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_rad
     else
         update_observables!(panel.chassis, car.chassis, cx, cy, ψ)
         for (j, wa) in enumerate(car.wheelAssemblies)
-            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], cx, cy, ψ)
+            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], cx, cy, ψ, Fz_static)
         end
         update_observables!(panel.aero, car.aero, cx, cy, ψ, wb, tw)
 
