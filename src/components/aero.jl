@@ -1,8 +1,10 @@
-mutable struct Aero{F1}
+mutable struct Aero{F1,F2,F3}
     CL::carParameter{carVar}
     CD::carParameter{carVar}
     CoP::carParameter{carVar}
     compute::F1
+    setupObservables::F2
+    updateObservables::F3
 end
 #Base.show(io::IO, ::MIME"text/plain", obj) = prettyPrintComponent(io, obj)
 
@@ -17,30 +19,30 @@ function createBasicAero()
         drag = -0.5 * rho * CD.value * vx^2
         return (downforce=downforce, drag=drag)
     end
+    function setupObservables(ax)
+        dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
+        front_obs = Observable(dummy)
+        rear_obs  = Observable(dummy)
+        poly!(ax, front_obs; color=:transparent, strokecolor=:transparent, strokewidth=1.5)
+        poly!(ax, rear_obs;  color=:transparent, strokecolor=:transparent, strokewidth=1.5)
+        return (front=front_obs, rear=rear_obs)
+    end
+
+    function updateObservables(obs, x, y, ψ, wheelbase, trackwidth)
+        R = _rotmat2d(ψ)
+        fc = R * [wheelbase / 2 + 0.15; 0.0] .+ [x, y]
+        obs.front[] = _rect_points(fc[1], fc[2], 0.05, trackwidth + 0.3, ψ)
+        rc = R * [-wheelbase / 2 - 0.15; 0.0] .+ [x, y]
+        obs.rear[] = _rect_points(rc[1], rc[2], 0.05, trackwidth + 0.2, ψ)
+    end
+
     aero = Aero(
         CL,
         CD,
         CoP,
-        compute
+        compute,
+        setupObservables,
+        updateObservables,
     )
     return aero
-
-end
-
-
-function setup_observables!(ax, aero::Aero)
-    dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
-    front_obs = Observable(dummy)
-    rear_obs  = Observable(dummy)
-    poly!(ax, front_obs; color=:transparent, strokecolor=:transparent, strokewidth=1.5)
-    poly!(ax, rear_obs;  color=:transparent, strokecolor=:transparent, strokewidth=1.5)
-    return (front=front_obs, rear=rear_obs)
-end
-
-function update_observables!(obs, aero::Aero, x, y, ψ, wheelbase, trackwidth)
-    R = _rotmat2d(ψ)
-    fc = R * [wheelbase / 2 + 0.15; 0.0] .+ [x, y]
-    obs.front[] = _rect_points(fc[1], fc[2], 0.05, trackwidth + 0.3, ψ)
-    rc = R * [-wheelbase / 2 - 0.15; 0.0] .+ [x, y]
-    obs.rear[] = _rect_points(rc[1], rc[2], 0.05, trackwidth + 0.2, ψ)
 end

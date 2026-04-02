@@ -109,9 +109,9 @@ function _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, 
     end
 
     # Each component sets up its own observables
-    chassis_obs = setup_observables!(ax, car.chassis)
-    wa_obs = [setup_observables!(ax, wa, car.drivetrain.tires[i]) for (i, wa) in enumerate(car.wheelAssemblies)]
-    aero_obs = setup_observables!(ax, car.aero)
+    chassis_obs = car.chassis.setupObservables(ax)
+    wa_obs = [wa.setupObservables(ax, car.drivetrain.tires[i]) for (i, wa) in enumerate(car.wheelAssemblies)]
+    aero_obs = car.aero.setupObservables(ax)
 
     cog_obs = Observable([Point2f(0, 0)])
     scatter!(ax, cog_obs; color=:yellow, markersize=8, marker=:cross, strokewidth=1.5, strokecolor=:black)
@@ -145,22 +145,22 @@ function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_rad
         panel.track_right[]  = [Point2f(Rcam * ([xr[k], yr[k]] - car_pos)) for k in eachindex(xr)]
 
         car_ψ = π/2
-        update_observables!(panel.chassis, car.chassis, 0.0, 0.0, car_ψ)
+        car.chassis.updateObservables(panel.chassis, 0.0, 0.0, car_ψ)
         for (j, wa) in enumerate(car.wheelAssemblies)
-            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], 0.0, 0.0, car_ψ, Fz_static)
+            wa.updateObservables(panel.wheel_assemblies[j], car.drivetrain.tires[j], 0.0, 0.0, car_ψ, Fz_static)
         end
-        update_observables!(panel.aero, car.aero, 0.0, 0.0, car_ψ, wb, tw)
+        car.aero.updateObservables(panel.aero, 0.0, 0.0, car_ψ, wb, tw)
 
         panel.cog[] = [Point2f(0, 0)]
 
         push!(panel.trail_global, Point2f(cx, cy))
         panel.trail[] = [Point2f(Rcam * ([p[1], p[2]] - car_pos)) for p in panel.trail_global]
     else
-        update_observables!(panel.chassis, car.chassis, cx, cy, ψ)
+        car.chassis.updateObservables(panel.chassis, cx, cy, ψ)
         for (j, wa) in enumerate(car.wheelAssemblies)
-            update_observables!(panel.wheel_assemblies[j], wa, car.drivetrain.tires[j], cx, cy, ψ, Fz_static)
+            wa.updateObservables(panel.wheel_assemblies[j], car.drivetrain.tires[j], cx, cy, ψ, Fz_static)
         end
-        update_observables!(panel.aero, car.aero, cx, cy, ψ, wb, tw)
+        car.aero.updateObservables(panel.aero, cx, cy, ψ, wb, tw)
 
         panel.cog[] = [Point2f(cx, cy)]
 

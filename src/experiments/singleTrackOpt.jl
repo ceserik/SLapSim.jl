@@ -65,8 +65,8 @@ problem = Problem_config(nothing, nothing, nothing, nothing)
 
 
 #car = createSimplestSingleTrack()
-car = createTwintrack()
-#car = createBus()
+#car = createTwintrack()
+car = createBus()
 problem.car = car
 #track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true)
@@ -159,7 +159,7 @@ if 1 == 1
    # sampling_density = get_sampling_density(optiResult_interp.path)
    # plot_on_path(problem,sampling_density,"sampling density")
 
-    animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="animation.mp4")
+    animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")

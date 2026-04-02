@@ -1,5 +1,5 @@
 using Revise
-mutable struct WheelAssembly{F1,F2,F3}
+mutable struct WheelAssembly{F1,F2,F3,F4,F5}
     position::carParameter{Vector{carVar}}
     velocityPivot::carParameter{Vector{carVar}}
     velocityTire::carParameter{Vector{carVar}}
@@ -10,6 +10,8 @@ mutable struct WheelAssembly{F1,F2,F3}
     constraints::F1
     setVelocity::F2
     getTorque::F3
+    setupObservables::F4
+    updateObservables::F5
 end
 Base.show(io::IO, ::MIME"text/plain", obj::WheelAssembly) = prettyPrintComponent(io, obj)
 
@@ -70,6 +72,17 @@ function createBasicWheelAssembly(position::Vector{carVar})
         pivot2CoG(forces.value)
     end
 
+    function setupObservables(ax, tire)
+        return tire.setupObservables(ax)
+    end
+
+    function updateObservables(obs, tire, x, y, ψ, Fz_static)
+        R = _rotmat2d(ψ)
+        global_pos = R * position.value[1:2] .+ [x, y]
+        total_angle = ψ + steeringAngle.value
+        tire.updateObservables(obs, global_pos[1], global_pos[2], total_angle, Fz_static)
+    end
+
     testWheelAssembly = WheelAssembly(
         position,
         velocityPivot,
@@ -80,7 +93,9 @@ function createBasicWheelAssembly(position::Vector{carVar})
         torque,
         constraints,
         setVelocity,
-        getTorque
+        getTorque,
+        setupObservables,
+        updateObservables,
     )
     return testWheelAssembly
 end
@@ -141,6 +156,17 @@ function createBusWheelAssembly(position::Vector{carVar})
         pivot2CoG(forces.value)
     end
 
+    function setupObservables(ax, tire)
+        return tire.setupObservables(ax)
+    end
+
+    function updateObservables(obs, tire, x, y, ψ, Fz_static)
+        R = _rotmat2d(ψ)
+        global_pos = R * position.value[1:2] .+ [x, y]
+        total_angle = ψ + steeringAngle.value
+        tire.updateObservables(obs, global_pos[1], global_pos[2], total_angle, Fz_static)
+    end
+
     testWheelAssembly = WheelAssembly(
         position,
         velocityPivot,
@@ -151,7 +177,9 @@ function createBusWheelAssembly(position::Vector{carVar})
         torque,
         constraints,
         setVelocity,
-        getTorque
+        getTorque,
+        setupObservables,
+        updateObservables,
     )
     return testWheelAssembly
 end
@@ -170,13 +198,3 @@ function draw!(ax, wa::WheelAssembly, tire::Tire, x, y, ψ)
     draw!(ax, tire, global_pos[1], global_pos[2], total_angle)
 end
 
-function setup_observables!(ax, wa::WheelAssembly, tire::Tire)
-    return setup_observables!(ax, tire)
-end
-
-function update_observables!(obs, wa::WheelAssembly, tire::Tire, x, y, ψ, Fz_static)
-    R = _rotmat2d(ψ)
-    global_pos = R * wa.position.value[1:2] .+ [x, y]
-    total_angle = ψ + wa.steeringAngle.value
-    update_observables!(obs, tire, global_pos[1], global_pos[2], total_angle, Fz_static)
-end

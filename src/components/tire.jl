@@ -1,5 +1,5 @@
 using Revise
-mutable struct  Tire{F1,F2,F3}
+mutable struct  Tire{F1,F2,F3,F4,F5}
     radius::carParameter{carVar}
     width::carParameter{carVar}
     inertia::carParameter{carVar}
@@ -14,6 +14,8 @@ mutable struct  Tire{F1,F2,F3}
     setVelocity::F3
     maxSLipAngle::carParameter{carVar}
     scalingForce::carParameter{carVar}
+    setupObservables::F4
+    updateObservables::F5
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
 
@@ -47,6 +49,29 @@ function createR20lin_double(motor,gearbox)
         greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
     end
 
+    function setupObservables(ax)
+        dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
+        rect_obs = Observable(dummy)
+        poly!(ax, rect_obs; color=(:black, 0.3), strokecolor=(:gray30, 0.5), strokewidth=1)
+        ellipse_obs = Observable([Point2f(0, 0) for _ in _ELLIPSE_ANGLES])
+        lines!(ax, ellipse_obs; color=(:gray, 0.5), linewidth=1, linestyle=:dash)
+        force_pos_obs = Observable([Point2f(0, 0)])
+        force_dir_obs = Observable([Point2f(0, 0)])
+        arrows2d!(ax, force_pos_obs, force_dir_obs; color=:green, shaftwidth=4, tipwidth=8, tiplength=8)
+        return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
+    end
+
+    function updateObservables(obs, wx, wy, θ, Fz_static)
+        r = radius.value
+        s = 4r / Fz_static
+        R = _rotmat2d(θ)
+        obs.rect[] = _rect_points(wx, wy, 2r, width.value * 0.8, θ)
+        obs.ellipse[] = [Point2f(R * [abs(forces.value[3]) * s * cos(a); abs(forces.value[3]) * s * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
+        f_global = R * forces.value[1:2] .* s
+        obs.force_pos[] = [Point2f(wx, wy)]
+        obs.force_dir[] = [Point2f(f_global[1], f_global[2])]
+    end
+
     tire = Tire(
         radius,
         width,
@@ -62,6 +87,8 @@ function createR20lin_double(motor,gearbox)
         setVelocity,
         maxSlipAngle,
         scalingForce,
+        setupObservables,
+        updateObservables,
     )
     return tire
 end
@@ -96,6 +123,29 @@ function createR20lin(motor,gearbox)
         greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
     end
 
+    function setupObservables(ax)
+        dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
+        rect_obs = Observable(dummy)
+        poly!(ax, rect_obs; color=(:black, 0.3), strokecolor=(:gray30, 0.5), strokewidth=1)
+        ellipse_obs = Observable([Point2f(0, 0) for _ in _ELLIPSE_ANGLES])
+        lines!(ax, ellipse_obs; color=(:gray, 0.5), linewidth=1, linestyle=:dash)
+        force_pos_obs = Observable([Point2f(0, 0)])
+        force_dir_obs = Observable([Point2f(0, 0)])
+        arrows2d!(ax, force_pos_obs, force_dir_obs; color=:green, shaftwidth=4, tipwidth=8, tiplength=8)
+        return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
+    end
+
+    function updateObservables(obs, wx, wy, θ, Fz_static)
+        r = radius.value
+        s = 4r / Fz_static
+        R = _rotmat2d(θ)
+        obs.rect[] = _rect_points(wx, wy, 2r, width.value * 0.8, θ)
+        obs.ellipse[] = [Point2f(R * [abs(forces.value[3]) * s * cos(a); abs(forces.value[3]) * s * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
+        f_global = R * forces.value[1:2] .* s
+        obs.force_pos[] = [Point2f(wx, wy)]
+        obs.force_dir[] = [Point2f(f_global[1], f_global[2])]
+    end
+
     tire = Tire(
         radius,
         width,
@@ -111,36 +161,11 @@ function createR20lin(motor,gearbox)
         setVelocity,
         maxSlipAngle,
         scalingForce,
+        setupObservables,
+        updateObservables,
     )
 end
 
 const _N_ELLIPSE_PTS = 41
 const _ELLIPSE_ANGLES = range(0, 2π, length=_N_ELLIPSE_PTS)
 
-function setup_observables!(ax, tire::Tire)
-    dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
-    rect_obs = Observable(dummy)
-    poly!(ax, rect_obs; color=:black, strokecolor=:gray30, strokewidth=1)
-
-    ellipse_obs = Observable([Point2f(0, 0) for _ in _ELLIPSE_ANGLES])
-    lines!(ax, ellipse_obs; color=(:gray, 0.5), linewidth=1, linestyle=:dash)
-
-    force_pos_obs = Observable([Point2f(0, 0)])
-    force_dir_obs = Observable([Point2f(0, 0)])
-    arrows2d!(ax, force_pos_obs, force_dir_obs; color=:green, shaftwidth=4, tipwidth=8, tiplength=8)
-
-    return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
-end
-
-function update_observables!(obs, tire::Tire, wx, wy, θ, Fz_static)
-    r = tire.radius.value
-    s = 4r / Fz_static
-    R = _rotmat2d(θ)
-
-    obs.rect[] = _rect_points(wx, wy, 2r, tire.width.value * 0.8, θ)
-    obs.ellipse[] = [Point2f(R * [abs(tire.forces.value[3]) * s * cos(a); abs(tire.forces.value[3]) * s * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
-
-    f_global = R * tire.forces.value[1:2] .* s
-    obs.force_pos[] = [Point2f(wx, wy)]
-    obs.force_dir[] = [Point2f(f_global[1], f_global[2])]
-end
