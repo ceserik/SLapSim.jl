@@ -14,12 +14,12 @@ function createBasicAero()
     CL = carParameter{carVar}(-5.0,"Lift coeffcient","-")
     CD = carParameter{carVar}(2.0,"Drag coeffcient","-")
     CoP = carParameter{carVar}(0.5,"Cener of pressure on front","-")
-    function compute(vx, rho=RHO_SEA_LEVEL)
+    function compute(vx::carVar, rho::Float64=RHO_SEA_LEVEL)
         downforce = -0.5 * rho * CL.value * vx^2
         drag = -0.5 * rho * CD.value * vx^2
         return (downforce=downforce, drag=drag)
     end
-    function setupObservables(ax)
+    function setupObservables(ax::Axis)
         dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
         front_obs = Observable(dummy)
         rear_obs  = Observable(dummy)
@@ -28,7 +28,7 @@ function createBasicAero()
         return (front=front_obs, rear=rear_obs)
     end
 
-    function updateObservables(obs, x, y, ψ, wheelbase, trackwidth)
+    function updateObservables(obs::NamedTuple, x::Float64, y::Float64, ψ::Float64, wheelbase::Float64, trackwidth::Float64)
         R = _rotmat2d(ψ)
         fc = R * [wheelbase / 2 + 0.15; 0.0] .+ [x, y]
         obs.front[] = _rect_points(fc[1], fc[2], 0.05, trackwidth + 0.3, ψ)

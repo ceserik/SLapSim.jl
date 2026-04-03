@@ -1,13 +1,13 @@
 using Revise
 using Interpolations
 
-function _fmt_time(t)
+function _fmt_time(t::Float64)
     s = string(round(t; digits=3))
     d = length(s) - findlast('.', s)
     return "t = " * s * "0"^(3 - d) * " s"
 end
 
-function _unique_path(path)
+function _unique_path(path::String)
     isfile(path) || return path
     base, ext = splitext(path)
     i = 1
@@ -24,7 +24,7 @@ end
 
 2D rotation matrix for angle θ.
 """
-_rotmat2d(θ) = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+_rotmat2d(θ::Float64) = [cos(θ) -sin(θ); sin(θ) cos(θ)]
 
 """
     _rect_corners(cx, cy, w, h, θ)
@@ -32,7 +32,7 @@ _rotmat2d(θ) = [cos(θ) -sin(θ); sin(θ) cos(θ)]
 Return 5×2 matrix of corners (closed polygon) for a rectangle centered at (cx,cy)
 with width `w`, height `h`, rotated by `θ`.
 """
-function _rect_corners(cx, cy, w, h, θ)
+function _rect_corners(cx::Float64, cy::Float64, w::Float64, h::Float64, θ::Float64)
     hw, hh = w / 2, h / 2
     corners = [-hw -hh; hw -hh; hw hh; -hw hh; -hw -hh]
     R = _rotmat2d(θ)
@@ -80,7 +80,7 @@ end
 
 Same as `_rect_corners` but returns `Vector{Point2f}` for Observable updates.
 """
-function _rect_points(cx, cy, w, h, θ)
+function _rect_points(cx::Float64, cy::Float64, w::Float64, h::Float64, θ::Float64)
     c = _rect_corners(cx, cy, w, h, θ)
     return Point2f.(eachrow(c))
 end
@@ -90,10 +90,16 @@ end
 
 Set up one animation panel (axis with car observables). Returns a NamedTuple of observables.
 """
-function _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, yl, xr, yr; cam_offset=2)
+function _setup_panel(ax::Axis, track::Track, car::Car, follow_car::Bool, view_radius::Float64, xc::Vector{Float64}, yc::Vector{Float64}, thc::Vector{Float64}, xl::Vector{Float64}, yl::Vector{Float64}, xr::Vector{Float64}, yr::Vector{Float64}; cam_offset::Float64=2.0)
     track_center_obs = nothing
     track_left_obs = nothing
     track_right_obs = nothing
+
+    # Pre-allocate buffers for follow-cam track transforms
+    n_track = length(xc)
+    buf_center = Vector{Point2f}(undef, n_track)
+    buf_left   = Vector{Point2f}(undef, n_track)
+    buf_right  = Vector{Point2f}(undef, n_track)
 
     if follow_car
         track_center_obs = Observable(Point2f.(xc, yc))
@@ -122,7 +128,8 @@ function _setup_panel(ax, track, car, follow_car, view_radius, xc, yc, thc, xl, 
     return (chassis=chassis_obs, wheel_assemblies=wa_obs, aero=aero_obs,
             cog=cog_obs, trail=trail_obs,
             track_center=track_center_obs, track_left=track_left_obs, track_right=track_right_obs,
-            trail_global=Point2f[], follow=follow_car)
+            trail_global=Point2f[], follow=follow_car,
+            buf_center=buf_center, buf_left=buf_left, buf_right=buf_right)
 end
 
 """
@@ -131,18 +138,30 @@ end
 Update one panel's observables for the current frame.
 Reads steering angles and forces directly from the car struct (set by controlMapping/carFunction).
 """
-function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_radius)
+function _update_panel!(panel::NamedTuple, car::Car, cx::Float64, cy::Float64, ψ::Float64, xc::Vector{Float64}, yc::Vector{Float64}, xl::Vector{Float64}, yl::Vector{Float64}, xr::Vector{Float64}, yr::Vector{Float64}, view_radius::Float64)
     wb = car.chassis.wheelbase.value
     tw = car.chassis.track.value
     Fz_static = car.chassis.mass.value * 9.81 / length(car.wheelAssemblies)
 
     if panel.follow
         Rcam = _rotmat2d(π/2 - ψ)
-        car_pos = [cx, cy]
+        r11, r12, r21, r22 = Rcam[1,1], Rcam[1,2], Rcam[2,1], Rcam[2,2]
 
-        panel.track_center[] = [Point2f(Rcam * ([xc[k], yc[k]] - car_pos)) for k in eachindex(xc)]
-        panel.track_left[]   = [Point2f(Rcam * ([xl[k], yl[k]] - car_pos)) for k in eachindex(xl)]
-        panel.track_right[]  = [Point2f(Rcam * ([xr[k], yr[k]] - car_pos)) for k in eachindex(xr)]
+        @inbounds for k in eachindex(xc)
+            dx, dy = xc[k] - cx, yc[k] - cy
+            panel.buf_center[k] = Point2f(r11*dx + r12*dy, r21*dx + r22*dy)
+        end
+        @inbounds for k in eachindex(xl)
+            dx, dy = xl[k] - cx, yl[k] - cy
+            panel.buf_left[k] = Point2f(r11*dx + r12*dy, r21*dx + r22*dy)
+        end
+        @inbounds for k in eachindex(xr)
+            dx, dy = xr[k] - cx, yr[k] - cy
+            panel.buf_right[k] = Point2f(r11*dx + r12*dy, r21*dx + r22*dy)
+        end
+        panel.track_center[] = panel.buf_center
+        panel.track_left[]   = panel.buf_left
+        panel.track_right[]  = panel.buf_right
 
         car_ψ = π/2
         car.chassis.updateObservables(panel.chassis, 0.0, 0.0, car_ψ)
@@ -154,7 +173,13 @@ function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_rad
         panel.cog[] = [Point2f(0, 0)]
 
         push!(panel.trail_global, Point2f(cx, cy))
-        panel.trail[] = [Point2f(Rcam * ([p[1], p[2]] - car_pos)) for p in panel.trail_global]
+        trail_buf = panel.trail[]
+        resize!(trail_buf, length(panel.trail_global))
+        @inbounds for k in eachindex(panel.trail_global)
+            dx, dy = panel.trail_global[k][1] - cx, panel.trail_global[k][2] - cy
+            trail_buf[k] = Point2f(r11*dx + r12*dy, r21*dx + r22*dy)
+        end
+        notify(panel.trail)
     else
         car.chassis.updateObservables(panel.chassis, cx, cy, ψ)
         for (j, wa) in enumerate(car.wheelAssemblies)
@@ -170,7 +195,7 @@ function _update_panel!(panel, car, cx, cy, ψ, xc, yc, xl, yl, xr, yr, view_rad
 end
 
 # ── Precompute track boundaries (shared by all animation functions) ──
-function _precompute_track(track)
+function _precompute_track(track::Track)
     s_track = track.sampleDistances
     vals = track.fcurve.(s_track)
     xc  = getindex.(vals, 3)
@@ -184,7 +209,7 @@ function _precompute_track(track)
 end
 
 # ── Animation loop (shared) ──
-function _animate_loop!(fig, panels, track, result, car, speedup, time_obs, xc, yc, xl, yl, xr, yr, view_radius)
+function _animate_loop!(fig::Figure, panels::Vector{<:NamedTuple}, track::Track, result, car::Car, speedup::Float64, time_obs::Observable{String}, xc::Vector{Float64}, yc::Vector{Float64}, xl::Vector{Float64}, yl::Vector{Float64}, xr::Vector{Float64}, yr::Vector{Float64}, view_radius::Float64)
     is_matrix = result.states isa AbstractMatrix
     n_frames = is_matrix ? size(result.states, 1) : length(result.path)
 
@@ -217,12 +242,6 @@ function _animate_loop!(fig, panels, track, result, car, speedup, time_obs, xc, 
         end
 
         time_obs[] = _fmt_time(state[6])
-
-        if i < n_frames
-            t_current = state[6]
-            t_next = is_matrix ? result.states[i + 1, 6] : result.states(result.path[i + 1])[6]
-            sleep(max(0.0, (t_next - t_current) / speedup))
-        end
     end
 end
 
@@ -326,7 +345,7 @@ function animateCarDual(track::Track, result, car::Car; fps=30, speedup=1.0, vie
     return fig
 end
 
-function _update_frame!(panels, track, result, car, time_obs, i, is_matrix, xc, yc, xl, yl, xr, yr, view_radius)
+function _update_frame!(panels::Vector{<:NamedTuple}, track::Track, result, car::Car, time_obs::Observable{String}, i::Int, is_matrix::Bool, xc::Vector{Float64}, yc::Vector{Float64}, xl::Vector{Float64}, yl::Vector{Float64}, xr::Vector{Float64}, yr::Vector{Float64}, view_radius::Float64)
     if is_matrix
         state = result.states[i, :]
         ctrl = result.controls[min(i, size(result.controls, 1)), :]

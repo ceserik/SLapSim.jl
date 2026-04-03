@@ -1,4 +1,8 @@
 using Revise
+
+const _N_ELLIPSE_PTS = 41
+const _ELLIPSE_ANGLES = range(0, 2π, length=_N_ELLIPSE_PTS)
+
 mutable struct  Tire{F1,F2,F3,F4,F5}
     radius::carParameter{carVar}
     width::carParameter{carVar}
@@ -20,7 +24,7 @@ mutable struct  Tire{F1,F2,F3,F4,F5}
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Tire) = prettyPrintComponent(io, obj)
 
-function createR20lin(motor,gearbox)
+function createR20lin(motor::Motor,gearbox::Gearbox)
     radius = carParameter{carVar}(0.205, "tire radius", "m")
     width = carParameter{carVar}(0.3, "tire width, wrong", "m")
     inertia = carParameter{carVar}(0.3, "tire width, wrong", "m")
@@ -51,7 +55,7 @@ function createR20lin(motor,gearbox)
         #greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
     end
 
-    function setupObservables(ax)
+    function setupObservables(ax::Axis)
         dummy = _rect_points(0.0, 0.0, 1.0, 1.0, 0.0)
         rect_obs = Observable(dummy)
         poly!(ax, rect_obs; color=(:black, 0.3), strokecolor=(:gray30, 0.5), strokewidth=1)
@@ -63,7 +67,7 @@ function createR20lin(motor,gearbox)
         return (rect=rect_obs, ellipse=ellipse_obs, force_pos=force_pos_obs, force_dir=force_dir_obs)
     end
 
-    function updateObservables(obs, wx, wy, θ, Fz_static)
+    function updateObservables(obs::NamedTuple, wx::Float64, wy::Float64, θ::Float64, Fz_static::Float64)
         r = radius.value
         s = 4r / Fz_static
         R = _rotmat2d(θ)
@@ -95,6 +99,5 @@ function createR20lin(motor,gearbox)
     )
 end
 
-const _N_ELLIPSE_PTS = 41
-const _ELLIPSE_ANGLES = range(0, 2π, length=_N_ELLIPSE_PTS)
+
 

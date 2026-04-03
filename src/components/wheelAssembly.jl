@@ -45,16 +45,16 @@ function createBasicWheelAssembly(position::Vector{carVar})
         greaterContraint(steeringAngle.value / maxAngle.value, -20 / 180 * pi / maxAngle.value, model)
     end
 
-    function pivot2CoG(forces)
+    function pivot2CoG(forces::Vector{carVar})
         #returns moments on cog from wheel forces
         torque.value = cross(position.value, forces)
     end
 
-    function setPivotForce(forcesIn)
+    function setPivotForce(forcesIn::Vector{carVar})
         forces.value = rotZ(steeringAngle.value) * forcesIn
     end
 
-    function setPivotVelocity(angularVelocity, CoGvelocity)
+    function setPivotVelocity(angularVelocity::Vector{carVar}, CoGvelocity::Vector{carVar})
         velocityPivot.value = CoGvelocity + cross(angularVelocity, position.value) #CoG2wheelAssembly(velocity.value,angularVelocity)
     end
 
@@ -62,21 +62,21 @@ function createBasicWheelAssembly(position::Vector{carVar})
         velocityTire.value = rotZinv(steeringAngle.value) * velocityPivot.value
     end
 
-    function setVelocity(angularVelocity, velocity)
+    function setVelocity(angularVelocity::Vector{carVar}, velocity::Vector{carVar})
         setPivotVelocity(angularVelocity, velocity)
         setTireSpeeds()
     end
 
-    function getTorque(forcesIn)
+    function getTorque(forcesIn::Vector{carVar})
         setPivotForce(forcesIn)
         pivot2CoG(forces.value)
     end
 
-    function setupObservables(ax, tire)
+    function setupObservables(ax::Axis, tire::Tire)
         return tire.setupObservables(ax)
     end
 
-    function updateObservables(obs, tire, x, y, ψ, Fz_static)
+    function updateObservables(obs::NamedTuple, tire::Tire, x::Float64, y::Float64, ψ::Float64, Fz_static::Float64)
         R = _rotmat2d(ψ)
         global_pos = R * position.value[1:2] .+ [x, y]
         total_angle = ψ + steeringAngle.value
@@ -130,15 +130,15 @@ function createBusWheelAssembly(position::Vector{carVar})
         greaterContraint(steeringAngle.value / maxAngle.value, -45 / 180 * pi / maxAngle.value, model)
     end
 
-    function pivot2CoG(forces)
+    function pivot2CoG(forces::Vector{carVar})
         torque.value = cross(position.value, forces)
     end
 
-    function setPivotForce(forcesIn)
+    function setPivotForce(forcesIn::Vector{carVar})
         forces.value = rotZ(steeringAngle.value) * forcesIn
     end
 
-    function setPivotVelocity(angularVelocity, CoGvelocity)
+    function setPivotVelocity(angularVelocity::Vector{carVar}, CoGvelocity::Vector{carVar})
         velocityPivot.value = CoGvelocity + cross(angularVelocity, position.value)
     end
 
@@ -146,21 +146,21 @@ function createBusWheelAssembly(position::Vector{carVar})
         velocityTire.value = rotZinv(steeringAngle.value) * velocityPivot.value
     end
 
-    function setVelocity(angularVelocity, velocity)
+    function setVelocity(angularVelocity::Vector{carVar}, velocity::Vector{carVar})
         setPivotVelocity(angularVelocity, velocity)
         setTireSpeeds()
     end
 
-    function getTorque(forcesIn)
+    function getTorque(forcesIn::Vector{carVar})
         setPivotForce(forcesIn)
         pivot2CoG(forces.value)
     end
 
-    function setupObservables(ax, tire)
+    function setupObservables(ax::Axis, tire::Tire)
         return tire.setupObservables(ax)
     end
 
-    function updateObservables(obs, tire, x, y, ψ, Fz_static)
+    function updateObservables(obs::NamedTuple, tire::Tire, x::Float64, y::Float64, ψ::Float64, Fz_static::Float64)
         R = _rotmat2d(ψ)
         global_pos = R * position.value[1:2] .+ [x, y]
         total_angle = ψ + steeringAngle.value

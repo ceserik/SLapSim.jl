@@ -14,7 +14,7 @@ function createCTU25chassis()
     mass = carParameter{carVar}(280.0,"mass","kg")
     wheelbase = carParameter{carVar}(1.525,"wheelbase","m")
     track = carParameter{carVar}(1.2,"track","m")
-    CoG_X_pos = carParameter{carVar}(0.54,"ratio of CoG on front","m",:tunable)
+    CoG_X_pos = carParameter{carVar}(0.5,"ratio of CoG on front","m",:tunable)
     CoG_Y_pos = carParameter{carVar}(0.5,"ratio of CoG on left","m",:tunable)
     function hitbox(n::carVar,racetrack::Union{Track,Nothing},model=nothing)
         greaterContraint(n, -racetrack.widthR[1] + track.value / 2, model)
@@ -28,7 +28,7 @@ function createCTU25chassis()
         return obs
     end
 
-    function updateObservables(obs, x, y, ψ)
+    function updateObservables(obs::Observable, x::Float64, y::Float64, ψ::Float64)
         obs[] = _rect_points(x, y, wheelbase.value + 0.2, track.value + 0.1, ψ)
     end
 

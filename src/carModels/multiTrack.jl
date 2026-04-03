@@ -107,8 +107,10 @@ function createTwintrack()
 ######################################################CONSTRAINTS###########################
         # TODO this has to be enfroced only for car parts which are controls
         # motor torque limit
+        car.drivetrain.motors[2].constraints(drivetrain.motors[3].torque.value, optiModel)
+        #car.drivetrain.motors[1].constraints(drivetrain.motors[4].torque.value, optiModel)
         car.drivetrain.motors[3].constraints(drivetrain.motors[3].torque.value, optiModel)
-        car.drivetrain.motors[4].constraints(drivetrain.motors[4].torque.value, optiModel)
+        #car.drivetrain.motors[4].constraints(drivetrain.motors[4].torque.value, optiModel)
         #steering angle
         car.wheelAssemblies[1].constraints(optiModel)
         #car.wheelAssemblies[2].constraints(optiModel)
