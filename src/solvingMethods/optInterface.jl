@@ -255,7 +255,7 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     return out, out_interp
 end
 
-function refineMesh(problem,segment_edges,s_all)
+function refineMesh(problem,segment_edges,s_all,pol_order)
     error_itp = getErrors(problem)
     segment_errors = zeros(length(segment_edges) - 1)
     idx = 1
@@ -352,7 +352,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         #initialization = make_result_interpolation(x, u, s_all) # uncomment to use previous result as initialization
 
         resetParameters(tunables)
-        (segment_edges,clear,segment_errors) = refineMesh(problem,segment_edges,s_all,)
+        (segment_edges,clear,segment_errors) = refineMesh(problem,segment_edges,s_all,pol_order)
 
         if clear == 0
             model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)

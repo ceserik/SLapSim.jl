@@ -41,9 +41,10 @@ include("dataAnalysis/sensitivityAnalysis.jl")
 
 include("animation/drawCar.jl")
 include("dataAnalysis/validation.jl")
+include("dataAnalysis/carSnapshot.jl")
 include("solvingMethods/myCollocation.jl")
 include("solvingMethods/collocation.jl")
-
+include("solvingMethods/adaptiveRK.jl")
 
 # Export public functions
 export Car, Track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack, createBasicWheelAssembly,figureEight, carParameter, CarParameters
@@ -53,6 +54,9 @@ export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, c
 export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
 export setParameters, resetParameters, sensitivityAnalysis
 export drawCar!, animateCar, animateCarDual, draw!
+export Problem_config, Result_interpolation, find_optimal_trajectory_adaptive
+export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors
+export timeSimulation_interpolated, snapshot_car, plot_parameters
 #println("SLapSim module loaded")
 
 end # module

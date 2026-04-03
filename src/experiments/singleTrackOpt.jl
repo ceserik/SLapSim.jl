@@ -1,21 +1,9 @@
-
-
 using SLapSim
 using GLMakie
 import MathOptInterface as MOI
 using UnoSolver
 using UnicodePlots
 using DiffOpt
-#Infiltrator.clear_disabled!()
-include("../solvingMethods/optInterface.jl")
-include("../dataAnalysis/validation.jl")
-include("../solvingMethods/myCollocation.jl")
-include("../solvingMethods/collocation.jl")
-include("../solvingMethods/adaptiveRK.jl")
-include("../carModels/multiTrack.jl")
-include("../carModels/bus.jl")
-include("../dataAnalysis/carSnapshot.jl")
-#include("../carModels/simpleSingleTrack.jl")
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = Sys.islinux()
 if detect
@@ -64,8 +52,8 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
 
-#car = createSimplestSingleTrack()
-car = createTwintrack()
+car = createSimplestSingleTrack()
+#car = createTwintrack()
 #car = createBus()
 problem.car = car
 #track = figureEight(true, 2.0)
@@ -76,16 +64,14 @@ path = "tracks/FSCZ.kml"
 track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
-#Number of transcription points
-#sampleDistances = collect(LinRange(track.sampleDistances[1],track.sampleDistances[end],50))
-#initialization = initializeSolution(car,track,sampleDistances)
+
 #UnoSolver.Optimizer
 
 model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 30
+segments = Int64(round(track.sampleDistances[end]/2))
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
