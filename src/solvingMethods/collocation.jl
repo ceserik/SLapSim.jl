@@ -1,6 +1,5 @@
-using Revise
 using JuMP
-using Infiltrator
+
 using FastGaussQuadrature
 using SLapSim
 #include("../solvingMethods/optInterface.jl")

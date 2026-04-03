@@ -1,6 +1,5 @@
 
-using Revise
-using Infiltrator
+
 using SLapSim
 using GLMakie
 import MathOptInterface as MOI
@@ -73,8 +72,8 @@ problem.car = car
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
 path = "tracks/FSCZ.kml"
-track = kml2track(path, false, true)
-#track = doubleTurn(false,0.1)
+#track = kml2track(path, false, true)
+track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
 #Number of transcription points
@@ -86,7 +85,7 @@ model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 400
+segments = 30
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")

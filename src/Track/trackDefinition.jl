@@ -1,4 +1,3 @@
-using Revise
 using GLMakie
 using SLapSim
 #include("trackProcessing.jl")

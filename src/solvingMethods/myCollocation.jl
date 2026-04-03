@@ -1,7 +1,5 @@
-using Revise
 using RungeKutta
 using JuMP, Ipopt, Zygote
-using Infiltrator
 using HermiteInterpolation
 using FastGaussQuadrature
 

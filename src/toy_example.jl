@@ -1,5 +1,4 @@
 using Optim
-using Infiltrator
 using LinearAlgebra
 using Plots
 #using GLMakie

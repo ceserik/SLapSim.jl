@@ -1,4 +1,3 @@
-using Revise
 mutable struct WheelAssembly{F1,F2,F3,F4,F5}
     position::carParameter{Vector{carVar}}
     velocityPivot::carParameter{Vector{carVar}}
@@ -78,7 +77,7 @@ function createBasicWheelAssembly(position::Vector{carVar})
 
     function updateObservables(obs::NamedTuple, tire::Tire, x::Float64, y::Float64, ψ::Float64, Fz_static::Float64)
         R = _rotmat2d(ψ)
-        global_pos = R * position.value[1:2] .+ [x, y]
+        global_pos = R * [position.value[1], position.value[2]] + [x, y]
         total_angle = ψ + steeringAngle.value
         tire.updateObservables(obs, global_pos[1], global_pos[2], total_angle, Fz_static)
     end
@@ -162,7 +161,7 @@ function createBusWheelAssembly(position::Vector{carVar})
 
     function updateObservables(obs::NamedTuple, tire::Tire, x::Float64, y::Float64, ψ::Float64, Fz_static::Float64)
         R = _rotmat2d(ψ)
-        global_pos = R * position.value[1:2] .+ [x, y]
+        global_pos = R * [position.value[1], position.value[2]] + [x, y]
         total_angle = ψ + steeringAngle.value
         tire.updateObservables(obs, global_pos[1], global_pos[2], total_angle, Fz_static)
     end
@@ -192,8 +191,7 @@ Uses the assembly's position offset and steering angle, plus the car's CoG (x,y)
 """
 function draw!(ax, wa::WheelAssembly, tire::Tire, x, y, ψ)
     R = _rotmat2d(ψ)
-    pos_local = wa.position.value[1:2]
-    global_pos = R * pos_local .+ [x, y]
+    global_pos = R * [wa.position.value[1], wa.position.value[2]] + [x, y]
     total_angle = ψ + wa.steeringAngle.value
     draw!(ax, tire, global_pos[1], global_pos[2], total_angle)
 end

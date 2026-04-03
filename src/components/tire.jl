@@ -1,4 +1,3 @@
-using Revise
 
 const _N_ELLIPSE_PTS = 41
 const _ELLIPSE_ANGLES = range(0, 2π, length=_N_ELLIPSE_PTS)
@@ -72,8 +71,9 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
         s = 4r / Fz_static
         R = _rotmat2d(θ)
         obs.rect[] = _rect_points(wx, wy, 2r, width.value * 0.8, θ)
-        obs.ellipse[] = [Point2f(R * [abs(forces.value[3]) * s * cos(a); abs(forces.value[3]) * s * sin(a)] .+ [wx, wy]) for a in _ELLIPSE_ANGLES]
-        f_global = R * forces.value[1:2] .* s
+        Fz_abs_s = abs(forces.value[3]) * s
+        obs.ellipse[] = [Point2f(R * [Fz_abs_s * cos(a), Fz_abs_s * sin(a)] + [wx, wy]) for a in _ELLIPSE_ANGLES]
+        f_global = R * [forces.value[1], forces.value[2]] .* s
         obs.force_pos[] = [Point2f(wx, wy)]
         obs.force_dir[] = [Point2f(f_global[1], f_global[2])]
     end

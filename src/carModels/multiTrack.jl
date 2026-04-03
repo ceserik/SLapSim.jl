@@ -1,4 +1,3 @@
-using Revise
 using SLapSim
 function createTwintrack()
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s")

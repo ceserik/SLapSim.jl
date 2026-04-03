@@ -1,5 +1,4 @@
 
-using Revise
 using SLapSim
 using LinearAlgebra
 using JuMP, Ipopt, Zygote

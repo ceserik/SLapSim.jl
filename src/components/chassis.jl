@@ -1,4 +1,3 @@
-using Revise
 mutable struct Chassis{F1,F2,F3}
     mass::carParameter{carVar}
     hitbox::F1

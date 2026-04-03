@@ -1,6 +1,4 @@
 
-using Revise
-using Infiltrator
 using SLapSim
 using JuMP
 using OrdinaryDiffEq

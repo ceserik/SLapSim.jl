@@ -1,4 +1,3 @@
-using Revise
 using SLapSim
 using Interpolations
 using JuMP, Ipopt, Zygote

@@ -1,7 +1,6 @@
-using Revise
 using SLapSim
 using JuMP
-using Infiltrator
+
 using Interpolations
 using OrdinaryDiffEq
 using DiffEqCallbacks

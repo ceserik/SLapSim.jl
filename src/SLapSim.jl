@@ -1,13 +1,11 @@
 module SLapSim
-using Revise
 using GLMakie
 using LinearAlgebra
+using StaticArrays
 using JuMP, Ipopt, Zygote, DiffOpt
 using ControlSystemsBase
 using OrdinaryDiffEq
-using Debugger
 using FastGaussQuadrature
-using Infiltrator
 
 const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr,JuMP.QuadExpr}
 #const carVar = Union{JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr}
