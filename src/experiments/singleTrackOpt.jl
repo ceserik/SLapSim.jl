@@ -52,16 +52,16 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
 
-car = createSimplestSingleTrack()
-#car = createTwintrack()
+#car = createSimplestSingleTrack()
+car = createTwintrack()
 #car = createBus()
 problem.car = car
-#track = figureEight(true, 2.0)
+track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
 path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
-track = doubleTurn(false,0.1)
+#track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
 
@@ -73,8 +73,8 @@ problem.model = model
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
 segments = Int64(round(track.sampleDistances[end]/2))
 pol_order = 2
-#optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
-optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
+optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
+#optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
 problem.optiResult = optiResult_interp
 
 if 1 == 1
@@ -148,6 +148,7 @@ if 1 == 1
     animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
-    plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
+    
     sensitivityAnalysis(problem)
+    #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.motors[3].torque" , "drivetrain.motors[4].torque" ])
 end

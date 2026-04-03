@@ -10,10 +10,10 @@ end
 
 const RHO_SEA_LEVEL = 1.225
 
-function createBasicAero()
-    CL = carParameter{carVar}(-5.0,"Lift coeffcient","-")
-    CD = carParameter{carVar}(2.0,"Drag coeffcient","-")
-    CoP = carParameter{carVar}(0.5,"Cener of pressure on front","-")
+function createBasicAero(CL_a::Float64 = -5.0, CD_a::Float64 = 2.0, CoP_a::Float64 = 0.5)
+    CL = carParameter{carVar}(CL_a,"Lift coeffcient","-")
+    CD = carParameter{carVar}(CD_a,"Drag coeffcient","-")
+    CoP = carParameter{carVar}(CoP_a,"Cener of pressure on front","-")
     function compute(vx::carVar, rho::Float64=RHO_SEA_LEVEL)
         downforce = -0.5 * rho * CL.value * vx^2
         drag = -0.5 * rho * CD.value * vx^2

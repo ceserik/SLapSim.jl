@@ -40,8 +40,8 @@ function createBasicWheelAssembly(position::Vector{carVar})
         return out
     end
     function constraints(model=nothing)
-        lessContraint(steeringAngle.value / maxAngle.value, 20 / 180 * pi / maxAngle.value, model)
-        greaterContraint(steeringAngle.value / maxAngle.value, -20 / 180 * pi / maxAngle.value, model)
+        lessContraint(steeringAngle.value / maxAngle.value, 1.0, model)
+        greaterContraint(steeringAngle.value / maxAngle.value, -1.0, model)
     end
 
     function pivot2CoG(forces::Vector{carVar})
@@ -125,8 +125,8 @@ function createBusWheelAssembly(position::Vector{carVar})
         return out
     end
     function constraints(model=nothing)
-        lessContraint(steeringAngle.value / maxAngle.value, 45 / 180 * pi / maxAngle.value, model)
-        greaterContraint(steeringAngle.value / maxAngle.value, -45 / 180 * pi / maxAngle.value, model)
+        lessContraint(steeringAngle.value / maxAngle.value, 1.0, model)
+        greaterContraint(steeringAngle.value / maxAngle.value, -1.0, model)
     end
 
     function pivot2CoG(forces::Vector{carVar})

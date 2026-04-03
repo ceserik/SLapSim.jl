@@ -5,16 +5,18 @@ mutable struct Chassis{F1,F2,F3}
     track::carParameter{carVar}
     CoG_X_pos::carParameter{carVar}
     CoG_Y_pos::carParameter{carVar}
+    width::carParameter{carVar}
     setupObservables::F2
     updateObservables::F3
 end
 
-function createCTU25chassis()
-    mass = carParameter{carVar}(280.0,"mass","kg")
-    wheelbase = carParameter{carVar}(1.525,"wheelbase","m")
-    track = carParameter{carVar}(1.2,"track","m")
-    CoG_X_pos = carParameter{carVar}(0.5,"ratio of CoG on front","m",:tunable)
-    CoG_Y_pos = carParameter{carVar}(0.5,"ratio of CoG on left","m",:tunable)
+function createCTU25chassis(mass_p::Float64 = 280.0, wheelbase_p::Float64 = 1.525,track_p::Float64 = 1.2,CoGx::Float64 = 0.5,CogY::Float64 = 0.5,width_p::Float64 = 1.525)
+    mass = carParameter{carVar}(mass_p,"mass","kg")
+    wheelbase = carParameter{carVar}(wheelbase_p,"wheelbase","m")
+    track = carParameter{carVar}(track_p,"track","m")
+    width = carParameter{carVar}(width_p,"track","m")
+    CoG_X_pos = carParameter{carVar}(CoGx,"ratio of CoG on front","m",:tunable)
+    CoG_Y_pos = carParameter{carVar}(CogY,"ratio of CoG on left","m",:tunable)
     function hitbox(n::carVar,racetrack::Union{Track,Nothing},model=nothing)
         greaterContraint(n, -racetrack.widthR[1] + track.value / 2, model)
         lessContraint(n, racetrack.widthL[1] - track.value / 2, model)
@@ -38,6 +40,7 @@ function createCTU25chassis()
         track,
         CoG_X_pos,
         CoG_Y_pos,
+        width,
         setupObservables,
         updateObservables,
     )

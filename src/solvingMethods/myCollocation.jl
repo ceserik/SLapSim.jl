@@ -307,21 +307,62 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
         end
 
         # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
-        x_lb = [0.5, -20.0, -2π, -5.0, -10.0, 0.0]
+        x_lb = [5, -20.0, -2π, -5.0, -10.0, 0.0]
         x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
         u_lb = [-1e4, -π/2, -1e4]
         u_ub = [ 1e4,  π/2,  1e4]
 
-        # Create X variables
-        for i = 1:size(X, 1)
-            for j = 1:nStates
-                X[i, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
+        # Create variables interlaced (state+control per node) for banded Hessian/Jacobian
+        # Walk through the same indexing logic as the constraint loop below
+        _x_row = 1
+        _u_row = 1
+        for seg = 1:segments
+            if variant == "Legendre"
+                _end = _x_row + pol_order
+            elseif variant == "Radau"
+                _end = _x_row + pol_order
+            else
+                _end = _x_row + pol_order - 1
             end
-        end
 
-        for i = 1:size(U, 1)
-            for j = 1:nControls
-                U[i, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
+            # Boundary state + control (Legendre has no boundary control)
+            if !isassigned(X, _x_row, 1)
+                for j = 1:nStates
+                    X[_x_row, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
+                end
+                if variant != "Legendre"
+                    for j = 1:nControls
+                        U[_u_row, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
+                    end
+                end
+            end
+
+            # Interior/collocation nodes
+            n_ode = size(D, 1)
+            for node = 1:n_ode
+                x_idx = _x_row + node
+                u_idx = (variant == "Legendre") ? _u_row + node - 1 : x_idx
+                for j = 1:nStates
+                    X[x_idx, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
+                end
+                for j = 1:nControls
+                    U[u_idx, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
+                end
+            end
+
+            # Advance indices same as constraint loop
+            if variant == "Legendre"
+                # Legendre endpoint state
+                if !isassigned(X, _end + 1, 1)
+                    for j = 1:nStates
+                        X[_end + 1, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
+                    end
+                end
+                _x_row = _end + 1
+                _u_row += pol_order
+            else
+                _x_row = _end  # shared boundary
+                _u_row = _end
             end
         end
 
