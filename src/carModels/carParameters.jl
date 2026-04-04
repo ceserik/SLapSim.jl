@@ -52,6 +52,8 @@ mutable struct CarParameters
     n::carParameter{carVar}
     powerLimit::carParameter{carVar}
     lateralForce::carParameter{carVar}
+    lateralTransfer::carParameter{carVar}
+    brakeBias::carParameter{carVar}
     nControls::carParameter{carVar}
     nStates::carParameter{carVar}
     s::carParameter{carVar}

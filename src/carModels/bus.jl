@@ -6,6 +6,8 @@ function createBus()
     mass = carParameter{carVar}(12000.0, "Mass", "kg")
     motorForce = carParameter{carVar}(3000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
+    lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
+    brakeBias = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
     CL = carParameter{carVar}(0.0, "Lift Coefficient", "-")
     CD = carParameter{carVar}(6.0, "Drag Coefficient", "-")
     powerLimit = carParameter{carVar}(300000.0, "PowerLimit", "W")
@@ -69,14 +71,16 @@ function createBus()
 
     suspension.setInput(chassis)
 
-    # wheel positions: front axle, rear axle 1, rear axle 2
-    rearCenter = -chassis.wheelbase.value / 2
-    wheelAssemblyFL  = createBusWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2, chassis.track.value / 2, 0]))
-    wheelAssemblyFR  = createBusWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2, -chassis.track.value / 2, 0]))
-    wheelAssemblyRL1 = createBasicWheelAssembly(Vector{carVar}([rearCenter + rearAxleSpacing / 2, chassis.track.value / 2, 0]))
-    wheelAssemblyRR1 = createBasicWheelAssembly(Vector{carVar}([rearCenter + rearAxleSpacing / 2, -chassis.track.value / 2, 0]))
-    wheelAssemblyRL2 = createBasicWheelAssembly(Vector{carVar}([rearCenter - rearAxleSpacing / 2, chassis.track.value / 2, 0]))
-    wheelAssemblyRR2 = createBasicWheelAssembly(Vector{carVar}([rearCenter - rearAxleSpacing / 2, -chassis.track.value / 2, 0]))
+    # wheel positions relative to CoG
+    cogOffsetX = (chassis.CoG_X_pos.value - 0.5) * chassis.wheelbase.value
+    cogOffsetY = (chassis.CoG_Y_pos.value - 0.5) * chassis.track.value
+    rearCenter = -chassis.wheelbase.value / 2 - cogOffsetX
+    wheelAssemblyFL  = createBusWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyFR  = createBusWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, -chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyRL1 = createBasicWheelAssembly(Vector{carVar}([rearCenter + rearAxleSpacing / 2, chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyRR1 = createBasicWheelAssembly(Vector{carVar}([rearCenter + rearAxleSpacing / 2, -chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyRL2 = createBasicWheelAssembly(Vector{carVar}([rearCenter - rearAxleSpacing / 2, chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyRR2 = createBasicWheelAssembly(Vector{carVar}([rearCenter - rearAxleSpacing / 2, -chassis.track.value / 2 - cogOffsetY, 0]))
 
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL1, wheelAssemblyRR1, wheelAssemblyRL2, wheelAssemblyRR2]
 
@@ -121,8 +125,7 @@ function createBus()
             car.drivetrain.gearboxes[i].compute()
         end
 
-        rho = isnothing(track) ? RHO_SEA_LEVEL : track.rho[1]
-        aeroForces = aero.compute(velocity.value[1], rho)
+        aeroForces = aero.compute(velocity.value[1], isnothing(track) ? RHO_SEA_LEVEL : track.rho[1])
 
         forces = suspension.calculate(aeroForces.downforce, aero.CoP.value)
         for i in eachindex(forces)
@@ -177,6 +180,8 @@ function createBus()
         n,
         powerLimit,
         lateralForce,
+        lateralTransfer,
+        brakeBias,
         nControls,
         nStates,
         s

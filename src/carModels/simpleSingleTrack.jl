@@ -23,8 +23,9 @@ function createSimplestSingleTrack()
     aero = createBasicAero()
     suspension = createDummySuspension()
     chassis = createCTU25chassis()
-    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([1.520 / 2, 0, 0]))
-    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-1.520 / 2, 0, 0]))
+    cogOffsetX = (chassis.CoG_X_pos.value - 0.5) * chassis.wheelbase.value
+    wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, 0, 0]))
+    wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2 - cogOffsetX, 0, 0]))
 
     velocity = carParameter{Vector{carVar}}([15.0, 0.0, 0.0], "Speed X", "m/s")
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s")
@@ -32,6 +33,8 @@ function createSimplestSingleTrack()
     mass = carParameter{carVar}(280.0, "Mass", "kg")
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
+    lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
+    brakeBias = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
     CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
@@ -65,8 +68,7 @@ function createSimplestSingleTrack()
         gbRear.setTorque(drivetrain.motors[2].torque.value)
         gbRear.compute()
 
-        rho = isnothing(track) ? RHO_SEA_LEVEL : track.rho[1]
-        aeroForces = aero.compute(velocity.value[1], rho)
+        aeroForces = aero.compute(velocity.value[1], isnothing(track) ? RHO_SEA_LEVEL : track.rho[1])
 
         # calculate Fz on tires (weight + downforce, split 50/50 for single track)
         drivetrain.tires[1].forces.value[3] = 0.5 * mass.value * 9.81 + aeroForces.downforce * aero.CoP.value
@@ -126,6 +128,8 @@ function createSimplestSingleTrack()
         n,
         powerLimit,
         lateralForce,
+        lateralTransfer,
+        brakeBias,
         nControls,
         nStates,
         s

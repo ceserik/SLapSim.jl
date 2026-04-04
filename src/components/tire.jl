@@ -19,6 +19,7 @@ mutable struct  Tire{F1,F2,F3,F4,F5}
     scalingForce::carParameter{carVar}
     frictionCoefficient::carParameter{carVar}
     rollingResistance::carParameter{carVar}
+    brakingForce::carParameter{carVar}
     setupObservables::F4
     updateObservables::F5
 end
@@ -69,7 +70,8 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
     frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
-    rollingResistance = carParameter{carVar}(0.0, "Rolling resistance coeff", "-", :tunable)
+    rollingResistance = carParameter{carVar}(0.010, "Rolling resistance coeff", "-", :tunable)
+    brakingForce = carParameter{carVar}(0.0, "braking force", "N")
 
     function setVelocity(velocityIn::Vector{carVar})
         velocity.value = velocityIn
@@ -128,6 +130,7 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
         scalingForce,
         frictionCoefficient,
         rollingResistance,
+        brakingForce,
         setupObservables,
         updateObservables,
     )
@@ -149,7 +152,8 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
     frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
-    rollingResistance = carParameter{carVar}(0.0, "Rolling resistance coeff", "-", :tunable)
+    rollingResistance = carParameter{carVar}(0.010, "Rolling resistance coeff", "-", :tunable)
+    brakingForce = carParameter{carVar}(0.0, "braking force", "N")
     # Pacejka Magic Formula coefficients
     B = 5   # stiffness factor
     C = 2.59  # shape factor
@@ -214,6 +218,7 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
         scalingForce,
         frictionCoefficient,
         rollingResistance,
+        brakingForce,
         setupObservables,
         updateObservables,
     )

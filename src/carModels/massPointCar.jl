@@ -57,6 +57,8 @@ function createCTU25_1D()
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2")
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
+    lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
+    brakeBias = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
     CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     velocity = carParameter{Vector{carVar}}([15.0,0,0],"Speed X","m/s")
@@ -80,6 +82,8 @@ function createCTU25_1D()
         n,
         powerLimit,
         lateralForce,
+        lateralTransfer,
+        brakeBias,
         nControls,
         nStates
     )

@@ -12,8 +12,8 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
         # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering, ...]
         x_lb = [5, -10.0, -2π, -5.0, -10.0, 0.0]
         x_ub = [60.0, 10.0,  2π,  5.0,  10.0, 200.0]
-        u_lb = [-30.0, -45/180*π, -30.0]
-        u_ub = [ 30.0,  45/180*π,  30.0]
+        u_lb = [-1000.0, -45/180*π, -1000.0]
+        u_ub = [ 1000.0,  45/180*π,  1000.0]
 
         for i = 1:totalPoints
             for j = 1:nStates

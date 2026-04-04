@@ -11,6 +11,7 @@ mutable struct Suspension{F1,F2}
 
     stiffnessHeave::carParameter{carVar}
     dampingHeave::carParameter{carVar}
+    lateralTransfer::carParameter{carVar}
     calculate::F1
     setInput ::F2
     # da sa posuvat pitch center???
@@ -30,10 +31,11 @@ function createDummySuspension()
     dampingLong = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingLat = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingHeave = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
+    lateralTransfer = carParameter{carVar}(0.0,"lateral load transfer","N")
 
     function setInput()
-    
-    
+
+
     end
 
     function calculate(downforce=0.0)
@@ -49,6 +51,7 @@ function createDummySuspension()
         dampingLat,
         stiffnessHeave,
         dampingHeave,
+        lateralTransfer,
         calculate,
         setInput    )
     return susp
@@ -69,12 +72,13 @@ function createSimpleSuspension()
     dampingLong = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingLat = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingHeave = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
+    lateralTransfer = carParameter{carVar}(0.0,"lateral load transfer","N")
     chassis::Union{Chassis, Nothing} = nothing
 
 
     function setInput(chassis_in::Chassis)
         chassis = chassis_in
-    
+
     end
 
     function calculate(downforce::carVar=0.0, CoP::carVar=0.5)
@@ -104,6 +108,7 @@ function createSimpleSuspension()
         dampingLat,
         stiffnessHeave,
         dampingHeave,
+        lateralTransfer,
         calculate,
         setInput    )
     return susp
@@ -121,6 +126,7 @@ function createBusSuspension()
     dampingLong = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingLat = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingHeave = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
+    lateralTransfer = carParameter{carVar}(0.0,"lateral load transfer","N")
     chassis::Union{Chassis, Nothing} = nothing
 
     function setInput(chassis_in::Chassis)
@@ -156,6 +162,50 @@ function createBusSuspension()
         dampingLat,
         stiffnessHeave,
         dampingHeave,
+        lateralTransfer,
+        calculate,
+        setInput    )
+    return susp
+end
+
+
+function createQuasi_steady_Suspension()
+    tlong = carParameter{carVar}(0.0,"longitudinal transfer time constant","s")
+    tlat = carParameter{carVar}(0.0,"lateral transfer time constant","s")
+    theave = carParameter{carVar}(0.0,"heave transfer time constant","s")
+
+    stiffnessLong = carParameter{carVar}(0.0,"Long stifness","N/rad??")
+    stiffnessLat = carParameter{carVar}(0.0,"Lat stifness","N/rad??")
+    stiffnessHeave = carParameter{carVar}(0.0,"Long stifness","N/rad??")
+    
+    dampingLong = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
+    dampingLat = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
+    dampingHeave = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
+    lateralTransfer = carParameter{carVar}(0.0,"lateral load transfer","N")
+    chassis::Union{Chassis, Nothing} = nothing
+
+
+    function setInput(chassis_in::Chassis)
+        chassis = chassis_in
+
+    end
+
+    function calculate(ax)
+        
+        return [Fz_FL, Fz_FR, Fz_RL, Fz_RR]
+    end
+
+    susp = Suspension(
+        tlong,
+        tlat,
+        theave,
+        stiffnessLong,
+        dampingLong,
+        stiffnessLat,
+        dampingLat,
+        stiffnessHeave,
+        dampingHeave,
+        lateralTransfer,
         calculate,
         setInput    )
     return susp

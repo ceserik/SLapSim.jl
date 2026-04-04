@@ -90,7 +90,7 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
 
         #this creation of cariables is very clumsy, buut when they are crated interlaced(like this), the hessian an lagrangian are diagonal banded matrices
         # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
-        x_lb = [0.5, -20.0, -2π, -5.0, -10.0, 0.0]
+        x_lb = [3, -20.0, -2π, -5.0, -10.0, 0.0]
         x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
         u_lb = [-29.0, -20/180*π, -29.0]
         u_ub = [ 29.0,  20/180*π,  29.0]
@@ -165,10 +165,10 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
     end
 
     function create_interpolation(X_vals, U_vals, all_s, segment_edges)
-
+        segments = length(segment_edges) - 1
 
         x_stride = pol_order + 1
-        u_stride = pol_order 
+        u_stride = pol_order
         function find_segment(s)
             for i in 1:segments
                 s <= segment_edges[i+1] && return i

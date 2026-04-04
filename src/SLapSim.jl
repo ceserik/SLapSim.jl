@@ -56,7 +56,7 @@ export setParameters, resetParameters, sensitivityAnalysis
 export drawCar!, animateCar, animateCarDual, draw!
 export Problem_config, Result_interpolation, find_optimal_trajectory_adaptive
 export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors
-export timeSimulation_interpolated, snapshot_car, plot_parameters
+export timeSimulation_interpolated, snapshot_car, plot_parameters,createR20_pacejka, createQuasi_steady_Suspension,formulaE2026
 #println("SLapSim module loaded")
 
 end # module

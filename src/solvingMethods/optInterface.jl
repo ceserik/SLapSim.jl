@@ -44,7 +44,7 @@ const INITIALIZATION_CONTROL_LABELS = ["torque", "steering"]
 
 function build_initialization_controller(car::Car)
     return (
-        vref = 5.0,
+        vref = 5,
         steeringP = 10.0,
         steeringD = 1.0,
         velocityP = 3 * car.carParameters.mass.value / 280.0,
@@ -311,25 +311,23 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     nStates = Int64(car.carParameters.nStates.value)
     initialization = initializeSolution_interpolation(car, track, 200)
 
-    Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
+    Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
+    #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
     (params, tunables) = setParameters(car,model)
     problem.params = params
-    xd = Gauss_radau.createConstraints(segments,initialization);
-
-    #Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
-    #xd = Gauss_legendre.createConstraints(segments,initialization);
-    #segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
-    #RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
-    #xd = RKadaptive.createConstraints(segment_edges, initialization)
+    
+    
+    #xd = Gauss_radau.createConstraints(segments,initialization);
+    xd = Gauss_legendre.createConstraints(segments,initialization);
     X = xd[2]
     U = xd[3]
     s_all = xd[4]
     segment_edges = xd[5]
 
     @constraint(model, X[1:end, 1] .>= 0) #vx
-    @constraint(model, X[1, 1] .>= 2) #vx
+    @constraint(model, X[1, 1] .== 10) #vx
     @constraint(model, X[1, 2] .== 0) # intial vy
-    #@constraint(model, X[1, 3] .== track.theta[1]) # intial heading
+    @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
     @constraint(model, X[1, 6] .>= 0) # final time
     @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
 
@@ -348,8 +346,8 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     u = value.(U)
 
     # Interpolate using the LGR polynomial from the optimisation (Garg et al. 2010)
-    #out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
-    out_interp = Gauss_radau.createInterpolator(x, u, s_all, segment_edges)
+    out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
+    #out_interp = Gauss_radau.createInterpolator(x, u, s_all, segment_edges)
     #out_interp = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
 
     out = Result(x, u[1:end-1, :], s_all)

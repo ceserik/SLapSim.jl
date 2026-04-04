@@ -12,8 +12,8 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", obj::Gearbox) = prettyPrintComponent(io, obj)
 
-function createCTU25gearbox()
-    ratio = carParameter{carVar}(11.46,"Gearbox ratio","-")
+function createCTU25gearbox(ratio_p::Float64 = 11.46)
+    ratio = carParameter{carVar}(ratio_p,"Gearbox ratio","-")
     torqueIn = carParameter{carVar}(0.0,"torque in","-")
     speedIn = carParameter{carVar}(0.0,"velocity in","rad/s")
 

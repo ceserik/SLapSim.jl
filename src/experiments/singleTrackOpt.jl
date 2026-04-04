@@ -53,8 +53,8 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
 #car = createSimplestSingleTrack()
-car = createTwintrack()
-#car = createBus()
+#car = createTwintrack()
+car = createBus()
 problem.car = car
 track = figureEight(true, 2.0)
 #track = singleTurn(50.0,5.0,true)
@@ -71,10 +71,10 @@ model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = Int64(round(track.sampleDistances[end]/2))
+segments = 1Int64(round(track.sampleDistances[end]/2))
 pol_order = 2
-optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
-#optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Radau")
+#optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
+optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Lobatto")
 problem.optiResult = optiResult_interp
 
 if 1 == 1
@@ -98,16 +98,16 @@ if 1 == 1
     SLapSim.plotCarStates_interp(optiResult_interp, 0.1)
     #SLapSim.plotCarStates2(optiResult)
 
-    include("../dataAnalysis/jacobian.jl")
-    include("../dataAnalysis/hessian_test2.jl")
-    println("jacobian")
-    println(UnicodePlots.spy(jacobian))
-    println("hessian")
-    println(UnicodePlots.spy(H_star))
-    fig_jac = Figure()
-    ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
-    spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
-    display(GLMakie.Screen(), fig_jac)
+    #include("../dataAnalysis/jacobian.jl")
+    #include("../dataAnalysis/hessian_test2.jl")
+    #println("jacobian")
+    #println(UnicodePlots.spy(jacobian))
+    #println("hessian")
+    #println(UnicodePlots.spy(H_star))
+    #fig_jac = Figure()
+    #ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
+    #spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
+    #display(GLMakie.Screen(), fig_jac)
 
   #  error_itp = getErrors(problem)
   #  plot(error_itp(optiResult_interp.path))
@@ -145,10 +145,14 @@ if 1 == 1
    # sampling_density = get_sampling_density(optiResult_interp.path)
    # plot_on_path(problem,sampling_density,"sampling density")
 
-    animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
+    #animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     
-    sensitivityAnalysis(problem)
-    #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.motors[3].torque" , "drivetrain.motors[4].torque" ])
+    #sensitivityAnalysis(problem)
+    try
+    plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.motors[3].torque" , "drivetrain.motors[4].torque" ])
+    catch
+        plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
+    end
 end
