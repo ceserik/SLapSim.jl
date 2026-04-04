@@ -74,7 +74,7 @@ Optimal Control Applications and Methods 32, no. 4 (2011): 476–502.
 https://doi.org/10.1002/oca.957.
 
 """
-function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates, track)
+function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates, track; car=nothing)
 
     (nodes_LG, w2) = gausslegendre(pol_order)
     τ = [-1; nodes_LG]
@@ -88,12 +88,16 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
         U = Matrix{VariableRef}(undef, segments * (pol_order), nControls)
         FX = Matrix{NonlinearExpr}(undef, pol_order, nStates)
 
-        #this creation of cariables is very clumsy, buut when they are crated interlaced(like this), the hessian an lagrangian are diagonal banded matrices
-        # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering]
-        x_lb = [3, -20.0, -2π, -5.0, -10.0, 0.0]
-        x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
-        u_lb = [-29.0, -20/180*π, -29.0]
-        u_ub = [ 29.0,  20/180*π,  29.0]
+        # Get bounds from car descriptors if available, otherwise use defaults
+        if !isnothing(car) && !isnothing(car.state_desc)
+            x_lb, x_ub = get_bounds(car.state_desc)
+            u_lb, u_ub = get_bounds(car.control_desc)
+        else
+            x_lb = [3.0, -20.0, -2π, -5.0, -10.0, 0.0]
+            x_ub = [40.0, 20.0,  2π,  5.0,  10.0, 200.0]
+            u_lb = [-29.0, -20/180*π, -29.0]
+            u_ub = [ 29.0,  20/180*π,  29.0]
+        end
 
         for i = 1:segments*(pol_order+1)+1
             for j = 1:nStates

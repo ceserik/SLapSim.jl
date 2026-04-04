@@ -180,7 +180,7 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     nStates = Int64(car.carParameters.nStates.value)
     initialization = initializeSolution_interpolation(car, track, 1000)
 
-    Gauss_legendre = create_gauss_legendre(F, pol_order, variant, model, nControls, nStates, track)
+    Gauss_legendre = create_gauss_legendre(F, pol_order, variant, model, nControls, nStates, track; car=car)
     #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
     (params, tunables) = setParameters(car, model)
     problem.params = params
@@ -200,6 +200,7 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     @constraint(model, X[1, 2] .== 0) # intial vy
 
     @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
+    u_scale = !isnothing(car.control_desc) ? get_scales(car.control_desc) : ones(nControls)
     control_reg = 1e-5 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
     @objective(model, Min, X[end, 6] + control_reg)
 
@@ -245,9 +246,9 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
     while clear == 0 && iterations <= 50
         clear = 1
         iterations += 1
-        # Characteristic scales so optimizer variables are O(1)
-        x_scale = [30.0, 2.0, 4.0, 1.0, 2.50, 15.0]  # [vx, vy, ψ, ω, n, t]
-        u_scale = [30.0, 0.3]                    # [torque, steering, torque]
+        # Characteristic scales from car descriptors
+        x_scale = get_scales(car.state_desc)
+        u_scale = get_scales(car.control_desc)
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
             x_scale=x_scale, u_scale=u_scale)
         println("creating constraints")

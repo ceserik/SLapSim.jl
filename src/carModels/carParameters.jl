@@ -4,8 +4,9 @@ mutable struct carParameter{T}
     unit::String
     size::Tuple{Int,Int}  # To store dimensions of the value (1,1) for scalar, (n,1) for vector, (n,m) for matrix
     role::Symbol  # :control, :state, :static parameter, :tunable parameter
+    limits::Vector{Float64}
 end
-function carParameter{T}(value::T, name::String, unit::String, role::Symbol=:static) where T
+function carParameter{T}(value::T, name::String, unit::String, role::Symbol=:static,limits::Vector{Float64} = [9999.0,-9999.0]) where T
     if isa(value, AbstractArray)
         size_tuple = (length(value), 1)  # For vectors, treat as (n,1)
         if ndims(value) == 2
@@ -15,12 +16,12 @@ function carParameter{T}(value::T, name::String, unit::String, role::Symbol=:sta
         size_tuple = (1, 1)  # For scalars
     end
 
-    return carParameter{T}(value, name, unit, size_tuple, role)
+    return carParameter{T}(value, name, unit, size_tuple, role,limits)
 end
 
 # Convenience constructor for vector carParameters
-carParameter{Vector{T}}(v::Vector{<:Real}, name::String, unit::String) where T = 
-    carParameter{Vector{T}}(Vector{T}(v), name, unit)
+carParameter{Vector{T}}(v::Vector{<:Real}, name::String, unit::String, args...) where T =
+    carParameter{Vector{T}}(Vector{T}(v), name, unit, args...)
 
 # Pretty printing for carParameter
 function Base.show(io::IO, p::carParameter)
@@ -34,10 +35,11 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", p::carParameter)
     println(io, "carParameter: $(p.name)")
-    println(io, "  Value: $(p.value)")
-    println(io, "  Unit:  $(p.unit)")
-    println(io, "  Size:  $(p.size)")
-    print(io,   "  Role:  $(p.role)")
+    println(io, "  Value:  $(p.value)")
+    println(io, "  Unit:   $(p.unit)")
+    println(io, "  Size:   $(p.size)")
+    println(io, "  Role:   $(p.role)")
+    print(io,   "  Limits: $(p.limits)")
 end
 
 mutable struct CarParameters
@@ -66,4 +68,31 @@ function Base.show(io::IO, ::MIME"text/plain", car::CarParameters)
         p = getfield(car, fname)
         println(io, "  $(p.name) = $(p.value) [$(p.unit)] ($(p.role))")
     end
+end
+
+# --- Variable descriptors for optimizer mapping ---
+
+struct VarEntry
+    name::String
+    targets::Vector{Pair}  # carParameter => vector_index (0 = scalar)
+    lb::Float64
+    ub::Float64
+end
+
+function apply_mapping!(desc::Vector{VarEntry}, values::AbstractVector)
+    for (i, entry) in enumerate(desc)
+        for (param, idx) in entry.targets
+            if idx == 0
+                param.value = values[i]
+            else
+                param.value[idx] = values[i]
+            end
+        end
+    end
+end
+
+get_bounds(desc::Vector{VarEntry}) = ([e.lb for e in desc], [e.ub for e in desc])
+
+function get_scales(desc::Vector{VarEntry})
+    return [max(abs(e.lb), abs(e.ub), 1.0) for e in desc]
 end

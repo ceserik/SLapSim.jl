@@ -198,6 +198,8 @@ function createBus()
         suspension,
         chassis,
         [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL1, wheelAssemblyRR1, wheelAssemblyRL2, wheelAssemblyRR2],
+        nothing,
+        nothing,
     )
     return car
 end

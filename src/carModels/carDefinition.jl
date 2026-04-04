@@ -60,11 +60,8 @@ mutable struct Car
     suspension::Suspension
     chassis::Chassis
     wheelAssemblies::Vector{WheelAssembly}
-
-    # Inner constructor
-   # function Car(carFunction, carParameters, controlMapping=nothing, stateMapping=nothing, mapping=nothing)
-   #     new(carFunction, carParameters, controlMapping, stateMapping, mapping)
-   # end
+    state_desc::Union{Vector{VarEntry}, Nothing}
+    control_desc::Union{Vector{VarEntry}, Nothing}
 end
 
 

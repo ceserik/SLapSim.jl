@@ -1,8 +1,8 @@
 function createTwintrack(pacejka::Bool=true)
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s")
+    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s",:static,[2.0,40.0])
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s")
 
-    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable)
+    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable,[200.0,320.0])
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
     lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
@@ -12,7 +12,7 @@ function createTwintrack(pacejka::Bool=true)
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
     psi = carParameter{carVar}(0.0, "heading", "rad")
     n = carParameter{carVar}(0.0, "Distance from centerline", "m")
-    nControls = carParameter{carVar}(2.0, "number of controlled parameters", "-")
+    nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
     s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
@@ -59,24 +59,33 @@ function createTwintrack(pacejka::Bool=true)
 
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
 
-    function controlMapping(controls::AbstractVector)
-        #drivetrain.motors[1].torque.value = controls[3]
-        #drivetrain.motors[2].torque.value = controls[3]
-        drivetrain.motors[3].torque.value = controls[1]
-        drivetrain.motors[4].torque.value = controls[1]
-        wheelAssemblies[1].steeringAngle.value = controls[2]
-        wheelAssemblies[2].steeringAngle.value = controls[2]
+    max_steer = wheelAssemblies[1].maxAngle.value
+    max_torque = drivetrain.motors[1].torqueSpeedFunction(0.0)
 
+    state_desc = VarEntry[
+        VarEntry("vx",    [velocity => 1],                           2.0,   40.0),
+        VarEntry("vy",    [velocity => 2],                          -5.0,    5.0),
+        VarEntry("psi",   [psi => 0],                               -2π,    2π),
+        VarEntry("omega", [angularVelocity => 3],                   -5.0,    5.0),
+        VarEntry("n",     [n => 0],                                 -5.0,    5.0),
+        VarEntry("t",     [s => 0],                                  0.0,  200.0),
+    ]
+
+    control_desc = VarEntry[
+        VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0],  -max_torque, max_torque),
+        VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0],  -max_steer, max_steer),
+        VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0],  -max_torque, max_torque),
+    ]
+
+    function controlMapping(controls::AbstractVector)
+        apply_mapping!(control_desc, controls)
     end
 
     function stateMapping(states::AbstractVector)
-        #@infiltrate
-        velocity.value .= [states[1], states[2], 0.0]
-        psi.value = states[3]
-        angularVelocity.value .= [0.0, 0.0, states[4]]
-        n.value = states[5]
-        s.value = states[6]
-
+        velocity.value[3] = 0.0
+        angularVelocity.value[1] = 0.0
+        angularVelocity.value[2] = 0.0
+        apply_mapping!(state_desc, states)
     end
 
     function anyTrack(track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
@@ -115,7 +124,7 @@ function createTwintrack(pacejka::Bool=true)
 
         ######################################################CONSTRAINTS###########################
         # motor torque limit — one per shared control
-        #drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # front (controls[3])
+        drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # front (controls[3])
         drivetrain.motors[3].constraints(drivetrain.motors[3].torque.value, optiModel) # rear  (controls[1])
         #steering angle
         wheelAssemblies[1].constraints(optiModel)
@@ -176,6 +185,8 @@ function createTwintrack(pacejka::Bool=true)
         suspension,
         chassis,
         [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR],
+        state_desc,
+        control_desc,
     )
     return afto
 end
@@ -351,6 +362,8 @@ function formulaE2026()
         suspension,
         chassis,
         [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR],
+        nothing,
+        nothing,
     )
     return afto
 

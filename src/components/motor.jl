@@ -10,7 +10,7 @@ end
 Base.show(io::IO, ::MIME"text/plain", obj::Motor) = prettyPrintComponent(io, obj)
 
 function createFischerMotor(maxTorqueVal::Float64=29.0)
-    torque = carParameter{carVar}(0.0,"motor torque","Nm")
+    torque = carParameter{carVar}(0.0,"motor torque","Nm",:control,[2.0,40.0])
     angularFrequency = carParameter{carVar}(0.0,"angular frequency","rad/s")
     loss = carParameter{carVar}(0.0,"loss","W")
     torqueSpeedFunction = angularFrequency::Float64 -> maxTorqueVal

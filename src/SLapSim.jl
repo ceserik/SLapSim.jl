@@ -53,7 +53,7 @@ export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, int
 export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
 export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
 export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
-export setParameters, resetParameters, sensitivityAnalysis
+export setParameters, resetParameters, sensitivityAnalysis, VarEntry, apply_mapping!, get_scales, get_bounds
 export drawCar!, animateCar, animateCarDual, draw!
 export Problem_config, Result_interpolation, find_optimal_trajectory_adaptive
 export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors

@@ -56,13 +56,13 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 car = createTwintrack(true)
 #car = createBus()
 problem.car = car
-track = figureEight(true, 0.1)
+#track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
 
-path = "tracks/FSG.kml"
+path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
-#track = doubleTurn(false,0.1)
+track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
 

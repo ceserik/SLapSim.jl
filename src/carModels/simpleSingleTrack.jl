@@ -146,6 +146,8 @@ function createSimplestSingleTrack()
         suspension,
         chassis,
         [wheelAssemblyFront, wheelAssemblyRear],
+        nothing,
+        nothing,
     )
     return afto
 end
