@@ -59,7 +59,8 @@ problem.car = car
 track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
-path = "tracks/FSCZ.kml"
+
+path = "tracks/FSG.kml"
 #track = kml2track(path, false, true)
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
@@ -72,18 +73,33 @@ model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
 
 
 JuMP.set_optimizer_attribute(model, "max_iter", 3000)
-JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "none")
-JuMP.set_optimizer_attribute(model, "mu_strategy", "adaptive")
-JuMP.set_optimizer_attribute(model, "acceptable_tol", 1e-4)
-JuMP.set_optimizer_attribute(model, "acceptable_iter", 5)
-JuMP.set_optimizer_attribute(model, "bound_relax_factor", 1e-6)
-JuMP.set_optimizer_attribute(model, "constr_viol_tol", 1e-6)
-
+JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
+for (k,v) in [
+    ("alpha_for_y", "safer-min-dual-infeas"),
+    ("recalc_y", "yes"),
+    ("recalc_y_feas_tol", 1e-4),
+    ("adaptive_mu_globalization", "kkt-error"),
+    ("quality_function_balancing_term", "cubic"),
+    ("mu_min", 1e-8),
+    ("nlp_scaling_constr_target_gradient", 1.0),
+    ("nlp_scaling_obj_target_gradient", 1.0),
+    ("nlp_scaling_min_value", 1e-6),
+    ("jacobian_regularization_value", 1e-6),
+    ("bound_relax_factor", 0.0),
+    ("mumps_pivtol", 1e-4),
+    ("min_refinement_steps", 2),
+    ("max_refinement_steps", 20),
+    #("acceptable_tol", 1e-5),
+    #("acceptable_iter", 5),
+    ("acceptable_dual_inf_tol", 1e-1)
+]
+    JuMP.set_optimizer_attribute(model, k, v)
+end
 
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = 1Int64(round(track.sampleDistances[end]/2))
+segments = Int64(round(track.sampleDistances[end]/2))
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Lobatto")
@@ -157,14 +173,15 @@ if 1 == 1
    # sampling_density = get_sampling_density(optiResult_interp.path)
    # plot_on_path(problem,sampling_density,"sampling density")
 
-    animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
+    
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     
-    #sensitivityAnalysis(problem)
+    sensitivityAnalysis(problem)
     try
     plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.motors[3].torque" , "drivetrain.motors[4].torque" ])
     catch
         plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
     end
+    animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
 end

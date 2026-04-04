@@ -178,15 +178,10 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
     end
 
     function tireConstraints(model=nothing)
-        Fx_s = forces.value[1]/scalingForce.value
-        Fy_s = forces.value[2]/scalingForce.value
-        Fz_s = frictionCoefficient.value * forces.value[3]/scalingForce.value
-        if isnothing(model)
-            lessContraint(Fx_s^2 + Fy_s^2, Fz_s^2, nothing)
-        else
-            ε = @variable(model, lower_bound=0.0)
-            @constraint(model, Fx_s^2 + Fy_s^2 + ε == Fz_s^2)
-        end
+        μFz = frictionCoefficient.value * forces.value[3]
+        fx = forces.value[1] / μFz
+        fy = forces.value[2] / μFz
+        lessContraint(fx^2 + fy^2, 1.0, model)
     end
 
     function setupObservables(ax::Axis)

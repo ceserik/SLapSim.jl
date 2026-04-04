@@ -198,18 +198,21 @@ end
 #This function applies states and control from optimisation result and using Tsit5 predicts next states, the difference 
 #between states from optimisation and states from Tsit5 simulation is compared and used as output.
 
-function getErrors(problem; pol_order::Int=1)
+function getErrors(problem; pol_order::Int=1, method::Symbol=:ode)
     s = problem.optiResult.path
     n = length(s)
     error_vector = zeros(Float64, n)
     for i = 1:pol_order:n-pol_order
         segment_span = [s[i], s[i+pol_order]]
-        error = getError(segment_span, problem)
-        segmentLength = s[i+pol_order] - s[i]
-        for j = 0:pol_order-1
-            error_vector[i+j] = error #/ segmentLength
+        if method == :defect
+            error = getError_defect(segment_span, problem)
+        else
+            error = getError(segment_span, problem)
         end
-        print("\rError evaluation: $i/$(n-1)")
+        for j = 0:pol_order-1
+            error_vector[i+j] = error
+        end
+        print("\rError evaluation ($method): $i/$(n-1)")
     end
     println()
     error_vector[end] = error_vector[end-1]
@@ -223,13 +226,30 @@ function getError(s, problem)
     x0 = problem.optiResult.states(s[1])
     ode(du, x, p, s) = du .= carODE_path(p[1], p[2], s, p[3](s), x, nothing)
     prob = ODEProblem(ode, x0, (s[1], s[2]), (problem.car, problem.track, problem.optiResult.controls))
-    
+
     sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-5, abstol=1e-5)
     final_states_time_sim = sol.u[end]
     final_states_optimized= problem.optiResult.states(s[2])
     #@infiltrate
     # return scalar L2 norm (single number)
     return norm(final_states_time_sim .- final_states_optimized)
+end
+
+function getError_defect(s_segment, problem; x_scale=[10.0, 5.0, 1.0, 1.0, 5.0, 10.0])
+    s_mid = (s_segment[1] + s_segment[2]) / 2
+    x_mid = problem.optiResult.states(s_mid)
+    u_mid = problem.optiResult.controls(s_mid)
+
+    # RHS of the ODE at the midpoint
+    f_mid = carODE_path(problem.car, problem.track, s_mid, u_mid, x_mid, nothing)
+
+    # Numerical derivative of the collocation polynomial
+    h = 1e-5 * (s_segment[2] - s_segment[1])
+    dxds_mid = (problem.optiResult.states(s_mid + h) .- problem.optiResult.states(s_mid - h)) ./ (2h)
+
+    # Defect: how well does the polynomial satisfy the ODE
+    defect = dxds_mid .- f_mid
+    return norm(defect ./ x_scale)
 end
 
 

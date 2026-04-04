@@ -41,6 +41,7 @@ include("dataAnalysis/sensitivityAnalysis.jl")
 
 include("animation/drawCar.jl")
 include("dataAnalysis/validation.jl")
+include("solvingMethods/initialization.jl")
 include("dataAnalysis/carSnapshot.jl")
 include("solvingMethods/myCollocation.jl")
 include("solvingMethods/collocation.jl")

@@ -16,7 +16,7 @@ Base.show(io::IO, ::MIME"text/plain", obj::WheelAssembly) = prettyPrintComponent
 
 function createBasicWheelAssembly(position::Vector{carVar})
     steeringAngle = carParameter{carVar}(0.0, "steering angle", "rad")
-    maxAngle = carParameter{carVar}(20 / 180 * pi, " max steering angle", "rad")
+    maxAngle = carParameter{carVar}(25 / 180 * pi, " max steering angle", "rad")
     forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Pivot forces", "N N N")
     torque = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Generated torque on CoG", "N N N")
     velocityPivot = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Velocity at pivot", "m/s")

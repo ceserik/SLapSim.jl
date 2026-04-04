@@ -5,6 +5,35 @@ using OrdinaryDiffEq
 using DifferentiationInterface
 using Interpolations
 
+function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symbol=:ode)
+    error_itp = getErrors(problem; method=error_method)
+    segment_errors = zeros(length(segment_edges) - 1)
+    idx = 1
+    clear = 1
+    for i = eachindex(segment_errors)
+        error_segment = 0
+        for node = 2:pol_order
+            error_segment += error_itp(s_all[idx])
+            idx += 1
+        end
+        segment_errors[i] = error_segment
+    end
+    error_threshold = 1e-1
+
+    # Find and insert nodes for segments with error > 1e-3
+    segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
+    for i = length(segment_errors):-1:1  # Iterate backwards to avoid index shifting issues
+        if segment_errors[i] > error_threshold
+            s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
+            insert!(segment_edges, i + 1, s_mid)
+            clear = 0
+        end
+    end
+    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors"))
+    lines!(fig.axis, [1, length(segment_errors)], [error_threshold, error_threshold], color=:red, linewidth=2)
+    display(GLMakie.Screen(), fig)
+    return segment_edges, clear, segment_errors
+end
 
 struct Result
     states::Matrix{Float64}
@@ -14,9 +43,9 @@ end
 
 
 mutable struct Problem_config
-    car::Union{Nothing, Car}
-    track::Union{Nothing, Track}
-    model::Union{Nothing, JuMP.Model}
+    car::Union{Nothing,Car}
+    track::Union{Nothing,Track}
+    model::Union{Nothing,JuMP.Model}
     optiResult
     params
 end
@@ -37,68 +66,6 @@ function make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix
 end
 
 make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s::Vector{Float64}) = make_result_interpolation(x, u, s, s)
-
-function initializeSolution_interpolation(car::Car, track::Track, segments::Int64; vref=5.0)
-    println("started initialization")
-    max_steer = car.wheelAssemblies[1].maxAngle.value
-    Kv = 3 * car.carParameters.mass.value / 280.0
-    Kp, Kd = 8.0, 3.0
-    nControls = Int64(car.carParameters.nControls.value)
-
-    function ctrl(s, x)
-        th = track.fcurve(s)[2]
-        ε = x[3] - th
-        n_dot = x[1] * sin(ε) + x[2] * cos(ε)
-        torque = (vref - x[1]) * Kv
-        steering = clamp(-(x[5] * Kp + n_dot * Kd), -max_steer, max_steer)
-        return torque, steering
-    end
-
-    x0 = [vref, 0.0, track.theta[1], 0.0, 0.0, 0.0]
-    s_span = (track.sampleDistances[1], track.sampleDistances[end])
-    s_save = LinRange(s_span..., segments)
-
-    # Live debug plot
-    labels = ["vx", "vy", "ψ", "ψ̇", "n", "t", "torque", "steering"]
-    fig = Figure(size=(1200, 800))
-    debug_axes = [Axis(fig[div(i-1, 3)+1, mod(i-1, 3)+1], title=labels[i]) for i in eachindex(labels)]
-    debug_obs = [Observable(Point2f[]) for _ in eachindex(labels)]
-    for i in eachindex(labels)
-        lines!(debug_axes[i], debug_obs[i]; linewidth=2)
-    end
-    display(GLMakie.Screen(), fig)
-
-    cb = FunctionCallingCallback(; funcat=range(s_span..., length=201)) do x, s, _
-        pct = round(100 * (s - s_span[1]) / (s_span[2] - s_span[1]), digits=0)
-        print("\r  Initialization: $(Int(pct))%")
-        torque, steering = ctrl(s, x)
-        for i in 1:6
-            push!(debug_obs[i][], Point2f(s, x[i])); notify(debug_obs[i]); autolimits!(debug_axes[i])
-        end
-        for (j, v) in enumerate((torque, steering))
-            push!(debug_obs[6+j][], Point2f(s, v)); notify(debug_obs[6+j]); autolimits!(debug_axes[6+j])
-        end
-    end
-
-    prob = ODEProblem((du, x, _, s) -> begin
-        torque, steering = ctrl(s, x)
-        du .= carODE_path(car, track, s, [torque, steering, zeros(nControls - 2)...], x, nothing)
-    end, x0, s_span)
-
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4, callback=cb)
-    println()
-
-    x = hcat(sol.u...)'
-    s = sol.t
-    u = zeros(segments, nControls)
-    for i in eachindex(s)
-        u[i, 1], u[i, 2] = ctrl(s[i], view(x, i, :))
-    end
-
-    initialization = make_result_interpolation(x, u, s)
-
-    return initialization
-end;
 
 
 function carODE_path(car::Car, track::Track, k::Union{Int64,Float64},
@@ -170,7 +137,7 @@ function findOptimalTrajectory(track::Track, car::Car, model::JuMP.Model, sample
     X = xd[2]
     U = xd[3][1:end-1, :]
     s_all = xd[6]
-    control_reg = 1e-6 * sum(U[i,j]^2 for i in axes(U,1), j in axes(U,2))
+    control_reg = 1e-6 * sum(U[i, j]^2 for i in axes(U, 1), j in axes(U, 2))
     @objective(model, Min, X[end, 6] + control_reg)
 
 
@@ -211,38 +178,32 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
 
     nControls = Int64(car.carParameters.nControls.value)
     nStates = Int64(car.carParameters.nStates.value)
-    initialization = initializeSolution_interpolation(car, track, 200)
+    initialization = initializeSolution_interpolation(car, track, 1000)
 
-    Gauss_legendre = create_gauss_legendre(F,pol_order,variant,model,nControls,nStates,track);
+    Gauss_legendre = create_gauss_legendre(F, pol_order, variant, model, nControls, nStates, track)
     #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
-    (params, tunables) = setParameters(car,model)
+    (params, tunables) = setParameters(car, model)
     problem.params = params
-    
-    
+
+
     #xd = Gauss_radau.createConstraints(segments,initialization);
-    xd = Gauss_legendre.createConstraints(segments,initialization);
+    xd = Gauss_legendre.createConstraints(segments, initialization)
     X = xd[2]
     U = xd[3]
     s_all = xd[4]
     segment_edges = xd[5]
 
-    @constraint(model, X[1:end, 1] .>= 0) #vx
-    @constraint(model, X[1, 1] .== 10) #vx
-    @constraint(model, X[1, 2] .== 0) # intial vy
+    @constraint(model, X[1, 1] .<= 10)      # vx
     @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
-    @constraint(model, X[1, 6] .>= 0) # final time
+    @constraint(model, X[1, 4] .== 0)     # ω
+    @constraint(model, X[1, 6] .== 0)      # t
+    @constraint(model, X[1, 2] .== 0) # intial vy
+
     @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
-
-
-    #@constraint(model,diff(U[:,1]) .>=-1) #constraint on controls derivative
-
-    #this has to have variable length to allow closed track
-    #@constraint(model,-100/2 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 100/2) #constraint on controls derivative
-    #@constraint(model,-100/2 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 100/2) #constraint on controls derivative
-    #@constraint(model,-1/2 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1/2) #constraint on controls derivative
-    #@constraint(model,U[1,:].== U[2,:])
-    control_reg = 1e-6 * sum(U[i,j]^2 for i in axes(U,1), j in axes(U,2))
+    control_reg = 1e-5 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
     @objective(model, Min, X[end, 6] + control_reg)
+
+
     optimize!(model)
     resetParameters(tunables)
     x = value.(X)
@@ -257,35 +218,6 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     return out, out_interp
 end
 
-function refineMesh(problem,segment_edges,s_all,pol_order)
-    error_itp = getErrors(problem)
-    segment_errors = zeros(length(segment_edges) - 1)
-    idx = 1
-    clear = 1
-    for i = eachindex(segment_errors)
-        error_segment = 0
-        for node = 2:pol_order
-            error_segment += error_itp(s_all[idx])
-            idx += 1
-        end
-        segment_errors[i] = error_segment
-    end
-    error_threshold = 1e-1
-
-    # Find and insert nodes for segments with error > 1e-3
-    segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
-    for i = length(segment_errors):-1:1  # Iterate backwards to avoid index shifting issues
-        if segment_errors[i] > error_threshold
-            s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
-            insert!(segment_edges, i + 1, s_mid)
-            clear = 0
-        end
-    end
-    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors"))
-    lines!(fig.axis, [1, length(segment_errors)], [error_threshold, error_threshold], color=:red, linewidth=2)
-    display(GLMakie.Screen(), fig)
-    return segment_edges,clear,segment_errors
-end
 
 
 
@@ -306,7 +238,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         return dxds
     end
 
-    initialization = initializeSolution_interpolation(car, track, 200)
+    initialization = initializeSolution_interpolation(car, track, Int64(round(track.sampleDistances[end] * 2)))
     segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
     clear = 0
     iterations = 0
@@ -314,14 +246,14 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         clear = 1
         iterations += 1
         # Characteristic scales so optimizer variables are O(1)
-        x_scale = [10.0, 5.0, 1.0, 1.0, 5.0, 10.0]  # [vx, vy, ψ, ω, n, t]
-        u_scale = [30.0, 0.3, 30.0]                    # [torque, steering, torque]
+        x_scale = [30.0, 2.0, 4.0, 1.0, 2.50, 15.0]  # [vx, vy, ψ, ω, n, t]
+        u_scale = [30.0, 0.3]                    # [torque, steering, torque]
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
-                                                 x_scale=x_scale, u_scale=u_scale)
+            x_scale=x_scale, u_scale=u_scale)
         println("creating constraints")
 
         #Add parameters
-        (params, tunables) = setParameters(car,model)
+        (params, tunables) = setParameters(car, model)
         problem.params = params
         xd = RKadaptive.createConstraints(segment_edges, initialization)
         X = xd[2]
@@ -330,16 +262,14 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         segment_edges = xd[5]
 
         # State bounds: [vx, vy, ψ, ω, n, t]
-        @constraint(model, X[1, 1] .== 10)      # vx
-        @constraint(model, X[1, 2] .>= 0)    # vy
+        @constraint(model, X[1, 1] .<= 10)      # vx
         @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
         @constraint(model, X[1, 4] .== 0)     # ω
         @constraint(model, X[1, 6] .== 0)      # t
         @constraint(model, X[1, 2] .== 0) # intial vy
-        
-        @constraint(model, X[1, 6] .>= 0) # final time
+
         @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
-        control_reg = 1e-6 * sum((U[i,j]/u_scale[j])^2 for i in axes(U,1), j in axes(U,2))
+        control_reg = 1e-4 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
         @objective(model, Min, X[end, 6] + control_reg)
 
         #@constraint(model,-50 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 50) #constraint on controls derivative
@@ -356,13 +286,42 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         problem.model = model
         problem.params = params
         problem.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
-        #initialization = make_result_interpolation(x, u, s_all) # uncomment to use previous result as initialization
-
+        #initialization = make_result_interpolation(x, u, s_all)
+        println("resetting parameters")
         resetParameters(tunables)
-        (segment_edges,clear,segment_errors) = refineMesh(problem,segment_edges,s_all,pol_order)
+        (segment_edges, clear, segment_errors) = refineMesh(problem, segment_edges, s_all, pol_order)
 
         if clear == 0
             model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
+            JuMP.set_optimizer_attribute(model, "max_iter", 3000)
+            JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
+            #JuMP.set_optimizer_attribute(model, "mu_strategy", "adaptive")
+            #JuMP.set_optimizer_attribute(model, "acceptable_tol", 1e-4)
+            #JuMP.set_optimizer_attribute(model, "acceptable_iter", 5)
+            #JuMP.set_optimizer_attribute(model, "bound_relax_factor", 1e-6)
+            #JuMP.set_optimizer_attribute(model, "constr_viol_tol", 1e-6)
+            for (k, v) in [
+                ("alpha_for_y", "safer-min-dual-infeas"),
+                ("recalc_y", "yes"),
+                ("recalc_y_feas_tol", 1e-4),
+                ("adaptive_mu_globalization", "kkt-error"),
+                ("quality_function_balancing_term", "cubic"),
+                ("mu_min", 1e-8),
+                ("nlp_scaling_constr_target_gradient", 1.0),
+                ("nlp_scaling_obj_target_gradient", 1.0),
+                ("nlp_scaling_min_value", 1e-6),
+                ("jacobian_regularization_value", 1e-6),
+                ("bound_relax_factor", 0.0),
+                ("mumps_pivtol", 1e-4),
+                ("min_refinement_steps", 2),
+                ("max_refinement_steps", 20),
+                #("acceptable_tol", 1e-5),
+                #("acceptable_iter", 5),
+                ("acceptable_dual_inf_tol", 1e-1)
+            ]
+                JuMP.set_optimizer_attribute(model, k, v)
+            end
+
         end
 
         println("Sum of all errors: ", sum(segment_errors))
