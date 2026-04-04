@@ -1,8 +1,8 @@
 function createTwintrack(pacejka::Bool=true)
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s",:static,[2.0,40.0])
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s")
+    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 40.0])
+    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-5.0, 5.0])
 
-    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable,[200.0,320.0])
+    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable, [200.0, 320.0])
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
     lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
@@ -10,12 +10,12 @@ function createTwintrack(pacejka::Bool=true)
     CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
-    psi = carParameter{carVar}(0.0, "heading", "rad")
-    n = carParameter{carVar}(0.0, "Distance from centerline", "m")
+    psi = carParameter{carVar}(0.0, "heading", "rad", :static, [-4π, 4π])
+    n = carParameter{carVar}(0.0, "Distance from centerline", "m", :static, [-5.0, 5.0])
     nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
-    s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
+    s = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
 
     gearboxFL = createCTU25gearbox()
     gearboxFR = createCTU25gearbox()
@@ -59,22 +59,19 @@ function createTwintrack(pacejka::Bool=true)
 
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
 
-    max_steer = wheelAssemblies[1].maxAngle.value
-    max_torque = drivetrain.motors[1].torqueSpeedFunction(0.0)
-
     state_desc = VarEntry[
-        VarEntry("vx",    [velocity => 1],                           2.0,   40.0),
+        VarEntry("vx",    [velocity => 1]),
         VarEntry("vy",    [velocity => 2],                          -5.0,    5.0),
-        VarEntry("psi",   [psi => 0],                               -2π,    2π),
-        VarEntry("omega", [angularVelocity => 3],                   -5.0,    5.0),
-        VarEntry("n",     [n => 0],                                 -5.0,    5.0),
-        VarEntry("t",     [s => 0],                                  0.0,  200.0),
+        VarEntry("psi",   [psi => 0]),
+        VarEntry("omega", [angularVelocity => 3]),
+        VarEntry("n",     [n => 0]),
+        VarEntry("t",     [s => 0]),
     ]
 
     control_desc = VarEntry[
-        VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0],  -max_torque, max_torque),
-        VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0],  -max_steer, max_steer),
-        VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0],  -max_torque, max_torque),
+        VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0]),
+        VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
+        VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
     ]
 
     function controlMapping(controls::AbstractVector)

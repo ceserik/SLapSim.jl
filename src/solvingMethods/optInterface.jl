@@ -269,7 +269,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         @constraint(model, X[1, 6] .== 0)      # t
         @constraint(model, X[1, 2] .== 0) # intial vy
 
-        @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
+        @constraint(model, diff(X[:, 6]) .>= 0.001) #time goes forward
         control_reg = 1e-4 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
         @objective(model, Min, X[end, 6] + control_reg)
 

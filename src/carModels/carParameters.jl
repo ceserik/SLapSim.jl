@@ -79,6 +79,17 @@ struct VarEntry
     ub::Float64
 end
 
+# Auto-read limits from the first target's carParameter
+function VarEntry(name::String, targets::Vector{<:Pair})
+    param = first(targets).first
+    VarEntry(name, collect(Pair, targets), param.limits[1], param.limits[2])
+end
+
+# Explicit bounds with typed pair vector
+function VarEntry(name::String, targets::Vector{<:Pair}, lb::Real, ub::Real)
+    VarEntry(name, collect(Pair, targets), Float64(lb), Float64(ub))
+end
+
 function apply_mapping!(desc::Vector{VarEntry}, values::AbstractVector)
     for (i, entry) in enumerate(desc)
         for (param, idx) in entry.targets
