@@ -38,153 +38,64 @@ end
 
 make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s::Vector{Float64}) = make_result_interpolation(x, u, s, s)
 
-const INITIALIZATION_STATE_LABELS = ["vx", "vy", "ψ", "ω", "n", "t"]
-const INITIALIZATION_CONTROL_LABELS = ["torque", "steering"]
-
-
-function build_initialization_controller(car::Car)
-    return (
-        vref = 5,
-        steeringP = 10.0,
-        steeringD = 1.0,
-        velocityP = 3 * car.carParameters.mass.value / 280.0,
-    )
-end
-
-
-function get_initialization_controls(car::Car, track::Track, s, x::AbstractVector, controller::NamedTuple)
+function initializeSolution_interpolation(car::Car, track::Track, segments::Int64; vref=5.0)
+    println("started initialization")
     max_steer = car.wheelAssemblies[1].maxAngle.value
-    th = track.fcurve(s)[2]
-    epsilon = x[3] - th
-    n_dot = x[1] * sin(epsilon) + x[2] * cos(epsilon)
+    Kv = 3 * car.carParameters.mass.value / 280.0
+    Kp, Kd = 8.0, 3.0
+    nControls = Int64(car.carParameters.nControls.value)
 
-    torque = (controller.vref - x[1]) * controller.velocityP
-    steering = clamp(-(x[5] * controller.steeringP + n_dot * controller.steeringD), -max_steer, max_steer)
-    return torque, steering
-end
+    function ctrl(s, x)
+        th = track.fcurve(s)[2]
+        ε = x[3] - th
+        n_dot = x[1] * sin(ε) + x[2] * cos(ε)
+        torque = (vref - x[1]) * Kv
+        steering = clamp(-(x[5] * Kp + n_dot * Kd), -max_steer, max_steer)
+        return torque, steering
+    end
 
+    x0 = [vref, 0.0, track.theta[1], 0.0, 0.0, 0.0]
+    s_span = (track.sampleDistances[1], track.sampleDistances[end])
+    s_save = LinRange(s_span..., segments)
 
-function get_initialization_controls(car::Car, track::Track, s, x::AbstractVector, steeringP, steeringD, velocityP, vref)
-    controller = (steeringP=steeringP, steeringD=steeringD, velocityP=velocityP, vref=vref)
-    return get_initialization_controls(car, track, s, x, controller)
-end
-
-
-function create_initialization_debug_plot()
-    n_state_plots = length(INITIALIZATION_STATE_LABELS)
-    n_control_plots = length(INITIALIZATION_CONTROL_LABELS)
-    n_plots = n_state_plots + n_control_plots
-
-    debug_fig = Figure(size=(1200, 800))
-    debug_axes = [
-        Axis(
-            debug_fig[div(i - 1, 3) + 1, mod(i - 1, 3) + 1],
-            title=(i <= n_state_plots ? INITIALIZATION_STATE_LABELS[i] : INITIALIZATION_CONTROL_LABELS[i - n_state_plots]),
-        ) for i in 1:n_plots
-    ]
-    debug_obs = [Observable(Point2f[]) for _ in 1:n_plots]
-
-    for i in 1:n_plots
+    # Live debug plot
+    labels = ["vx", "vy", "ψ", "ψ̇", "n", "t", "torque", "steering"]
+    fig = Figure(size=(1200, 800))
+    debug_axes = [Axis(fig[div(i-1, 3)+1, mod(i-1, 3)+1], title=labels[i]) for i in eachindex(labels)]
+    debug_obs = [Observable(Point2f[]) for _ in eachindex(labels)]
+    for i in eachindex(labels)
         lines!(debug_axes[i], debug_obs[i]; linewidth=2)
     end
-    display(GLMakie.Screen(), debug_fig)
+    display(GLMakie.Screen(), fig)
 
-    return debug_axes, debug_obs
-end
-
-
-function update_initialization_debug!(debug_axes, debug_obs, s, x::AbstractVector, torque, steering)
-    n_state_plots = length(INITIALIZATION_STATE_LABELS)
-    for i in 1:n_state_plots
-        push!(debug_obs[i][], Point2f(s, x[i]))
-        notify(debug_obs[i])
-        autolimits!(debug_axes[i])
+    cb = FunctionCallingCallback(; funcat=range(s_span..., length=201)) do x, s, _
+        pct = round(100 * (s - s_span[1]) / (s_span[2] - s_span[1]), digits=0)
+        print("\r  Initialization: $(Int(pct))%")
+        torque, steering = ctrl(s, x)
+        for i in 1:6
+            push!(debug_obs[i][], Point2f(s, x[i])); notify(debug_obs[i]); autolimits!(debug_axes[i])
+        end
+        for (j, v) in enumerate((torque, steering))
+            push!(debug_obs[6+j][], Point2f(s, v)); notify(debug_obs[6+j]); autolimits!(debug_axes[6+j])
+        end
     end
 
-    control_values = (torque, steering)
-    for (j, value) in enumerate(control_values)
-        idx = n_state_plots + j
-        push!(debug_obs[idx][], Point2f(s, value))
-        notify(debug_obs[idx])
-        autolimits!(debug_axes[idx])
-    end
-end
+    prob = ODEProblem((du, x, _, s) -> begin
+        torque, steering = ctrl(s, x)
+        du .= carODE_path(car, track, s, [torque, steering, zeros(nControls - 2)...], x, nothing)
+    end, x0, s_span)
 
-
-function create_initialization_callback(span2, debug_axes, debug_obs, car::Car, track::Track, controller)
-    s_start, s_end = span2
-    return FunctionCallingCallback(; funcat=range(s_start, s_end, length=201)) do x, s, integrator
-        pct = round(100 * (s - s_start) / (s_end - s_start), digits=0)
-        print("\r  Initialization: $(Int(pct))% (s=$(round(s, digits=2))/$(round(s_end, digits=2)))")
-
-        torque, steering = get_initialization_controls(car, track, s, x, controller)
-        update_initialization_debug!(debug_axes, debug_obs, s, x, torque, steering)
-    end
-end
-
-
-function create_initialization_controls_trajectory(car::Car, track::Track, s::AbstractVector, x::AbstractMatrix, controller)
-    torque = zeros(length(s))
-    steering = zeros(length(s))
-    for i in eachindex(s)
-        torque[i], steering[i] = get_initialization_controls(car, track, s[i], view(x, i, :), controller)
-    end
-    return torque, steering
-end
-
-
-function plot_initialization_summary(track::Track, initialization::Result_interpolation, s::AbstractVector, x::AbstractMatrix)
-    fig_init = Figure()
-    ax_init = Axis(fig_init[1, 1], aspect=DataAspect(), title="Initialization")
-    plotCarPath_interpolated(track, initialization, ax_init)
-    display(GLMakie.Screen(), fig_init)
-
-    state_history_labels = ["vx", "vy", "ψ", "ψ̇", "n", "t"]
-    fig_states = Figure()
-    for j in 1:size(x, 2)
-        ax = Axis(fig_states[j, 1], ylabel=state_history_labels[j])
-        lines!(ax, s, x[:, j], linewidth=2)
-    end
-    display(GLMakie.Screen(), fig_states)
-end
-
-
-function unpack_initialization_params(p)
-    if p isa NamedTuple
-        return p.car, p.track, p.controller
-    end
-
-    controller = (steeringP=p[3], steeringD=p[4], velocityP=p[5], vref=p[6])
-    return p[1], p[2], controller
-end
-
-
-function initializeSolution_interpolation(car::Car, track::Track, segments::Int64)
-    println("started initialization")
-    controller = build_initialization_controller(car)
-
-    x0 = [controller.vref, 0.0, track.theta[1], 0.0, 0.0, 0.0]
-    sampling_distances = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments)
-    span2 = (sampling_distances[1], sampling_distances[end])
-    problem_params = (car=car, track=track, controller=controller)
-    prob = ODEProblem(carODE_path_initialization, x0, span2, problem_params)
-
-    debug_axes, debug_obs = create_initialization_debug_plot()
-    cb = create_initialization_callback(span2, debug_axes, debug_obs, car, track, controller)
-
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), saveat=sampling_distances, reltol=1e-1, abstol=1e-1, callback=cb)
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4, callback=cb)
     println()
 
     x = hcat(sol.u...)'
     s = sol.t
-    torque, steering = create_initialization_controls_trajectory(car, track, s, x, controller)
-
-    u = zeros(segments, Int64(car.carParameters.nControls.value))
-    u[:, 1] = torque
-    u[:, 2] = steering
+    u = zeros(segments, nControls)
+    for i in eachindex(s)
+        u[i, 1], u[i, 2] = ctrl(s[i], view(x, i, :))
+    end
 
     initialization = make_result_interpolation(x, u, s)
-    plot_initialization_summary(track, initialization, s, x)
 
     return initialization
 end;
@@ -203,16 +114,6 @@ end;
 #poradie car,track,k,s,u,x
 
 
-function carODE_path_initialization(du, x, p, s)
-    car, track, controller = unpack_initialization_params(p)
-    torque, steering = get_initialization_controls(car, track, s, x, controller)
-    control = [torque, steering, 0.0]
-    dx = carODE_path(car, track, s, control, x, nothing) # carF must return a vector matching length(x)
-    du .= dx
-end;
-
-
-#initializeSolution(1,2)
 #here I need to define transfomation of ODE with respect to time to ODE with respect to path
 function time2path(car::Car, track::Track, k::Union{Int64,Float64}, model::Union{Nothing,JuMP.Model})
     #track.mapping(track,instantTrack,s)
@@ -269,7 +170,8 @@ function findOptimalTrajectory(track::Track, car::Car, model::JuMP.Model, sample
     X = xd[2]
     U = xd[3][1:end-1, :]
     s_all = xd[6]
-    @objective(model, Min, X[end, 6])
+    control_reg = 1e-6 * sum(U[i,j]^2 for i in axes(U,1), j in axes(U,2))
+    @objective(model, Min, X[end, 6] + control_reg)
 
 
     @constraint(model, X[1:end, 1] .>= 0) #vx
@@ -339,7 +241,8 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     #@constraint(model,-100/2 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 100/2) #constraint on controls derivative
     #@constraint(model,-1/2 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 1/2) #constraint on controls derivative
     #@constraint(model,U[1,:].== U[2,:])
-    @objective(model, Min, X[end, 6])
+    control_reg = 1e-6 * sum(U[i,j]^2 for i in axes(U,1), j in axes(U,2))
+    @objective(model, Min, X[end, 6] + control_reg)
     optimize!(model)
     resetParameters(tunables)
     x = value.(X)
@@ -367,7 +270,7 @@ function refineMesh(problem,segment_edges,s_all,pol_order)
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-0
+    error_threshold = 1e-1
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
@@ -378,10 +281,9 @@ function refineMesh(problem,segment_edges,s_all,pol_order)
             clear = 0
         end
     end
-    fig = plot(segment_errors, axis=(; yscale=log10))
+    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors"))
     lines!(fig.axis, [1, length(segment_errors)], [error_threshold, error_threshold], color=:red, linewidth=2)
-    display(fig)
-    sleep(1)   # give the backend time to render
+    display(GLMakie.Screen(), fig)
     return segment_edges,clear,segment_errors
 end
 
@@ -411,7 +313,11 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
     while clear == 0 && iterations <= 50
         clear = 1
         iterations += 1
-        RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track)
+        # Characteristic scales so optimizer variables are O(1)
+        x_scale = [10.0, 5.0, 1.0, 1.0, 5.0, 10.0]  # [vx, vy, ψ, ω, n, t]
+        u_scale = [30.0, 0.3, 30.0]                    # [torque, steering, torque]
+        RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
+                                                 x_scale=x_scale, u_scale=u_scale)
         println("creating constraints")
 
         #Add parameters
@@ -423,23 +329,25 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         s_all = xd[4]
         segment_edges = xd[5]
 
-        @constraint(model, X[1:end, 1] .>= 0) #vx
-        @constraint(model, X[1, 1] .== 10) #vx
-        @constraint(model, X[1, 2] .== 0) # intial vy
+        # State bounds: [vx, vy, ψ, ω, n, t]
+        @constraint(model, X[1, 1] .== 10)      # vx
+        @constraint(model, X[1, 2] .>= 0)    # vy
         @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
+        @constraint(model, X[1, 4] .== 0)     # ω
+        @constraint(model, X[1, 6] .== 0)      # t
+        @constraint(model, X[1, 2] .== 0) # intial vy
+        
         @constraint(model, X[1, 6] .>= 0) # final time
         @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
-        @objective(model, Min, X[end, 6])
+        control_reg = 1e-6 * sum((U[i,j]/u_scale[j])^2 for i in axes(U,1), j in axes(U,2))
+        @objective(model, Min, X[end, 6] + control_reg)
 
         #@constraint(model,-50 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 50) #constraint on controls derivative
         #@constraint(model,-50 .<= diff(U[1:end,2])./diff(X[:,6]) .<= 50) #constraint on controls derivative
         #@constraint(model,-0.5 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 0.5) #constraint on controls derivative
 
         println("Variables: $(num_variables(model)), Constraints: $(num_constraints(model; count_variable_in_set_constraints=true))")
-        set_optimizer_attribute(model, "max_iter", 3000)
-        set_optimizer_attribute(model, "print_level", 5)
-        set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
-        set_optimizer_attribute(model, "mu_strategy", "adaptive")
+
         optimize!(model)
         println("Termination: ", termination_status(model), " | Objective: ", objective_value(model))
 

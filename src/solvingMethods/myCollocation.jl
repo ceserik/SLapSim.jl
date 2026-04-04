@@ -389,6 +389,12 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
                 x_start_idx  = end_idx + 1
                 u_start_idx += pol_order   # FIX: advance by pol_order (no boundary slot)
             elseif variant == "Radau"
+                # Fix boundary U: tie left-boundary control to last collocation point of previous segment
+                if i == 1
+                    @constraint(model, U[x_start_idx, :] .== U[x_start_idx + 1, :])
+                else
+                    @constraint(model, U[x_start_idx, :] .== U[x_start_idx - 1, :])
+                end
                 x_start_idx = end_idx
             else
                 x_start_idx = end_idx

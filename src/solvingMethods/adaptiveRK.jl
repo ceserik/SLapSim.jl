@@ -1,28 +1,28 @@
-function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
+function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
+                                    x_scale=ones(nStates), u_scale=ones(nControls))
     tableau = TableauLobattoIIIA(stages)
-    τ_ref  = tableau.c                      
-    w_bary = barycentric_weights(τ_ref)    
- 
+    τ_ref  = tableau.c
+    w_bary = barycentric_weights(τ_ref)
+
     function createDynamicConstraints(segment_edges, initialization)
         number_of_segments = length(segment_edges) - 1
         totalPoints = number_of_segments * (stages - 1) + 1
-        X = Matrix{VariableRef}(undef, totalPoints, nStates)
-        U = Matrix{VariableRef}(undef, totalPoints, nControls)
 
-        # Bounds: X = [vx, vy, ψ, ψ̇, n, t], U = [torque, steering, ...]
-        x_lb = [5, -10.0, -2π, -5.0, -10.0, 0.0]
-        x_ub = [60.0, 10.0,  2π,  5.0,  10.0, 200.0]
-        u_lb = [-1000.0, -45/180*π, -1000.0]
-        u_ub = [ 1000.0,  45/180*π,  1000.0]
+        X_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
+        U_raw = Matrix{VariableRef}(undef, totalPoints, nControls)
 
         for i = 1:totalPoints
             for j = 1:nStates
-                X[i, j] = @variable(model, lower_bound=x_lb[j], upper_bound=x_ub[j])
+                X_raw[i, j] = @variable(model)
             end
             for j = 1:nControls
-                U[i, j] = @variable(model, lower_bound=u_lb[j], upper_bound=u_ub[j])
+                U_raw[i, j] = @variable(model)
             end
         end
+
+        #scaling
+        X = X_raw .* x_scale'
+        U = U_raw .* u_scale'
 
         # Build full list s_all: each node followed by its collocation points (except last node)
         s_all = zeros(totalPoints)
@@ -60,12 +60,12 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
             segment_start_idx = segment_start_idx + stages - 1
         end
 
-        #initialize all states and controls
+        #initialize all states and controls (set on raw O(1) variables)
         for idx = eachindex(s_all)
             init_vals = initialization.states(s_all[idx])
             init_u = initialization.controls(s_all[idx])
-            set_start_value.(X[idx, :], init_vals)
-            set_start_value.(U[idx, :], init_u)
+            set_start_value.(X_raw[idx, :], init_vals ./ x_scale)
+            set_start_value.(U_raw[idx, :], init_u ./ u_scale)
         end
 
         return [model, X, U, s_all, segment_edges]

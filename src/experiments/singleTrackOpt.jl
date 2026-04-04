@@ -53,10 +53,10 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
 #car = createSimplestSingleTrack()
-#car = createTwintrack()
-car = createBus()
+car = createTwintrack(true)
+#car = createBus()
 problem.car = car
-track = figureEight(true, 2.0)
+track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
 path = "tracks/FSCZ.kml"
@@ -68,6 +68,18 @@ problem.track = track
 #UnoSolver.Optimizer
 
 model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
+
+
+
+JuMP.set_optimizer_attribute(model, "max_iter", 3000)
+JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "none")
+JuMP.set_optimizer_attribute(model, "mu_strategy", "adaptive")
+JuMP.set_optimizer_attribute(model, "acceptable_tol", 1e-4)
+JuMP.set_optimizer_attribute(model, "acceptable_iter", 5)
+JuMP.set_optimizer_attribute(model, "bound_relax_factor", 1e-6)
+JuMP.set_optimizer_attribute(model, "constr_viol_tol", 1e-6)
+
+
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
@@ -145,7 +157,7 @@ if 1 == 1
    # sampling_density = get_sampling_density(optiResult_interp.path)
    # plot_on_path(problem,sampling_density,"sampling density")
 
-    #animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
+    animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     

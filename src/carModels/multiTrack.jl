@@ -86,7 +86,7 @@ function createTwintrack(pacejka::Bool=true)
         # Transformation of velocities from cog to wheels and steering
         for wa in wheelAssemblies
             wa.setVelocity(angularVelocity.value, velocity.value)
-            wa.constraints(optiModel)
+            wa.constraints(nothing)
         end
 
         for i in eachindex(drivetrain.tires)
@@ -114,15 +114,11 @@ function createTwintrack(pacejka::Bool=true)
         end
 
         ######################################################CONSTRAINTS###########################
-        # TODO this has to be enfroced only for car parts which are controls
-        # motor torque limit
-        drivetrain.motors[2].constraints(drivetrain.motors[3].torque.value, optiModel)
-        #drivetrain.motors[1].constraints(drivetrain.motors[4].torque.value, optiModel)
-        drivetrain.motors[3].constraints(drivetrain.motors[3].torque.value, optiModel)
-        #drivetrain.motors[4].constraints(drivetrain.motors[4].torque.value, optiModel)
+        # motor torque limit — one per shared control
+        drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # front (controls[3])
+        drivetrain.motors[3].constraints(drivetrain.motors[3].torque.value, optiModel) # rear  (controls[1])
         #steering angle
         wheelAssemblies[1].constraints(optiModel)
-        #wheelAssemblies[2].constraints(optiModel)
         #hitbox
         chassis.hitbox(n.value, track, optiModel)
         for tire in drivetrain.tires
@@ -294,15 +290,10 @@ function formulaE2026()
         end
 
         ######################################################CONSTRAINTS###########################
-        # TODO this has to be enfroced only for car parts which are controls
         # motor torque limit
-        drivetrain.motors[2].constraints(drivetrain.motors[3].torque.value, optiModel)
-        #drivetrain.motors[1].constraints(drivetrain.motors[4].torque.value, optiModel)
-        drivetrain.motors[3].constraints(drivetrain.motors[3].torque.value, optiModel)
-        #drivetrain.motors[4].constraints(drivetrain.motors[4].torque.value, optiModel)
+        drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # rear (controls[2])
         #steering angle
         wheelAssemblies[1].constraints(optiModel)
-        #wheelAssemblies[2].constraints(optiModel)
         #hitbox
         chassis.hitbox(n.value, track, optiModel)
         for tire in drivetrain.tires

@@ -84,9 +84,15 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
     end
 
     function tireConstraints(model=nothing)
-        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (frictionCoefficient.value * forces.value[3]/scalingForce.value)^2, model)
-        #lessContraint(slipAngle.value/maxSlipAngle.value, maxSlipAngle.value/maxSlipAngle.value, model)
-        #greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
+        Fx_s = forces.value[1]/scalingForce.value
+        Fy_s = forces.value[2]/scalingForce.value
+        Fz_s = frictionCoefficient.value * forces.value[3]/scalingForce.value
+        if isnothing(model)
+            lessContraint(Fx_s^2 + Fy_s^2, Fz_s^2, nothing)
+        else
+            ε = @variable(model, lower_bound=0.0)
+            @constraint(model, Fx_s^2 + Fy_s^2 + ε == Fz_s^2)
+        end
     end
 
     function setupObservables(ax::Axis)
@@ -172,9 +178,15 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
     end
 
     function tireConstraints(model=nothing)
-        lessContraint((forces.value[2]/scalingForce.value)^2 + (forces.value[1]/scalingForce.value)^2, (frictionCoefficient.value * forces.value[3]/scalingForce.value)^2, model)
-        #lessContraint(slipAngle.value/maxSlipAngle.value, maxSlipAngle.value/maxSlipAngle.value, model)
-        #greaterContraint(slipAngle.value/maxSlipAngle.value, -maxSlipAngle.value/maxSlipAngle.value, model)
+        Fx_s = forces.value[1]/scalingForce.value
+        Fy_s = forces.value[2]/scalingForce.value
+        Fz_s = frictionCoefficient.value * forces.value[3]/scalingForce.value
+        if isnothing(model)
+            lessContraint(Fx_s^2 + Fy_s^2, Fz_s^2, nothing)
+        else
+            ε = @variable(model, lower_bound=0.0)
+            @constraint(model, Fx_s^2 + Fy_s^2 + ε == Fz_s^2)
+        end
     end
 
     function setupObservables(ax::Axis)
