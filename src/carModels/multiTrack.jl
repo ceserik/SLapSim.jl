@@ -11,7 +11,7 @@ function createTwintrack(pacejka::Bool=true,track::Track = nothing)
     velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s",:static,[2.0,60.0])
     angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s",:static,[-10.0,10.0])
 
-    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable)
+    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable, [200.0, 320.0])
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
     lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
@@ -189,6 +189,8 @@ function createTwintrack(pacejka::Bool=true,track::Track = nothing)
         suspension,
         chassis,
         [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR],
+        state_desc,
+        control_desc,
     )
     return afto
 end
@@ -366,6 +368,8 @@ function formulaE2026()
         suspension,
         chassis,
         [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR],
+        nothing,
+        nothing,
     )
     return afto
 

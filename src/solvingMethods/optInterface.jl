@@ -206,7 +206,7 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     nStates = Int64(car.carParameters.nStates.value)
     initialization = initializeSolution_interpolation(car, track, 1000)
 
-    Gauss_legendre = create_gauss_legendre(F, pol_order, variant, model, nControls, nStates, track)
+    Gauss_legendre = create_gauss_legendre(F, pol_order, variant, model, nControls, nStates, track; car=car)
     #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
     (params, tunables) = setParameters(car, model)
     problem.params = params
@@ -226,6 +226,7 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
     @constraint(model, X[1, 2] .== 0) # intial vy
 
     @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
+    u_scale = !isnothing(car.control_desc) ? get_scales(car.control_desc) : ones(nControls)
     control_reg = 1e-5 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
     @objective(model, Min, X[end, 6] + control_reg)
 

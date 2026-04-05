@@ -119,9 +119,11 @@ function createCTU25_1D()
         mapping,
         Drivetrain(Motor[], Gearbox[], Tire[], createPepikCTU25()),  # Empty drivetrain
         createBasicAero(),                                                  # Empty aero
-        createDummySuspension(),                                           # Empty suspension  
+        createDummySuspension(),                                           # Empty suspension
         createCTU25chassis(),                                              # Empty chassis
-        WheelAssembly[]
+        WheelAssembly[],
+        nothing,
+        nothing,
     )
 
     return car

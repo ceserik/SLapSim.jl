@@ -246,13 +246,9 @@ function kml2track(path::String,closeTrack::Bool,flip    )
         )
         trackfig = Figure()
         ax = Axis(trackfig[1,1],aspect=DataAspect())
-        #lines!(ax,track.y, track.x)
-        #display(fig)
 
         smooth_by_OCP(track,1.0,0.4,closeTrack)
-        #track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
-        #lines!(ax,track.y, track.x)
-        #display(GLMakie.Screen(),trackfig)
+
         plotTrack(track)
     return track
 
