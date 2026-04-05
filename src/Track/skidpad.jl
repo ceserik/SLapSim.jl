@@ -2,8 +2,8 @@ using SLapSim
 #include("../Track/trackProcessing.jl")
 function skidpad(vis::Bool = false, ds::Float64 = 0.5)
         # Track parameters
-        w_l = 1.5 *0.2  # Width of the track [m]
-        w_r = 1.5  *0.2# Width of the track [m]
+        w_l = 1.5 #*0.2  # Width of the track [m]
+        w_r = 1.5 # *0.2# Width of the track [m]
         rho = 1.225
         μ = 1.0
 
