@@ -80,7 +80,7 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         forces.value[2] = 1*slipAngle.value/maxSlipAngle.value * forces.value[3] * frictionCoefficient.value
-        forces.value[1] = inTorque/radius.value - brakingForce.value
+        forces.value[1] = inTorque/radius.value + brakingForce.value
     end
 
     function tireConstraints(model=nothing)
@@ -158,10 +158,10 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
     frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
-    rollingResistance = carParameter{carVar}(0.010, "Rolling resistance coeff", "-", :tunable)
+    rollingResistance = carParameter{carVar}(-0.010, "Rolling resistance coeff", "-", :tunable)
     brakingForce = carParameter{carVar}(0.0, "braking force", "N")
     # Pacejka Magic Formula coefficients
-    B = 5   # stiffness factor
+    B = 9.62   # stiffness factor
     C = 2.59  # shape factor
     E = 1  # curvature factor
 
@@ -174,7 +174,7 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
         α = slipAngle.value * 1
         D = forces.value[3] * frictionCoefficient.value
         forces.value[2] = D * sin(C * atan(B * α - E * (B * α - atan(B * α))))
-        forces.value[1] = inTorque/radius.value - brakingForce.value
+        forces.value[1] = inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value
     end
 
     function tireConstraints(model=nothing)

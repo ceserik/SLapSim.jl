@@ -39,7 +39,12 @@ function sensitivityAnalysis(problem)
     # Reverse mode: one pass gives ∂objective/∂p for all parameters
     DiffOpt.empty_input_sensitivities!(model)
     DiffOpt.set_reverse_objective(model, 1.0)
-    DiffOpt.reverse_differentiate!(model)
+    try
+        DiffOpt.reverse_differentiate!(model)
+    catch e
+        @warn "sensitivityAnalysis: DiffOpt differentiation failed (likely numerical dual sign issue), skipping." exception=e
+        return nothing
+    end
 
     obj_val = objective_value(model)
     names = collect(keys(params))

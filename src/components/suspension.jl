@@ -190,8 +190,20 @@ function createQuasi_steady_Suspension()
 
     end
 
-    function calculate(ax)
-        
+    function calculate(ax,downforce,CoP)
+        totalLoad = chassis.mass.value * 9.81 + downforce
+        frontRatio = chassis.CoG_X_pos.value
+        rearRatio = 1 - chassis.CoG_X_pos.value
+        leftRatio = 1 - chassis.CoG_Y_pos.value
+        rightRatio = chassis.CoG_Y_pos.value
+        weightFront = chassis.mass.value * 9.81 * frontRatio
+        weightRear = chassis.mass.value * 9.81 * rearRatio
+        aeroFront = downforce * CoP
+        aeroRear = downforce * (1 - CoP)
+        Fz_FL = (weightFront + aeroFront) * leftRatio
+        Fz_FR = (weightFront + aeroFront) * rightRatio
+        Fz_RL = (weightRear + aeroRear) * leftRatio
+        Fz_RR = (weightRear + aeroRear) * rightRatio
         return [Fz_FL, Fz_FR, Fz_RL, Fz_RR]
     end
 

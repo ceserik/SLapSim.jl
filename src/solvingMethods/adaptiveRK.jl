@@ -16,14 +16,14 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         x_ub_raw = x_ub ./ x_scale
         u_lb_raw = u_lb ./ u_scale
         u_ub_raw = u_ub ./ u_scale
-        #println("State bounds & scales:")
-        #for j in 1:nStates
-        #    println("  x[$j]: lb=$(round(x_lb[j],digits=3))  ub=$(round(x_ub[j],digits=3))  scale=$(round(x_scale[j],digits=3))")
-        #end
-        #println("Control bounds & scales:")
-        #for j in 1:nControls
-        #    println("  u[$j]: lb=$(round(u_lb[j],digits=3))  ub=$(round(u_ub[j],digits=3))  scale=$(round(u_scale[j],digits=3))")
-        #end
+        println("State bounds & scales:")
+        for j in eachindex(x_lb)
+            println("  x[$j]: lb=$(round(x_lb[j],digits=3))  ub=$(round(x_ub[j],digits=3))  scale=$(round(x_scale[j],digits=3))")
+        end
+        println("Control bounds & scales:")
+        for j in eachindex(u_lb)
+            println("  u[$j]: lb=$(round(u_lb[j],digits=3))  ub=$(round(u_ub[j],digits=3))  scale=$(round(u_scale[j],digits=3))")
+        end
 
         for i = 1:totalPoints
             for j = 1:nStates

@@ -56,16 +56,17 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 #car = createBus()
 
-#track = figureEight(true, 0.1)
+track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
-track = doubleTurn(false,0.1)
+#track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
-car = createTwintrack(false,track)
+car = createTwintrack(true,track)
+#car = formulaE2026()
 problem.car = car
 
 plotTrackStates(track)
@@ -160,9 +161,16 @@ if 1 == 1
     sensitivityAnalysis(problem)
     try
         plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque", "drivetrain.motors[3].torque", "drivetrain.motors[4].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.tires[1].brakingForce","drivetrain.tires[2].brakingForce","drivetrain.tires[3].brakingForce","drivetrain.tires[4].brakingForce"])
-        
+
     catch
         plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
     end
+    plot_parameters(snapshots, car,
+        "carParameters.velocity" => 1,
+        "carParameters.velocity" => 2,
+        "carParameters.psi",
+        "carParameters.angularVelocity" => 3,
+        "carParameters.n"
+    )
     animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
 end

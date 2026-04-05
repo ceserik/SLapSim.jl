@@ -9,8 +9,8 @@ mutable struct Motor{F1,F2}
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Motor) = prettyPrintComponent(io, obj)
 
-function createFischerMotor(maxTorqueVal::Float64=29.0)
-    torque = carParameter{carVar}(0.0,"motor torque","Nm",:static,[-maxTorqueVal,maxTorqueVal])
+function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float64=29.0)
+    torque = carParameter{carVar}(0.0,"motor torque","Nm",:static,[-maxTorqueVal_regen,maxTorqueVal])
     angularFrequency = carParameter{carVar}(0.0,"angular frequency","rad/s")
     loss = carParameter{carVar}(0.0,"loss","W")
     torqueSpeedFunction = angularFrequency::Float64 -> maxTorqueVal
