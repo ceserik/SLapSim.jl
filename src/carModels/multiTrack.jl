@@ -12,7 +12,7 @@ function createTwintrack(pacejka::Bool=true)
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
     psi = carParameter{carVar}(0.0, "heading", "rad")
     n = carParameter{carVar}(0.0, "Distance from centerline", "m")
-    nControls = carParameter{carVar}(2.0, "number of controlled parameters", "-")
+    nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
     s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
@@ -60,8 +60,8 @@ function createTwintrack(pacejka::Bool=true)
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
 
     function controlMapping(controls::AbstractVector)
-        #drivetrain.motors[1].torque.value = controls[3]
-        #drivetrain.motors[2].torque.value = controls[3]
+        drivetrain.motors[1].torque.value = controls[3]
+        drivetrain.motors[2].torque.value = controls[3]
         drivetrain.motors[3].torque.value = controls[1]
         drivetrain.motors[4].torque.value = controls[1]
         wheelAssemblies[1].steeringAngle.value = controls[2]
@@ -115,7 +115,7 @@ function createTwintrack(pacejka::Bool=true)
 
         ######################################################CONSTRAINTS###########################
         # motor torque limit — one per shared control
-        #drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # front (controls[3])
+        drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # front (controls[3])
         drivetrain.motors[3].constraints(drivetrain.motors[3].torque.value, optiModel) # rear  (controls[1])
         #steering angle
         wheelAssemblies[1].constraints(optiModel)

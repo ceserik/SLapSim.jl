@@ -273,7 +273,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         iterations += 1
         # Characteristic scales so optimizer variables are O(1)
         x_scale = [40.0, 5.0, 10.0, 10.0, 4, 200.0]  # [vx, vy, ψ, ω, n, t]
-        u_scale = [30.0, 0.42]                    # [torque, steering, torque]
+        u_scale = [30.0, 0.42,30.0]                    # [torque, steering, torque]
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
             x_scale=x_scale, u_scale=u_scale)
         println("creating constraints")
@@ -295,7 +295,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         @constraint(model, X[1, 2] .== 0) # intial vy
 
         @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
-        control_reg = 1e-4 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
+        control_reg = 0#1e-4 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
         @objective(model, Min, X[end, 6] + control_reg)
 
         #@constraint(model,-50 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 50) #constraint on controls derivative
