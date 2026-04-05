@@ -1,4 +1,4 @@
-function createTwintrack(pacejka::Bool=true,track::Track = nothing)
+function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothing)
 
     if isnothing(track)
     widthR = 1.5
@@ -21,6 +21,7 @@ function createTwintrack(pacejka::Bool=true,track::Track = nothing)
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
     psi = carParameter{carVar}(0.0, "heading", "rad",:static,[-4pi,4pi])
     n = carParameter{carVar}(0.0, "Distance from centerline", "m",:static,[-widthR+0.6,widthL-0.6])
+    brakeCommand = carParameter{carVar}(0.0, "brake command", "N", :control, [0.0, 8000.0])
     nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
@@ -80,13 +81,21 @@ function createTwintrack(pacejka::Bool=true,track::Track = nothing)
     control_descriptor = VarEntry[
         VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0]),
         VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
-        VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
+        #VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
+        VarEntry("brake", [brakeCommand => 0]),
     ]
 
 
 
     function controlMapping(controls::AbstractVector)
         apply_mapping!(control_descriptor, controls)
+
+        frontBrake = brakeCommand.value * brakeBias.value
+        rearBrake = brakeCommand.value * (1 - brakeBias.value)
+        drivetrain.tires[1].brakingForce.value = frontBrake
+        drivetrain.tires[2].brakingForce.value = frontBrake
+        drivetrain.tires[3].brakingForce.value = rearBrake
+        drivetrain.tires[4].brakingForce.value = rearBrake
     end
 
     function stateMapping(states::AbstractVector)

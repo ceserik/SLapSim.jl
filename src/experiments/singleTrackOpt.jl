@@ -62,10 +62,10 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
-#track = doubleTurn(false,0.1)
-track = skidpad(false)
+track = doubleTurn(false,0.1)
+#track = skidpad(false)
 problem.track = track
-car = createTwintrack(true,track)
+car = createTwintrack(false,track)
 problem.car = car
 
 plotTrackStates(track)
@@ -103,7 +103,7 @@ if 1 == 1
     #@infiltrate
     fig = nothing
     ax = nothing
-    SLapSim.plotCarStates_interp(optiResult_interp, 0.1)
+#    SLapSim.plotCarStates_interp(optiResult_interp, 0.1)
     #SLapSim.plotCarStates2(optiResult)
 
     #include("../dataAnalysis/jacobian.jl")
@@ -159,7 +159,8 @@ if 1 == 1
     
     sensitivityAnalysis(problem)
     try
-    plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.motors[3].torque" , "drivetrain.motors[4].torque" ])
+        plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque", "drivetrain.motors[3].torque", "drivetrain.motors[4].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.tires[1].brakingForce","drivetrain.tires[2].brakingForce","drivetrain.tires[3].brakingForce","drivetrain.tires[4].brakingForce"])
+        
     catch
         plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
     end
