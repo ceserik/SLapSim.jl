@@ -189,8 +189,8 @@ function createTwintrack(pacejka::Bool=true,track::Track = nothing)
         suspension,
         chassis,
         [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR],
-        state_desc,
-        control_desc,
+        state_descriptor,
+        control_descriptor,
     )
     return afto
 end
