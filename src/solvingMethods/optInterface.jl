@@ -292,7 +292,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         segment_edges = xd[5]
 
         # State bounds: [vx, vy, ψ, ω, n, t]
-        @constraint(model, X[1, 1] .<= 100)      # vx
+        @constraint(model, X[1, 1] .<= 10)      # vx
         @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
         @constraint(model, X[1, 4] .== 0)     # ω
         @constraint(model, X[1, 6] .== 0)      # t

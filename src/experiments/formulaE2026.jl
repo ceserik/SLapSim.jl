@@ -98,10 +98,15 @@ if 1 == 1
          "drivetrain.tires[3].brakingForce", "drivetrain.tires[4].brakingForce"]
     )
     plot_parameters(snapshots, car,
-        ["carParameters.velocity" => 1, "carParameters.velocity" => 2],
+        "carParameters.velocity" => 1,
+         "carParameters.velocity" =>2,
         "carParameters.psi",
         "carParameters.angularVelocity" => 3,
         "carParameters.n"
+    )
+    plot_parameters(snapshots, car,
+        ["drivetrain.tires[1].forces" => 3, "drivetrain.tires[2].forces" => 3],
+        ["drivetrain.tires[3].forces" => 3, "drivetrain.tires[4].forces" => 3]
     )
 
     animateCarDual(track, optiResult_interp, car; speedup=1,

@@ -323,6 +323,28 @@ function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo)
 end
 
 
+function plot_controls_on_path(problem::Problem_config, optiResult_interp; error_itp=nothing)
+    n_controls = Int(problem.car.carParameters.nControls.value)
+    desc = problem.car.control_desc
+    plots = [(s -> optiResult_interp.controls(s)[i],
+              desc !== nothing ? desc[i].name : "control_$i") for i in 1:n_controls]
+    if !isnothing(error_itp)
+        push!(plots, (s -> error_itp(s), "error"))
+    end
+
+    n = length(plots)
+    fig = Figure(size=(900, 450 * ceil(Int, n / 2)))
+    for i in 1:n
+        row   = div(i - 1, 2) + 1
+        col   = mod(i - 1, 2) + 1
+        ax    = Axis(fig[row, 2*col-1], aspect=DataAspect())
+        _, plt = plot_on_path(problem, plots[i][1], plots[i][2]; axis=ax)
+        Colorbar(fig[row, 2*col], plt; label=plots[i][2], width=25)
+    end
+    display(GLMakie.Screen(), fig)
+    return fig
+end
+
 function get_sampling_density(segment_edges)
     h = diff(segment_edges)
     density = 1 ./ h

@@ -10,7 +10,7 @@ end
 
 const RHO_SEA_LEVEL = 1.225
 
-function createBasicAero(CL_a::Float64 = -5.0, CD_a::Float64 = 2.0, CoP_a::Float64 = 0.5)
+function createBasicAero(; CL_a::Float64 = -5.0, CD_a::Float64 = 2.0, CoP_a::Float64 = 0.5)
     CL = carParameter{carVar}(CL_a,"Lift coeffcient","-")
     CD = carParameter{carVar}(CD_a,"Drag coeffcient","-")
     CoP = carParameter{carVar}(CoP_a,"Cener of pressure on front","-")

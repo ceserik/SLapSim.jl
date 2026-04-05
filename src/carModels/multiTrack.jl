@@ -8,24 +8,24 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         widthR = track.widthR[1]
     end
 
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s",:static,[2.0,60.0])
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s",:static,[-10.0,10.0])
+    velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 60.0])
+    angularVelocity  = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-10.0, 10.0])
 
-    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable, [200.0, 320.0])
-    motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
-    lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
-    lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
-    brakeBias = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
-    CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
-    CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
-    powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
-    psi = carParameter{carVar}(0.0, "heading", "rad",:static,[-4pi,4pi])
-    n = carParameter{carVar}(0.0, "Distance from centerline", "m",:static,[-widthR+0.6,widthL-0.6])
-    brakeCommand = carParameter{carVar}(0.0, "brake command", "N", :control, [-20000.0, 0.0])
-    nControls = carParameter{carVar}(0.0, "number of controlled parameters", "-")
-    inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
-    nStates = carParameter{carVar}(0.0, "number of car states", "-")
-    s = carParameter{carVar}(1.0, "longitudinal position on track", "-",:static,[0.0,200.0])
+    mass             = carParameter{carVar}(280.0, "Mass", "kg", :tunable, [200.0, 320.0])
+    motorForce       = carParameter{carVar}(1000.0, "motorForce", "N")
+    lateralForce     = carParameter{carVar}(0.0, "lateral Force", "N")
+    lateralTransfer  = carParameter{carVar}(0.0, "lateral load transfer", "N")
+    brakeBias        = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
+    CL               = carParameter{carVar}(5.0, "Lift Coefficient", "-")
+    CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
+    powerLimit       = carParameter{carVar}(80000.0, "PowerLimit", "W")
+    psi              = carParameter{carVar}(0.0, "heading", "rad", :static, [-4pi, 4pi])
+    n                = carParameter{carVar}(0.0, "Distance from centerline", "m", :static, [-widthR+0.6, widthL-0.6])
+    brakeCommand     = carParameter{carVar}(0.0, "brake command", "N", :control, [-20000.0, 0.0])
+    nControls        = carParameter{carVar}(0.0, "number of controlled parameters", "-")
+    inertia          = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
+    nStates          = carParameter{carVar}(0.0, "number of car states", "-")
+    s                = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
 
     gearboxFL = createCTU25gearbox()
     gearboxFR = createCTU25gearbox()
@@ -83,7 +83,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
     control_descriptor = VarEntry[
         VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0]),
         VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
-        #VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
+        VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
         VarEntry("brake", [brakeCommand => 0]),
     ]
 #    @infiltrate
@@ -108,13 +108,14 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
     function anyTrack(track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
         # Transformation of velocities from cog to wheels and steering
         if !isnothing(optiModel)
-            T_max = drivetrain.motors[1].torque.limits[2]  # 29 Nm
+            # Prevent simultaneous acceleration and braking
+            # If torque > 0 (accelerating), brake must be 0; if brake < 0 (braking), torque must be 0
+            T_max = drivetrain.motors[3].torque.limits[2]  # 29 Nm
             F_max = -brakeCommand.limits[1]                # 20000 N
-            scale = T_max * F_max
-            #@constraint(optiModel, 0.00001 >= drivetrain.motors[1].torque.value * brakeCommand.value / scale >= -0.00001)
-            #@constraint(optiModel, 0.00001 >= drivetrain.motors[2].torque.value * brakeCommand.value / scale >= -0.00001)
-            #@constraint(optiModel, 0.00001 >= drivetrain.motors[3].torque.value * brakeCommand.value / scale >= -0.00001)
-            #@constraint(optiModel, 0.00001 >= drivetrain.motors[4].torque.value * brakeCommand.value / scale >= -0.00001)
+            # Product complementarity: (torque/T_max) * (-brake/F_max) ≤ ε
+            # Both factors are in [0,1], so product near zero enforces mutual exclusion
+            @constraint(optiModel, (drivetrain.motors[3].torque.value / T_max) * (-brakeCommand.value / F_max) <= 0.001)
+            @constraint(optiModel, (drivetrain.motors[1].torque.value / T_max) * (-brakeCommand.value / F_max) <= 0.001)
         end
         for wa in wheelAssemblies
             wa.setVelocity(angularVelocity.value, velocity.value)
@@ -226,26 +227,26 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         widthR = track.widthR[1]
     end
 
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s",:static,[2.0,60.0])
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s",:static,[-10.0,10.0])
-    mass = carParameter{carVar}(1200.0, "Mass", "kg", :tunable)
-    motorForce = carParameter{carVar}(7100.0, "motorForce", "N")
-    lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
-    lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
-    brakeBias = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
-    CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
-    CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
-    powerLimit = carParameter{carVar}(270000.0, "PowerLimit", "W")
-    psi = carParameter{carVar}(0.0, "heading", "rad",:static,[-4pi,4pi])
-    n = carParameter{carVar}(0.0, "Distance from centerline", "m",:static,[-widthR+0.6, widthL-0.6])
-    inertia = carParameter{carVar}(1260.0, "Inertia", "kg*m^2", :tunable)
-    s = carParameter{carVar}(1.0, "longitudinal position on track", "-",:static,[0.0,200.0])
-    brakeCommand = carParameter{carVar}(0.0, "brake command", "N", :control, [-20000.0, 0])
-    nControls = carParameter{carVar}(0.0, "number of controlled parameters", "-")
-    nStates = carParameter{carVar}(0.0, "number of car states", "-")
+    velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 60.0])
+    angularVelocity  = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-10.0, 10.0])
+    mass             = carParameter{carVar}(1200.0, "Mass", "kg", :tunable)
+    motorForce       = carParameter{carVar}(7100.0, "motorForce", "N")
+    lateralForce     = carParameter{carVar}(0.0, "lateral Force", "N")
+    lateralTransfer  = carParameter{carVar}(0.0, "lateral load transfer", "N")
+    brakeBias        = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
+    CL               = carParameter{carVar}(5.0, "Lift Coefficient", "-")
+    CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
+    powerLimit       = carParameter{carVar}(270000.0, "PowerLimit", "W")
+    psi              = carParameter{carVar}(0.0, "heading", "rad", :static, [-4pi, 4pi])
+    n                = carParameter{carVar}(0.0, "Distance from centerline", "m", :static, [-widthR+0.6, widthL-0.6])
+    inertia          = carParameter{carVar}(1260.0, "Inertia", "kg*m^2", :tunable)
+    s                = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
+    brakeCommand     = carParameter{carVar}(0.0, "brake command", "N", :control, [-20000.0, 0])
+    nControls        = carParameter{carVar}(0.0, "number of controlled parameters", "-")
+    nStates          = carParameter{carVar}(0.0, "number of car states", "-")
 
     gearbox = createCTU25gearbox(1.0)
-    motor = createFischerMotor(7100*0.33,0.0)#tire radius to get moment
+    motor   = createFischerMotor(7100*0.33,0.0)#tire radius to get moment
 
     tireFL = createR20_pacejka(motor, gearbox)
     tireFR = createR20_pacejka(motor, gearbox)
@@ -258,8 +259,20 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         [tireFL, tireFR, tireRL, tireRR],
         createPepikCTU25())
 
-    aero = createBasicAero(-2.7, 1.4, 0.44)
-    chassis = createCTU25chassis(1200.0, 2.9, 1.5, 0.517, 0.5, 2.0) #the model on website has different track for each axle
+    aero = createBasicAero(
+        CL_a  = -2.7,
+        CD_a  = 1.4,
+        CoP_a = 0.44
+        )
+
+    chassis = createCTU25chassis(
+        mass_p      = 1200.0,
+        wheelbase_p = 2.9,
+        track_p     = 1.5, CoGx=0.482,
+        CogY        = 0.5,
+        width_p     = 2.0
+        )
+
     suspension = createQuasi_steady_Suspension()
 
     cogOffsetX = (chassis.CoG_X_pos.value - 0.5) * chassis.wheelbase.value
@@ -268,7 +281,6 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     wheelAssemblyFR = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, -chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyRL = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2 - cogOffsetX, chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyRR = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2 - cogOffsetX, -chassis.track.value / 2 - cogOffsetY, 0]))
-
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
 
 
@@ -311,7 +323,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
             T_max = drivetrain.motors[1].torque.limits[2]
             F_max = -brakeCommand.limits[1]
             scale = T_max * F_max
-            @constraint(optiModel, 0.001 >= drivetrain.motors[1].torque.value * brakeCommand.value / scale >= -0.001)
+            @constraint(optiModel, drivetrain.motors[1].torque.value * brakeCommand.value / scale >= -0.0001)
         end
         # Transformation of velocities from cog to wheels and steering
         for wa in wheelAssemblies
@@ -349,13 +361,6 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
             drivetrain.tires[i].compute(torqueOut, optiModel)
         end
 
-        ######################################################CONSTRAINTS###########################
-        # motor torque limit
-        #drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # rear (controls[2])
-        #steering angle
-        #wheelAssemblies[1].constraints(optiModel)
-        #hitbox
-        chassis.hitbox(n.value, track, optiModel)
         for tire in drivetrain.tires
             tire.tireConstraints(optiModel)
         end

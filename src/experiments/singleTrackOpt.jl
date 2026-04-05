@@ -56,12 +56,12 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 #car = createBus()
 
-track = figureEight(true, 0.1)
+#track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path, false, true)
+track = kml2track(path, false, true)
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
@@ -77,7 +77,7 @@ model = make_ipopt_model()
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = Int64(round(track.sampleDistances[end]/2))
+segments = Int64(round(track.sampleDistances[end]/3))
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 t_solve = @elapsed begin
@@ -118,43 +118,12 @@ if 1 == 1
     #spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
     #display(GLMakie.Screen(), fig_jac)
 
-  #  error_itp = getErrors(problem)
-  #  plot(error_itp(optiResult_interp.path))
-  #  plotErrorsOnTrack2D(problem; itp=error_itp)
-#
-  #  # Plot all controls + error in a single square window (stacked rows)
-  #  fig = Figure(size=(900, 900))
-  #  # 2x2 grid of plots, each plot gets its own colorbar to the right
-  #  plots = [
-  #      (s -> optiResult_interp.controls(s)[1], "moment_front"),
-  #      (s -> optiResult_interp.controls(s)[1], "moment_rear"),
-  #      (s -> optiResult_interp.controls(s)[2], "steering"),
-  #      (s -> error_itp(s), "error"),
-  #  ]
-
-    # prepare error interpolant and append as a callable
-
-
-
-   # # Layout: 2 rows × 4 columns (each plot + its colorbar occupies 2 columns)
-   # for i in 1:length(plots)
-   #     row = div(i - 1, 2) + 1
-   #     col = mod(i - 1, 2) + 1
-   #     ax_col = 2 * col - 1
-   #     cb_col = 2 * col
-   #     p = plots[i]
-   #     f = p[1]
-   #     name = p[2]
-   #     ax = Axis(fig[row, ax_col], aspect=DataAspect())
-   #     _, plt = plot_on_path(problem, f, name; axis=ax)
-   #     Colorbar(fig[row, cb_col], plt; label=name, width=25)
-   # end
-   # display(GLMakie.Screen(), fig)
-   # lines(error_itp(optiResult_interp.path), axis=(title="chyba v zavislosti na poloze", yscale=log10))
-   # sampling_density = get_sampling_density(optiResult_interp.path)
-   # plot_on_path(problem,sampling_density,"sampling density")
-
+    #error_itp = getErrors(problem)
+    plot_controls_on_path(problem, optiResult_interp)
+    sampling_density = get_sampling_density(optiResult_interp.path)
     
+    plot_on_path(problem,sampling_density,"sampling density")
+
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     
