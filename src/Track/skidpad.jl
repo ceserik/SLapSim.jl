@@ -58,8 +58,9 @@ function skidpad(vis::Bool = false, ds::Float64 = 0.5)
         track.rho = fill(rho, length(track.x))
         track.μ = fill(μ, length(track.x))
 
-        if vis == 1
+        if vis == true
                 plotTrack(track)
+                plotTrackStates(track)
         end
         
         return track

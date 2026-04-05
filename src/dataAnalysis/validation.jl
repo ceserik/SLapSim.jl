@@ -7,28 +7,7 @@ using DiffEqCallbacks
 using LinearAlgebra
 using LaTeXStrings
 
-function timeSimulation(car::Car, result, track)
-    timeVector = result.states[1:end-1, 6] #this has to be compatible with different car models will cause issues in future
-    x0 = result.states[1, 1:4]
-    n = result.states[1,5]
-    carX = track.x[1] .- n .* sin.(track.theta[1])
-    carY = track.y[1] .+ n .* cos.(track.theta[1])
 
-    x0 = [x0; carX; carY]
-    tspan = [timeVector[1], timeVector[end]]
-    p = Vector{Any}(undef, 4)
-
-
-    p[1] = car
-    p[2] = track
-    p[3] = result.controls
-    p[4] = timeVector
-
-    prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-
-    sol = OrdinaryDiffEq.solve(prob,  Rodas4(autodiff = AutoFiniteDiff()),tstops=timeVector)
-    return sol
-end
 
 function timeSimulation_interpolated(car::Car, result, track)
     time(s) = result.states(s)[6] #this has to be compatible with different car models will cause issues in future
@@ -68,7 +47,8 @@ function timeSimulation_interpolated(car::Car, result, track)
     end
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-    sol = OrdinaryDiffEq.solve(prob,  Rodas4(autodiff = AutoFiniteDiff()), tstops = t_unique, saveat = t_unique, callback = cb)
+    sol = OrdinaryDiffEq.solve(prob, AutoTsit5(Rodas4(autodiff = AutoFiniteDiff())),  saveat=t_unique, callback=cb, reltol=1e-3, abstol=1e-3)
+
     return sol
 end
 

@@ -1,6 +1,15 @@
-function createTwintrack(pacejka::Bool=true)
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 40.0])
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-5.0, 5.0])
+function createTwintrack(pacejka::Bool=true,track::Track = nothing)
+
+    if isnothing(track)
+    widthR = 1.5
+    widthL = 1.5
+    else
+        widthL = track.widthL[1]
+        widthR = track.widthR[1]
+    end
+
+    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s",:static,[2.0,60.0])
+    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s",:static,[-10.0,10.0])
 
     mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable, [200.0, 320.0])
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
@@ -10,12 +19,12 @@ function createTwintrack(pacejka::Bool=true)
     CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
-    psi = carParameter{carVar}(0.0, "heading", "rad", :static, [-4π, 4π])
-    n = carParameter{carVar}(0.0, "Distance from centerline", "m", :static, [-5.0, 5.0])
+    psi = carParameter{carVar}(0.0, "heading", "rad",:static,[-4pi,4pi])
+    n = carParameter{carVar}(0.0, "Distance from centerline", "m",:static,[-widthR+0.6,widthL-0.6])
     nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
     inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
     nStates = carParameter{carVar}(6.0, "number of car states", "-")
-    s = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
+    s = carParameter{carVar}(1.0, "longitudinal position on track", "-",:static,[0.0,200.0])
 
     gearboxFL = createCTU25gearbox()
     gearboxFR = createCTU25gearbox()
@@ -59,7 +68,7 @@ function createTwintrack(pacejka::Bool=true)
 
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
 
-    state_desc = VarEntry[
+    state_descriptor = VarEntry[
         VarEntry("vx",    [velocity => 1]),
         VarEntry("vy",    [velocity => 2],                          -5.0,    5.0),
         VarEntry("psi",   [psi => 0]),
@@ -68,27 +77,23 @@ function createTwintrack(pacejka::Bool=true)
         VarEntry("t",     [s => 0]),
     ]
 
-    control_desc = VarEntry[
+    control_descriptor = VarEntry[
         VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0]),
         VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
         VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
     ]
 
+
+
     function controlMapping(controls::AbstractVector)
-        apply_mapping!(control_desc, controls)
+        apply_mapping!(control_descriptor, controls)
     end
 
     function stateMapping(states::AbstractVector)
-        velocity.value[3] = 0.0
-        angularVelocity.value[1] = 0.0
-        angularVelocity.value[2] = 0.0
-        apply_mapping!(state_desc, states)
+        apply_mapping!(state_descriptor, states)
     end
 
     function anyTrack(track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
-
-        #velocity = car.carParameters.velocity.value
-        #angularVelocity = car.carParameters.angularVelocity.value
         # Transformation of velocities from cog to wheels and steering
         for wa in wheelAssemblies
             wa.setVelocity(angularVelocity.value, velocity.value)
@@ -168,7 +173,9 @@ function createTwintrack(pacejka::Bool=true)
         brakeBias,
         nControls,
         nStates,
-        s
+        s,
+        state_descriptor,
+        control_descriptor
     )
 
     afto = Car(
@@ -345,7 +352,9 @@ function formulaE2026()
         brakeBias,
         nControls,
         nStates,
-        s
+        s,
+        state_descriptor,
+        control_descriptor
     )
 
     afto = Car(

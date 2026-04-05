@@ -51,57 +51,37 @@ GLMakie.closeall()
 problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
-
 #car = createSimplestSingleTrack()
-car = createTwintrack(true)
+
 #car = createBus()
-problem.car = car
-path = "tracks/FSCZ.kml"
+
 #track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
+
+path = "tracks/FSCZ.kml"
 track = kml2track(path, false, true)
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
+car = createTwintrack(true,track)
+problem.car = car
 
+plotTrackStates(track)
 #UnoSolver.Optimizer
 
-model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
-
-
-
-JuMP.set_optimizer_attribute(model, "max_iter", 3000)
-JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
-for (k,v) in [
-    ("alpha_for_y", "safer-min-dual-infeas"),
-    ("recalc_y", "yes"),
-    ("recalc_y_feas_tol", 1e-4),
-    ("adaptive_mu_globalization", "kkt-error"),
-    ("quality_function_balancing_term", "cubic"),
-    ("mu_min", 1e-8),
-    ("nlp_scaling_constr_target_gradient", 1.0),
-    ("nlp_scaling_obj_target_gradient", 1.0),
-    ("nlp_scaling_min_value", 1e-6),
-    ("jacobian_regularization_value", 1e-6),
-    ("bound_relax_factor", 0.0),
-    ("mumps_pivtol", 1e-4),
-    ("min_refinement_steps", 2),
-    ("max_refinement_steps", 20),
-    #("acceptable_tol", 1e-5),
-    #("acceptable_iter", 5),
-    ("acceptable_dual_inf_tol", 1e-1)
-]
-    JuMP.set_optimizer_attribute(model, k, v)
-end
+model = make_ipopt_model()
 
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = Int64(round(track.sampleDistances[end]/2))
+segments = Int64(round(track.sampleDistances[end]/1))
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
-optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Lobatto")
+t_solve = @elapsed begin
+    optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Lobatto")
+end
+println("Solve time: $(round(t_solve, digits=2)) s")
 problem.optiResult = optiResult_interp
 
 if 1 == 1

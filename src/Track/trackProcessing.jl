@@ -127,6 +127,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
         @constraint(model, z_th[end] == th_init[end])
         @constraint(model, z_x[end] == x_smpl[end])
         @constraint(model, z_y[end] == y_smpl[end])
+        @constraint(model, z_C[end] == C_init[end])
     end
 
     # Solve NLP
@@ -169,26 +170,30 @@ end
 
 function plotTrackStates(track::Track)
     s = track.sampleDistances
-    vals = track.fcurve.(s)              # vector of 4‑tuples: (x,y,theta,curvature)
+    vals = track.fcurve.(s)
+    C  = getindex.(vals, 1)
+    th = getindex.(vals, 2)
     x  = getindex.(vals, 3)
     y  = getindex.(vals, 4)
-    th = getindex.(vals, 2)
-    C  = getindex.(vals, 1)
 
-    fig = Figure(size = (800, 900))
-    ax1 = Axis(fig[1, 1], xlabel = "s", ylabel = "x", title = "x(s)")
-    ax2 = Axis(fig[2, 1], xlabel = "s", ylabel = "y", title = "y(s)")
-    ax3 = Axis(fig[3, 1], xlabel = "s", ylabel = "theta", title = "theta(s)")
+    ds = diff(collect(s))
+    u  = diff(C) ./ ds   # control: dC/ds
+
+    fig = Figure(size = (800, 1100))
+    ax1 = Axis(fig[1, 1], xlabel = "s", ylabel = "x",         title = "x(s)")
+    ax2 = Axis(fig[2, 1], xlabel = "s", ylabel = "y",         title = "y(s)")
+    ax3 = Axis(fig[3, 1], xlabel = "s", ylabel = "theta",     title = "theta(s)")
     ax4 = Axis(fig[4, 1], xlabel = "s", ylabel = "curvature", title = "curvature(s)")
+    ax5 = Axis(fig[5, 1], xlabel = "s", ylabel = "dC/ds",     title = "control u(s)")
 
     lines!(ax1, s, x)
     lines!(ax2, s, y)
     lines!(ax3, s, th)
     lines!(ax4, s, C)
+    lines!(ax5, collect(s)[1:end-1], u)
 
-    # show figure
     display(GLMakie.Screen(), fig)
-    return fig, (ax1, ax2, ax3, ax4)
+    return fig, (ax1, ax2, ax3, ax4, ax5)
 end
 
 function kml2cart(path::String)

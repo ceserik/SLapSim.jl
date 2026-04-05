@@ -15,8 +15,8 @@ end
 Base.show(io::IO, ::MIME"text/plain", obj::WheelAssembly) = prettyPrintComponent(io, obj)
 
 function createBasicWheelAssembly(position::Vector{carVar})
-    steeringAngle = carParameter{carVar}(0.0, "steering angle", "rad",:control,[-25 / 180 * pi, 25 / 180 * pi])
     maxAngle = carParameter{carVar}(25 / 180 * pi, " max steering angle", "rad")
+    steeringAngle = carParameter{carVar}(0.0, "steering angle", "rad", :control, [-maxAngle.value, maxAngle.value])
     forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Pivot forces", "N N N")
     torque = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Generated torque on CoG", "N N N")
     velocityPivot = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Velocity at pivot", "m/s")
@@ -40,8 +40,10 @@ function createBasicWheelAssembly(position::Vector{carVar})
         return out
     end
     function constraints(model=nothing)
-        lessContraint(steeringAngle.value / maxAngle.value, 1.0, model)
-        greaterContraint(steeringAngle.value / maxAngle.value, -1.0, model)
+        if !isnothing(model)
+        #    set_lower_bound(steeringAngle.value, -maxAngle.value)
+        #    set_upper_bound(steeringAngle.value,  maxAngle.value)
+        end
     end
 
     function pivot2CoG(forces::Vector{carVar})
@@ -100,8 +102,8 @@ function createBasicWheelAssembly(position::Vector{carVar})
 end
 
 function createBusWheelAssembly(position::Vector{carVar})
-    steeringAngle = carParameter{carVar}(0.0, "steering angle", "rad")
     maxAngle = carParameter{carVar}(45 / 180 * pi, " max steering angle", "rad")
+    steeringAngle = carParameter{carVar}(0.0, "steering angle", "rad",:static,[-maxAngle.value,maxAngle.value])
     forces = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Pivot forces", "N N N")
     torque = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Generated torque on CoG", "N N N")
     velocityPivot = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Velocity at pivot", "m/s")
@@ -125,8 +127,10 @@ function createBusWheelAssembly(position::Vector{carVar})
         return out
     end
     function constraints(model=nothing)
-        lessContraint(steeringAngle.value / maxAngle.value, 1.0, model)
-        greaterContraint(steeringAngle.value / maxAngle.value, -1.0, model)
+        if !isnothing(model)
+        #    set_lower_bound(steeringAngle.value, -maxAngle.value)
+        #    set_upper_bound(steeringAngle.value,  maxAngle.value)
+        end
     end
 
     function pivot2CoG(forces::Vector{carVar})

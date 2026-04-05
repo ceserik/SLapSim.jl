@@ -6,6 +6,15 @@ mutable struct carParameter{T}
     role::Symbol  # :control, :state, :static parameter, :tunable parameter
     limits::Vector{Float64}
 end
+
+
+struct VarEntry
+    name::String
+    targets::Vector{Pair}  # carParameter => vector_index (0 = scalar)
+    lb::Float64
+    ub::Float64
+end
+
 function carParameter{T}(value::T, name::String, unit::String, role::Symbol=:static,limits::Vector{Float64} = [9999.0,-9999.0]) where T
     if isa(value, AbstractArray)
         size_tuple = (length(value), 1)  # For vectors, treat as (n,1)
@@ -59,6 +68,8 @@ mutable struct CarParameters
     nControls::carParameter{carVar}
     nStates::carParameter{carVar}
     s::carParameter{carVar}
+    state_descriptor::Vector{VarEntry}
+    control_descriptor::Vector{VarEntry}
 end
 
 # Pretty printing for CarParameters
@@ -72,12 +83,6 @@ end
 
 # --- Variable descriptors for optimizer mapping ---
 
-struct VarEntry
-    name::String
-    targets::Vector{Pair}  # carParameter => vector_index (0 = scalar)
-    lb::Float64
-    ub::Float64
-end
 
 # Auto-read limits from the first target's carParameter
 function VarEntry(name::String, targets::Vector{<:Pair})

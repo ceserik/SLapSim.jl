@@ -5,6 +5,32 @@ using OrdinaryDiffEq
 using DifferentiationInterface
 using Interpolations
 
+function make_ipopt_model()
+    model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
+    JuMP.set_optimizer_attribute(model, "max_iter", 3000)
+    JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
+    for (k, v) in [
+        ("alpha_for_y",                      "safer-min-dual-infeas"),
+        ("recalc_y",                         "yes"),
+        ("recalc_y_feas_tol",                1e-4),
+        ("adaptive_mu_globalization",        "kkt-error"),
+        ("quality_function_balancing_term",  "cubic"),
+        ("mu_min",                           1e-8),
+        ("nlp_scaling_constr_target_gradient", 1.0),
+        ("nlp_scaling_obj_target_gradient",  1.0),
+        ("nlp_scaling_min_value",            1e-6),
+        ("jacobian_regularization_value",    1e-6),
+        ("bound_relax_factor",               0.0),
+        ("mumps_pivtol",                     1e-4),
+        ("min_refinement_steps",             2),
+        ("max_refinement_steps",             20),
+        ("acceptable_dual_inf_tol",          1e-1),
+    ]
+        JuMP.set_optimizer_attribute(model, k, v)
+    end
+    return model
+end
+
 function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symbol=:ode)
     error_itp = getErrors(problem; method=error_method)
     segment_errors = zeros(length(segment_edges) - 1)
@@ -246,11 +272,14 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
     while clear == 0 && iterations <= 50
         clear = 1
         iterations += 1
-        # Characteristic scales from car descriptors
-        x_scale = get_scales(car.state_desc)
-        u_scale = get_scales(car.control_desc)
+        # Characteristic scales so optimizer variables are O(1)
+        #@infiltrate
+        x_scale = get_scales(car.carParameters.state_descriptor)
+        u_scale = get_scales(car.carParameters.control_descriptor)
+        x_lb, x_ub = get_bounds(car.carParameters.state_descriptor)
+        u_lb, u_ub = get_bounds(car.carParameters.control_descriptor)
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
-            x_scale=x_scale, u_scale=u_scale)
+            x_scale=x_scale, u_scale=u_scale, x_lb=x_lb, x_ub=x_ub, u_lb=u_lb, u_ub=u_ub)
         println("creating constraints")
 
         #Add parameters
@@ -269,8 +298,8 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         @constraint(model, X[1, 6] .== 0)      # t
         @constraint(model, X[1, 2] .== 0) # intial vy
 
-        @constraint(model, diff(X[:, 6]) .>= 0.001) #time goes forward
-        control_reg = 1e-4 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
+        @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
+        control_reg = 0#1e-4 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
         @objective(model, Min, X[end, 6] + control_reg)
 
         #@constraint(model,-50 .<= diff(U[1:end,1])./diff(X[:,6]) .<= 50) #constraint on controls derivative
@@ -293,36 +322,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         (segment_edges, clear, segment_errors) = refineMesh(problem, segment_edges, s_all, pol_order)
 
         if clear == 0
-            model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
-            JuMP.set_optimizer_attribute(model, "max_iter", 3000)
-            JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
-            #JuMP.set_optimizer_attribute(model, "mu_strategy", "adaptive")
-            #JuMP.set_optimizer_attribute(model, "acceptable_tol", 1e-4)
-            #JuMP.set_optimizer_attribute(model, "acceptable_iter", 5)
-            #JuMP.set_optimizer_attribute(model, "bound_relax_factor", 1e-6)
-            #JuMP.set_optimizer_attribute(model, "constr_viol_tol", 1e-6)
-            for (k, v) in [
-                ("alpha_for_y", "safer-min-dual-infeas"),
-                ("recalc_y", "yes"),
-                ("recalc_y_feas_tol", 1e-4),
-                ("adaptive_mu_globalization", "kkt-error"),
-                ("quality_function_balancing_term", "cubic"),
-                ("mu_min", 1e-8),
-                ("nlp_scaling_constr_target_gradient", 1.0),
-                ("nlp_scaling_obj_target_gradient", 1.0),
-                ("nlp_scaling_min_value", 1e-6),
-                ("jacobian_regularization_value", 1e-6),
-                ("bound_relax_factor", 0.0),
-                ("mumps_pivtol", 1e-4),
-                ("min_refinement_steps", 2),
-                ("max_refinement_steps", 20),
-                #("acceptable_tol", 1e-5),
-                #("acceptable_iter", 5),
-                ("acceptable_dual_inf_tol", 1e-1)
-            ]
-                JuMP.set_optimizer_attribute(model, k, v)
-            end
-
+            model = make_ipopt_model()
         end
 
         println("Sum of all errors: ", sum(segment_errors))

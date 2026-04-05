@@ -1,5 +1,7 @@
 function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
-                                    x_scale=ones(nStates), u_scale=ones(nControls))
+                                    x_scale=ones(nStates), u_scale=ones(nControls),
+                                    x_lb=-x_scale, x_ub=x_scale,
+                                    u_lb=-u_scale, u_ub=u_scale)
     tableau = TableauLobattoIIIA(stages)
     τ_ref  = tableau.c
     w_bary = barycentric_weights(τ_ref)
@@ -10,13 +12,25 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
 
         X_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
         U_raw = Matrix{VariableRef}(undef, totalPoints, nControls)
+        x_lb_raw = x_lb ./ x_scale
+        x_ub_raw = x_ub ./ x_scale
+        u_lb_raw = u_lb ./ u_scale
+        u_ub_raw = u_ub ./ u_scale
+        println("State bounds & scales:")
+        for j in 1:nStates
+            println("  x[$j]: lb=$(round(x_lb[j],digits=3))  ub=$(round(x_ub[j],digits=3))  scale=$(round(x_scale[j],digits=3))")
+        end
+        println("Control bounds & scales:")
+        for j in 1:nControls
+            println("  u[$j]: lb=$(round(u_lb[j],digits=3))  ub=$(round(u_ub[j],digits=3))  scale=$(round(u_scale[j],digits=3))")
+        end
 
         for i = 1:totalPoints
             for j = 1:nStates
-                X_raw[i, j] = @variable(model)
+                X_raw[i, j] = @variable(model, lower_bound=x_lb_raw[j], upper_bound=x_ub_raw[j])
             end
             for j = 1:nControls
-                U_raw[i, j] = @variable(model)
+                U_raw[i, j] = @variable(model, lower_bound=u_lb_raw[j], upper_bound=u_ub_raw[j])
             end
         end
 
