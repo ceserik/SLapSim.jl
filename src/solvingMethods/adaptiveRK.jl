@@ -11,12 +11,22 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         X_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
         U_raw = Matrix{VariableRef}(undef, totalPoints, nControls)
 
+        # Physical bounds divided by scale → raw variable bounds ∈ O(1)
+        # States: [vx, vy, ψ, ω, n, t]
+        x_lb_phys = [3.0, -5.0, -4*π, -5.0, -2.5,   0.0]
+        x_ub_phys = [40.0, 5.0,  4*π,  5.0,  2.5, 200]
+        x_lb_raw = x_lb_phys ./ x_scale
+        x_ub_raw = x_ub_phys ./ x_scale
+        # Controls: symmetric ±1 in raw space (scale = physical limit)
+        u_lb_raw = -ones(nControls)
+        u_ub_raw =  ones(nControls)
+
         for i = 1:totalPoints
             for j = 1:nStates
-                X_raw[i, j] = @variable(model)
+                X_raw[i, j] = @variable(model, lower_bound=x_lb_raw[j], upper_bound=x_ub_raw[j])
             end
             for j = 1:nControls
-                U_raw[i, j] = @variable(model)
+                U_raw[i, j] = @variable(model, lower_bound=u_lb_raw[j], upper_bound=u_ub_raw[j])
             end
         end
 

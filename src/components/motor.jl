@@ -19,8 +19,8 @@ function createFischerMotor(maxTorqueVal::Float64=29.0)
 
     function constraints(u,model=nothing)
         maxTorque = torqueSpeedFunction(0.0)
-        u = lessContraint(u/maxTorque, 1.0, model) * maxTorque
-        u = greaterContraint(u/maxTorque, -1.0, model) * maxTorque
+#        u = lessContraint(u/maxTorque, 1.0, model) * maxTorque
+#        u = greaterContraint(u/maxTorque, -1.0, model) * maxTorque
         return u
     end
 

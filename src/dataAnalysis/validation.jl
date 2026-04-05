@@ -68,7 +68,8 @@ function timeSimulation_interpolated(car::Car, result, track)
     end
 
     prob = ODEProblem(carODE_globalFrame, x0, tspan, p)
-    sol = OrdinaryDiffEq.solve(prob,  Rodas4(autodiff = AutoFiniteDiff()), tstops = t_unique, saveat = t_unique, callback = cb)
+    sol = OrdinaryDiffEq.solve(prob, AutoTsit5(Rodas4(autodiff = AutoFiniteDiff())), tstops=t_unique, saveat=t_unique, callback=cb, reltol=1e-3, abstol=1e-3)
+
     return sol
 end
 

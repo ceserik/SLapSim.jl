@@ -40,8 +40,10 @@ function createBasicWheelAssembly(position::Vector{carVar})
         return out
     end
     function constraints(model=nothing)
-        lessContraint(steeringAngle.value / maxAngle.value, 1.0, model)
-        greaterContraint(steeringAngle.value / maxAngle.value, -1.0, model)
+        if !isnothing(model)
+        #    set_lower_bound(steeringAngle.value, -maxAngle.value)
+        #    set_upper_bound(steeringAngle.value,  maxAngle.value)
+        end
     end
 
     function pivot2CoG(forces::Vector{carVar})
@@ -125,8 +127,10 @@ function createBusWheelAssembly(position::Vector{carVar})
         return out
     end
     function constraints(model=nothing)
-        lessContraint(steeringAngle.value / maxAngle.value, 1.0, model)
-        greaterContraint(steeringAngle.value / maxAngle.value, -1.0, model)
+        if !isnothing(model)
+            set_lower_bound(steeringAngle.value, -maxAngle.value)
+            set_upper_bound(steeringAngle.value,  maxAngle.value)
+        end
     end
 
     function pivot2CoG(forces::Vector{carVar})
