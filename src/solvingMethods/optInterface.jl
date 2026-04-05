@@ -272,10 +272,13 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         clear = 1
         iterations += 1
         # Characteristic scales so optimizer variables are O(1)
-        x_scale = [40.0, 5.0, 10.0, 10.0, 4, 200.0]  # [vx, vy, ψ, ω, n, t]
-        u_scale = [30.0, 0.42,30.0]                    # [torque, steering, torque]
+        #@infiltrate
+        x_scale = get_scales(car.carParameters.state_descriptor)
+        u_scale = get_scales(car.carParameters.control_descriptor)
+        x_lb, x_ub = get_bounds(car.carParameters.state_descriptor)
+        u_lb, u_ub = get_bounds(car.carParameters.control_descriptor)
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
-            x_scale=x_scale, u_scale=u_scale)
+            x_scale=x_scale, u_scale=u_scale, x_lb=x_lb, x_ub=x_ub, u_lb=u_lb, u_ub=u_ub)
         println("creating constraints")
 
         #Add parameters

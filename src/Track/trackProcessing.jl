@@ -127,6 +127,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
         @constraint(model, z_th[end] == th_init[end])
         @constraint(model, z_x[end] == x_smpl[end])
         @constraint(model, z_y[end] == y_smpl[end])
+        @constraint(model, z_C[end] == C_init[end])
     end
 
     # Solve NLP
@@ -236,8 +237,8 @@ function kml2track(path::String,closeTrack::Bool,flip    )
         A[:,1],
         A[:,2],
         [0.0],
-        [3],
-        [3],
+        [1.5],
+        [1.5],
         [0.0],
         [0.0],
         (s) -> 0.0,

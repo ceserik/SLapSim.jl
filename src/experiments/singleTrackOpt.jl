@@ -52,18 +52,21 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 
 #car = createSimplestSingleTrack()
-car = createTwintrack(true)
+
 #car = createBus()
-problem.car = car
+
 #track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
-track = doubleTurn(true,0.1)
+#track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path, false, true)
+track = kml2track(path, false, true)
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
+car = createTwintrack(true,track)
+problem.car = car
+
 plotTrackStates(track)
 #UnoSolver.Optimizer
 
@@ -72,7 +75,7 @@ model = make_ipopt_model()
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = Int64(round(track.sampleDistances[end]/2))
+segments = Int64(round(track.sampleDistances[end]/1))
 pol_order = 2
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 t_solve = @elapsed begin
