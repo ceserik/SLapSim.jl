@@ -112,4 +112,21 @@ if 1 == 1
     animateCarDual(track, optiResult_interp, car; speedup=1,
         view_radius=car.chassis.wheelbase.value * 3, cam_offset=3.0,
         savepath="results/animation_formulaE.mp4")
+
+    include("../dataAnalysis/jacobian.jl")
+    include("../dataAnalysis/hessian_test2.jl")
+    println("jacobian")
+    println(UnicodePlots.spy(jacobian))
+    println("hessian")
+    println(UnicodePlots.spy(H_star))
+    fig_jac = Figure()
+    ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
+    spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
+    display(GLMakie.Screen(), fig_jac)
+
+
+
 end
+
+
+

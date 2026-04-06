@@ -233,7 +233,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     motorForce       = carParameter{carVar}(7100.0, "motorForce", "N")
     lateralForce     = carParameter{carVar}(0.0, "lateral Force", "N")
     lateralTransfer  = carParameter{carVar}(0.0, "lateral load transfer", "N")
-    brakeBias        = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
+    brakeBias        = carParameter{carVar}(0.7, "brake bias front", "-", :tunable)
     CL               = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit       = carParameter{carVar}(270000.0, "PowerLimit", "W")
@@ -357,9 +357,14 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
 
         #tire forces
         torqueOut = drivetrain.gearboxes[1].torqueOut.value
-        for i in eachindex(drivetrain.tires)
-            drivetrain.tires[i].compute(torqueOut, optiModel)
-        end
+        #for i in eachindex(drivetrain.tires)
+
+
+        drivetrain.tires[1].compute(0.0, optiModel)
+        drivetrain.tires[2].compute(0.0, optiModel)
+        drivetrain.tires[3].compute(torqueOut/2, optiModel)
+        drivetrain.tires[4].compute(torqueOut/2, optiModel)
+        #end
 
         for tire in drivetrain.tires
             tire.tireConstraints(optiModel)

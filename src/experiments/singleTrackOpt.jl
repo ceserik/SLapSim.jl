@@ -5,6 +5,7 @@ import MathOptInterface as MOI
 using UnoSolver
 using UnicodePlots
 using DiffOpt
+
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = Sys.islinux()
 if detect
@@ -107,16 +108,16 @@ if 1 == 1
 #    SLapSim.plotCarStates_interp(optiResult_interp, 0.1)
     #SLapSim.plotCarStates2(optiResult)
 
-    #include("../dataAnalysis/jacobian.jl")
-    #include("../dataAnalysis/hessian_test2.jl")
-    #println("jacobian")
-    #println(UnicodePlots.spy(jacobian))
-    #println("hessian")
-    #println(UnicodePlots.spy(H_star))
-    #fig_jac = Figure()
-    #ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
-    #spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
-    #display(GLMakie.Screen(), fig_jac)
+    include("../dataAnalysis/jacobian.jl")
+    include("../dataAnalysis/hessian_test2.jl")
+    println("jacobian")
+    println(UnicodePlots.spy(jacobian))
+    println("hessian")
+    println(UnicodePlots.spy(H_star))
+    fig_jac = Figure()
+    ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
+    spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
+    display(GLMakie.Screen(), fig_jac)
 
     #error_itp = getErrors(problem)
     plot_controls_on_path(problem, optiResult_interp)
