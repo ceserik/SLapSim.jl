@@ -1,44 +1,26 @@
 function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
                                     x_scale=ones(nStates), u_scale=ones(nControls),
-                                    x_lb=-x_scale, x_ub=x_scale,
-                                    u_lb=-u_scale, u_ub=u_scale)
+                                    x_lb=s -> -x_scale, x_ub=s -> x_scale,
+                                    u_lb=s -> -u_scale, u_ub=s -> u_scale)
     tableau = TableauLobattoIIIA(stages)
     τ_ref  = tableau.c
     w_bary = barycentric_weights(τ_ref)
+
+    # Bound arguments are callables s -> Vector{Float64} so the caller can
+    # impose s-dependent (per-node) bounds. For static bounds, the caller passes
+    # a constant closure; nothing in the builder needs to know whether the
+    # bounds vary along the path.
+    function _eval_bound(b, s, n)
+        v = b(s)
+        length(v) == n || error("bound function returned vector of length $(length(v)), expected $(n) at s=$(s)")
+        return v
+    end
 
     function createDynamicConstraints(segment_edges, initialization)
         number_of_segments = length(segment_edges) - 1
         totalPoints = number_of_segments * (stages - 1) + 1
 
-        X_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
-        U_raw = Matrix{VariableRef}(undef, totalPoints, nControls)
-        x_lb_raw = x_lb ./ x_scale
-        x_ub_raw = x_ub ./ x_scale
-        u_lb_raw = u_lb ./ u_scale
-        u_ub_raw = u_ub ./ u_scale
-        println("State bounds & scales:")
-        for j in eachindex(x_lb)
-            println("  x[$j]: lb=$(round(x_lb[j],digits=3))  ub=$(round(x_ub[j],digits=3))  scale=$(round(x_scale[j],digits=3))")
-        end
-        println("Control bounds & scales:")
-        for j in eachindex(u_lb)
-            println("  u[$j]: lb=$(round(u_lb[j],digits=3))  ub=$(round(u_ub[j],digits=3))  scale=$(round(u_scale[j],digits=3))")
-        end
-
-        for i = 1:totalPoints
-            for j = 1:nStates
-                X_raw[i, j] = @variable(model, lower_bound=x_lb_raw[j], upper_bound=x_ub_raw[j])
-            end
-            for j = 1:nControls
-                U_raw[i, j] = @variable(model, lower_bound=u_lb_raw[j], upper_bound=u_ub_raw[j])
-            end
-        end
-
-        #scaling
-        X = X_raw .* x_scale'
-        U = U_raw .* u_scale'
-
-        # Build full list s_all: each node followed by its collocation points (except last node)
+        # Build s_all FIRST so per-node bounds can be evaluated during variable creation.
         s_all = zeros(totalPoints)
         h_all = diff(segment_edges)
         idx = 1
@@ -53,8 +35,45 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
                 idx += 1
             end
         end
-
         s_all[end] = segment_edges[end]
+
+        X_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
+        U_raw = Matrix{VariableRef}(undef, totalPoints, nControls)
+
+        # Print bounds & scales summary using the value at s=0 (representative).
+        let s0 = s_all[1]
+            x_lb0 = _eval_bound(x_lb, s0, nStates)
+            x_ub0 = _eval_bound(x_ub, s0, nStates)
+            u_lb0 = _eval_bound(u_lb, s0, nControls)
+            u_ub0 = _eval_bound(u_ub, s0, nControls)
+            println("State bounds & scales (at s=$(round(s0,digits=3))):")
+            for j in eachindex(x_lb0)
+                println("  x[$j]: lb=$(round(x_lb0[j],digits=3))  ub=$(round(x_ub0[j],digits=3))  scale=$(round(x_scale[j],digits=3))")
+            end
+            println("Control bounds & scales (at s=$(round(s0,digits=3))):")
+            for j in eachindex(u_lb0)
+                println("  u[$j]: lb=$(round(u_lb0[j],digits=3))  ub=$(round(u_ub0[j],digits=3))  scale=$(round(u_scale[j],digits=3))")
+            end
+        end
+
+        for i = 1:totalPoints
+            si = s_all[i]
+            x_lb_i = _eval_bound(x_lb, si, nStates) ./ x_scale
+            x_ub_i = _eval_bound(x_ub, si, nStates) ./ x_scale
+            u_lb_i = _eval_bound(u_lb, si, nControls) ./ u_scale
+            u_ub_i = _eval_bound(u_ub, si, nControls) ./ u_scale
+            for j = 1:nStates
+                X_raw[i, j] = @variable(model, lower_bound=x_lb_i[j], upper_bound=x_ub_i[j])
+            end
+            for j = 1:nControls
+                U_raw[i, j] = @variable(model, lower_bound=u_lb_i[j], upper_bound=u_ub_i[j])
+            end
+        end
+
+        #scaling
+        X = X_raw .* x_scale'
+        U = U_raw .* u_scale'
+
         #create constraints using butcher tableau of lobattoIIIA
         segment_start_idx = 1
         f(X[segment_start_idx, :], U[segment_start_idx, :], s_all[segment_start_idx], model)

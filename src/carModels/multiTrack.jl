@@ -1,11 +1,14 @@
 function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothing)
 
     if isnothing(track)
-    widthR = 1.5
-    widthL = 1.5
+        widthR = 1.5
+        widthL = 1.5
     else
-        widthL = track.widthL[1]
-        widthR = track.widthR[1]
+        # Use full-track envelope so the static n limits are the loosest
+        # legal bounds anywhere on the track. Adaptive solver will tighten
+        # them per node from Track_interpolated. Margin kept at 0.6.
+        widthL = maximum(track.widthL)
+        widthR = maximum(track.widthR)
     end
 
     velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 60.0])
@@ -223,8 +226,10 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         widthR = 1.5
         widthL = 1.5
     else
-        widthL = track.widthL[1]
-        widthR = track.widthR[1]
+        # Envelope bounds: loosest legal n anywhere on the track. Per-node
+        # tightening happens later in the adaptive solver from Track_interpolated.
+        widthL = maximum(track.widthL)
+        widthR = maximum(track.widthR)
     end
 
     velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 60.0])

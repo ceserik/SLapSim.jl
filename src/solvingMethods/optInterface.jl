@@ -44,7 +44,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-1
+    error_threshold = 1e-0
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
@@ -267,6 +267,13 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
 
     initialization = initializeSolution_interpolation(car, track, Int64(round(track.sampleDistances[end] * 2)))
     segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
+
+    # Build a Track_interpolated once. We use it to drive s-dependent lateral
+    # bounds (n) inside the adaptive RK solver. The lateral state index is
+    # detected by name "n"; if absent, no per-node tightening is applied.
+    track_interp = interpolate_track(track)
+    n_state_index = findfirst(e -> e.name == "n", car.carParameters.state_descriptor)
+
     clear = 0
     iterations = 0
     while clear == 0 && iterations <= 50
@@ -276,10 +283,33 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         #@infiltrate
         x_scale = get_scales(car.carParameters.state_descriptor)
         u_scale = get_scales(car.carParameters.control_descriptor)
-        x_lb, x_ub = get_bounds(car.carParameters.state_descriptor)
-        u_lb, u_ub = get_bounds(car.carParameters.control_descriptor)
+        x_lb_static, x_ub_static = get_bounds(car.carParameters.state_descriptor)
+        u_lb_static, u_ub_static = get_bounds(car.carParameters.control_descriptor)
+
+        # Wrap bounds as functions of s. All entries return the static value;
+        # the lateral state ("n", if present) gets per-node envelope-tightened
+        # bounds from Track_interpolated. Margin kept at 0.6.
+        margin = 0.6
+        function x_lb_fun(s)
+            v = copy(x_lb_static)
+            if n_state_index !== nothing
+                v[n_state_index] = -track_interp.widthR(s) + margin
+            end
+            return v
+        end
+        function x_ub_fun(s)
+            v = copy(x_ub_static)
+            if n_state_index !== nothing
+                v[n_state_index] = track_interp.widthL(s) - margin
+            end
+            return v
+        end
+        u_lb_fun(s) = u_lb_static
+        u_ub_fun(s) = u_ub_static
+
         RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
-            x_scale=x_scale, u_scale=u_scale, x_lb=x_lb, x_ub=x_ub, u_lb=u_lb, u_ub=u_ub)
+            x_scale=x_scale, u_scale=u_scale,
+            x_lb=x_lb_fun, x_ub=x_ub_fun, u_lb=u_lb_fun, u_ub=u_ub_fun)
         println("creating constraints")
 
         #Add parameters

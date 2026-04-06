@@ -472,3 +472,55 @@ function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::V
     )
 end
 
+# Build a Track_interpolated from an existing Track.
+# Reuses track.sampleDistances as s_nodes and constructs scalar callables for each
+# field by linear interpolation over those nodes. Constant or unset fields fall
+# back to a constant function so callers can always evaluate them at any s.
+function interpolate_track(track::Track)
+    s_nodes = collect(Float64.(track.sampleDistances))
+    N = length(s_nodes)
+    N >= 2 || error("interpolate_track: need at least two sample distances, got $(N)")
+
+    # Helper that returns a callable f(s) for a per-node vector. If the vector
+    # length doesn't match N (e.g. it was never resampled and still holds a
+    # single element), the callable returns the first value as a constant.
+    function _callable(vec::AbstractVector{<:Real}, default::Float64)
+        if length(vec) == N
+            v = collect(Float64.(vec))
+            return s -> interp1(s_nodes, v, s)
+        elseif length(vec) >= 1
+            c = Float64(vec[1])
+            return s -> c
+        else
+            return s -> default
+        end
+    end
+
+    x_fun        = _callable(track.x,           0.0)
+    y_fun        = _callable(track.y,           0.0)
+    heading_fun  = _callable(track.theta,       0.0)
+    curv_fun     = _callable(track.curvature,   0.0)
+    widthL_fun   = _callable(track.widthL,      0.0)
+    widthR_fun   = _callable(track.widthR,      0.0)
+    rho_fun      = _callable(track.rho,         RHO_SEA_LEVEL)
+    mu_fun       = _callable(track.μ,           1.0)
+    incl_fun     = _callable(track.inclination, 0.0)
+
+    # Compatibility fcurve(s) -> (curvature, theta, x, y) matching make_fcurve order.
+    fcurve_compat = s -> (curv_fun(s), heading_fun(s), x_fun(s), y_fun(s))
+
+    return Track_interpolated(
+        s_nodes,
+        x_fun,
+        y_fun,
+        heading_fun,
+        curv_fun,
+        widthL_fun,
+        widthR_fun,
+        rho_fun,
+        mu_fun,
+        incl_fun,
+        fcurve_compat,
+    )
+end
+
