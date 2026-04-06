@@ -4,12 +4,22 @@ using JuMP
 using OrdinaryDiffEq
 using DifferentiationInterface
 using Interpolations
+using HSL_jll
 
 function make_ipopt_model()
     model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
-    JuMP.set_optimizer_attribute(model, "max_iter", 3000)
+    #set_attribute(model, "hsllib", HSL_jll.libhsl_path)
+    #set_attribute(model, "linear_solver", "ma57")
+    #model = Model(Ipopt.Optimizer)
+    #set_attribute(model, "pardisolib", "/home/riso/Downloads/panua-pardiso-20240229-linux/lib/libpardiso.so")
+    #set_attribute(model, "linear_solver", "pardiso")
+
+
+    #JuMP.set_optimizer_attribute(model, "max_iter", 3000)
     JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
+    #JuMP.set_optimizer_attribute(model, "print_timing_statistics", "yes")
     for (k, v) in [
+        ("ma57_pre_alloc",     100.0),     
         ("alpha_for_y",                      "safer-min-dual-infeas"),
         ("recalc_y",                         "yes"),
         ("recalc_y_feas_tol",                1e-4),
@@ -285,7 +295,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         # Wrap bounds as functions of s. All entries return the static value;
         # the lateral state ("n", if present) gets per-node envelope-tightened
         # bounds from Track_interpolated. Margin kept at 0.6.
-        margin = 0.6
+        margin = car.chassis.track.value/2
         function x_lb_fun(s)
             v = copy(x_lb_static)
             if n_state_index !== nothing
@@ -309,8 +319,8 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         println("creating constraints")
 
         #Add parameters
-        (params, tunables) = setParameters(car, model)
-        problem.params = params
+        #(params, tunables) = setParameters(car, model)
+        #problem.params = params
         xd = RKadaptive.createConstraints(segment_edges, initialization)
         X = xd[2]
         U = xd[3]
@@ -340,11 +350,11 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         x = value.(X)
         u = value.(U)
         problem.model = model
-        problem.params = params
+#        problem.params = params
         problem.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
         #initialization = make_result_interpolation(x, u, s_all)
         println("resetting parameters")
-        resetParameters(tunables)
+        #resetParameters(tunables)
         (segment_edges, clear, segment_errors) = refineMesh(problem, segment_edges, s_all, pol_order)
 
         if clear == 0

@@ -1,6 +1,7 @@
 using Interpolations
+using Printf
 
-_fmt_time(t::Float64) = "t = " * lpad(string(round(t; digits=3)), 7, ' ') * " s"
+_fmt_time(t::Float64) = @sprintf("t = %9.3f s", t)
 
 function _unique_path(path::String)
     isfile(path) || return path

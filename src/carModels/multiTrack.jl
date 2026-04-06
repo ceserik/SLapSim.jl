@@ -252,10 +252,10 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     gearbox = createCTU25gearbox(1.0)
     motor   = createFischerMotor(7100*0.33,0.0)#tire radius to get moment
 
-    tireFL = createR20_pacejka(motor, gearbox)
-    tireFR = createR20_pacejka(motor, gearbox)
-    tireRL = createR20_pacejka(motor, gearbox)
-    tireRR = createR20_pacejka(motor, gearbox)
+    tireFL = create_FormulaE_pacejka(motor, gearbox)
+    tireFR = create_FormulaE_pacejka(motor, gearbox)
+    tireRL = create_FormulaE_pacejka(motor, gearbox)
+    tireRR = create_FormulaE_pacejka(motor, gearbox)
 
     
 
@@ -348,7 +348,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
 
         # Acceleration approximation
         aeroForces = aero.compute(velocity.value[1], isnothing(track) ? RHO_SEA_LEVEL : track.rho[1])
-        ax = (drivetrain.gearboxes[1].torqueOut.value * drivetrain.tires[1].radius.value +
+        ax = (drivetrain.gearboxes[1].torqueOut.value / drivetrain.tires[1].radius.value +
         sum(t.brakingForce.value for t in drivetrain.tires) +
         aeroForces[2] + 
         drivetrain.tires[1].rollingResistance.value * chassis.mass.value * 9.81)/chassis.mass.value

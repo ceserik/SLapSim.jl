@@ -128,7 +128,7 @@ if 1 == 1
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     
-    sensitivityAnalysis(problem)
+#    sensitivityAnalysis(problem)
     try
         plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque", "drivetrain.motors[3].torque", "drivetrain.motors[4].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.tires[1].brakingForce","drivetrain.tires[2].brakingForce","drivetrain.tires[3].brakingForce","drivetrain.tires[4].brakingForce"])
 

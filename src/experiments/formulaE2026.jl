@@ -82,7 +82,7 @@ if 1 == 1
 
     snapshots = snapshot_car(car, optiResult_interp, track)
 
-    sensitivityAnalysis(problem)
+    #sensitivityAnalysis(problem)
 
     plot_parameters(snapshots, car,
         "drivetrain.motors[1].torque",
