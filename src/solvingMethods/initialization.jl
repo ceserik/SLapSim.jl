@@ -49,6 +49,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     end, x0, s_span)
 
     sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4, callback=cb)
+    #sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4)
     println()
 
     x = hcat(sol.u...)'

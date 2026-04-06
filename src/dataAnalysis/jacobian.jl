@@ -4,7 +4,7 @@ import LinearAlgebra
 import Random
 import SparseArrays
 import MathOptInterface as MOI
-
+using UnicodePlots
 
 function compute_optimal_jacobian(model::Model)
     rows = Any[]

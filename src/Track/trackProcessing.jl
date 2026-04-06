@@ -217,6 +217,160 @@ function kml2cart(path::String)
     return A
 end
 
+function csv2track(path::String;
+                   vis::Bool = false,
+                   ds::Float64 = 2.0,
+                   smooth_factor::Float64 = 1.0,
+                   closedTrack::Bool = false,
+                   flipXY::Bool = false,
+                   widthR_default::Float64 = 1.5,
+                   widthL_default::Float64 = 1.5,
+                   rho::Float64 = 1.225,
+                   μ::Float64 = 1.0,
+                   delimiter::Char = ',',
+                   comment_char::Char = '#',
+                   col_x::Int = 1,
+                   col_y::Int = 2,
+                   col_widthR::Union{Nothing,Int} = 3,
+                   col_widthL::Union{Nothing,Int} = 4)
+    candidate_paths = String[path]
+    if !isabspath(path)
+        push!(candidate_paths, joinpath(@__DIR__, path))
+    end
+
+    csv_path = nothing
+    for candidate in candidate_paths
+        if isfile(candidate)
+            csv_path = candidate
+            break
+        end
+    end
+
+    csv_path === nothing && error("Could not find track CSV. Checked: $(join(candidate_paths, ", "))")
+
+    x = Float64[]
+    y = Float64[]
+    width_r = Float64[]
+    width_l = Float64[]
+
+    required_col = max(col_x, col_y)
+    for line in eachline(csv_path)
+        line = strip(line)
+        if isempty(line) || startswith(line, string(comment_char))
+            continue
+        end
+
+        cols = split(line, delimiter)
+        if length(cols) < required_col
+            continue
+        end
+
+        x_val = tryparse(Float64, strip(cols[col_x]))
+        y_val = tryparse(Float64, strip(cols[col_y]))
+        if x_val === nothing || y_val === nothing
+            continue
+        end
+
+        widthR_val = widthR_default
+        if col_widthR !== nothing && length(cols) >= col_widthR
+            parsed_widthR = tryparse(Float64, strip(cols[col_widthR]))
+            if parsed_widthR !== nothing
+                widthR_val = parsed_widthR
+            end
+        end
+
+        widthL_val = widthL_default
+        if col_widthL !== nothing && length(cols) >= col_widthL
+            parsed_widthL = tryparse(Float64, strip(cols[col_widthL]))
+            if parsed_widthL !== nothing
+                widthL_val = parsed_widthL
+            end
+        end
+
+        push!(x, x_val)
+        push!(y, y_val)
+        push!(width_r, widthR_val)
+        push!(width_l, widthL_val)
+    end
+
+    length(x) < 2 && error("Track CSV must contain at least two numeric (x, y) samples: $(csv_path)")
+
+    if flipXY
+        x, y = y, x
+    end
+
+    track = Track(
+        [0.0],
+        fill(rho, length(x)),
+        fill(μ, length(x)),
+        [1.0],
+        trackMapping,
+        x,
+        y,
+        [0.0],
+        width_r,
+        width_l,
+        [0.0],
+        [0.0],
+        s -> 0.0,
+        [0.0]
+    )
+
+    ds_raw = sqrt.(diff(x) .^ 2 .+ diff(y) .^ 2)
+    s_raw = [0.0; cumsum(ds_raw)]
+
+    smooth_by_OCP(track, smooth_factor, ds, closedTrack)
+
+    s_new = track.sampleDistances
+    track.widthR = interp1(s_raw, width_r, s_new)
+    track.widthL = interp1(s_raw, width_l, s_new)
+    track.rho = fill(rho, length(track.x))
+    track.μ = fill(μ, length(track.x))
+    track.s = s_new
+
+    if vis
+        plotTrack(track)
+        plotTrackStates(track)
+    end
+
+    return track
+end
+
+function berlinTrack(; path::Union{Nothing,String} = nothing,
+                     vis::Bool = false,
+                     ds::Float64 = 2.0,
+                     smooth_factor::Float64 = 1.0,
+                     closedTrack::Bool = false,
+                     flipXY::Bool = false)
+    candidate_paths = String[]
+    if path === nothing
+        push!(candidate_paths, joinpath(@__DIR__, "berlin_208.csv"))
+        push!(candidate_paths, joinpath(@__DIR__, "berlin_2018.csv"))
+    else
+        push!(candidate_paths, path)
+        if !isabspath(path)
+            push!(candidate_paths, joinpath(@__DIR__, path))
+        end
+    end
+
+    csv_path = nothing
+    for candidate in candidate_paths
+        if isfile(candidate)
+            csv_path = candidate
+            break
+        end
+    end
+
+    csv_path === nothing && error("Could not find Berlin track CSV. Checked: $(join(candidate_paths, ", "))")
+
+    return csv2track(csv_path;
+                     vis = vis,
+                     ds = ds,
+                     smooth_factor = smooth_factor,
+                     closedTrack = closedTrack,
+                     flipXY = flipXY)
+end
+
 function kml2track(path::String,closeTrack::Bool,flip    )
     A = kml2cart(path)
 

@@ -49,7 +49,8 @@ GLMakie.closeall()
 
 problem = Problem_config(nothing, nothing, nothing, nothing, nothing)
 
-track = figureEight(true, 0.1)
+#track = figureEight(true, 0.1)
+track = csv2track("src/Track/berlin_2018.csv")
 #track = singleTurn(50.0, 5.0, true)
 #track = doubleTurn(true, 0.1)
 #path = "tracks/FSCZ.kml"

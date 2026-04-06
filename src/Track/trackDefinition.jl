@@ -20,6 +20,26 @@ mutable struct Track
 end
 
 
+
+struct Track_interpolated
+    s_nodes::Vector{Float64}      
+    x::Function                   
+    y::Function                   
+    heading::Function             
+    curvature::Function           
+    widthL::Function              
+    widthR::Function              
+    air_density::Function         
+    friction_c::Function          
+    inclination::Function         
+    fcurve::Function              
+end
+
+
+
+
+
+
 # interpolate track parameters at given distance s
 function trackMapping(track::Track,trackCopy::Track ,s)
     trackCopy.curvature = interp1(track.sampleDistances,track.curvature,s)
