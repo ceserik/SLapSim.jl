@@ -6,7 +6,7 @@ One simulator for multiple complexities of vehicle models
 ## 2026 Class Project: Race Car Minimum Lap Time 
 modelled according to https://smdogroup.github.io/ae6310/jupyter/2026_project/race_car_problem.html
 
-[Demo video (MP4)](https://github.com/user-attachments/assets/5742daef-963c-4b98-9139-21df3ba4fd9e)
+[Demo video (MP4)](https://github.com/user-attachments/assets/69ac034b-18c8-4b40-8d92-f07121dbcec9)
 
 ## Twintrack AWD
 [Demo video (MP4)](https://github.com/user-attachments/assets/0fbb19f6-cd7c-4648-a6b1-a0b04c9184ed)
