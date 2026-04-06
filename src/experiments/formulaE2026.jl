@@ -65,7 +65,7 @@ plotTrackStates(track)
 model = make_ipopt_model()
 problem.model = model
 
-segments = Int64(round(track.sampleDistances[end] / 2))
+segments = Int64(round(track.sampleDistances[end] / 3))
 pol_order = 2
 
 t_solve = @elapsed begin
@@ -75,15 +75,7 @@ println("Solve time: $(round(t_solve, digits=2)) s")
 problem.optiResult = optiResult_interp
 
 if 1 == 1
-    fig = Figure()
-    ax = Axis(fig[1, 1], aspect=DataAspect())
-    plotCarPath_interpolated(track, optiResult_interp, ax)
-    screen = display(GLMakie.Screen(), fig)
 
-    getError([1, 5], problem)
-    sol = timeSimulation_interpolated(car, optiResult_interp, track)
-    lines!(ax, getindex.(sol.u, 5), getindex.(sol.u, 6), label="Simulated in time")
-    axislegend(ax, position=:rt)
 
     fig = nothing
     ax = nothing
@@ -109,6 +101,16 @@ if 1 == 1
         ["drivetrain.tires[1].forces" => 3, "drivetrain.tires[2].forces" => 3],
         ["drivetrain.tires[3].forces" => 3, "drivetrain.tires[4].forces" => 3]
     )
+
+    fig = Figure()
+    ax = Axis(fig[1, 1], aspect=DataAspect())
+    plotCarPath_interpolated(track, optiResult_interp, ax)
+    screen = display(GLMakie.Screen(), fig)
+
+    getError([1, 5], problem)
+    sol = timeSimulation_interpolated(car, optiResult_interp, track)
+    lines!(ax, getindex.(sol.u, 5), getindex.(sol.u, 6), label="Simulated in time")
+    axislegend(ax, position=:rt)
 
     animateCarDual(track, optiResult_interp, car; speedup=1,
         view_radius=car.chassis.wheelbase.value * 3, cam_offset=3.0,

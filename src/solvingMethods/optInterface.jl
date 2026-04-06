@@ -20,7 +20,7 @@ function make_ipopt_model()
         ("nlp_scaling_obj_target_gradient",  1.0),
         ("nlp_scaling_min_value",            1e-6),
         ("jacobian_regularization_value",    1e-6),
-        ("bound_relax_factor",               1e-10),
+        ("bound_relax_factor",               1e-8),
         ("mumps_pivtol",                     1e-4),
         ("min_refinement_steps",             2),
         ("max_refinement_steps",             20),
@@ -44,7 +44,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-1
+    error_threshold = 999#1e-
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
@@ -247,8 +247,6 @@ end
 
 
 
-
-
 function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int64, pol_order::Int64, variant)
     track = problem.track
     car = problem.car
@@ -268,9 +266,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
     initialization = initializeSolution_interpolation(car, track, Int64(round(track.sampleDistances[end] * 2)))
     segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
 
-    # Build a Track_interpolated once. We use it to drive s-dependent lateral
-    # bounds (n) inside the adaptive RK solver. The lateral state index is
-    # detected by name "n"; if absent, no per-node tightening is applied.
+
     track_interp = interpolate_track(track)
     n_state_index = findfirst(e -> e.name == "n", car.carParameters.state_descriptor)
 

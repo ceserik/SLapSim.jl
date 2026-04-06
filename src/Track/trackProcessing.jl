@@ -439,7 +439,7 @@ function interpolate_track(track::Track)
     incl_itp    = interpolate((s_nodes,), collect(Float64.(track.inclination)), Gridded(Linear()))
 
     # Compatibility fcurve(s) -> (curvature, theta, x, y) matching make_fcurve order.
-    fcurve_compat = s -> (curv_itp(s), heading_itp(s), x_itp(s), y_itp(s))
+    fcurve_compat = track.fcurve
 
     return Track_interpolated(
         s_nodes,

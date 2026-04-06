@@ -181,16 +181,17 @@ function createQuasi_steady_Suspension()
     dampingLong = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingLat = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
     dampingHeave = carParameter{carVar}(0.0,"long dampnng","N/rad/s`")
-    lateralTransfer = carParameter{carVar}(0.0,"lateral load transfer","N")
+    lateralTransfer = carParameter{carVar}(0.0,"lateral load transfer","N",:control,[-6000.0,6000.0])
     chassis::Union{Chassis, Nothing} = nothing
+    wheelAssemblies:: Union{Vector{WheelAssembly},Nothing} = nothing
 
-
-    function setInput(chassis_in::Chassis)
+    function setInput(chassis_in::Chassis,wheelAssemblies_in)
         chassis = chassis_in
-
+        wheelAssemblies = wheelAssemblies_in
     end
 
-    function calculate(ax,downforce,CoP)
+    function calculate(ax,downforce,CoP,optiModel)
+        
         frontRatio = chassis.CoG_X_pos.value
         rearRatio = 1 - chassis.CoG_X_pos.value
         leftRatio = 1 - chassis.CoG_Y_pos.value
@@ -208,10 +209,19 @@ function createQuasi_steady_Suspension()
         h_cog = chassis.CoG_Z_pos.value
         transfer = mass * ax * h_cog / chassis.wheelbase.value
 
-        Fz_FL = (weightFront - transfer) * leftRatio  + aeroFront/2
-        Fz_FR = (weightFront - transfer) * rightRatio + aeroFront/2
-        Fz_RL = (weightRear  + transfer) * leftRatio  + aeroRear/2
-        Fz_RR = (weightRear  + transfer) * rightRatio + aeroRear/2
+        #@infiltrate
+
+        load_transfer = 
+        wheelAssemblies[1].forces.value[2] +
+        wheelAssemblies[2].forces.value[2] +
+        wheelAssemblies[3].forces.value[2] +
+        wheelAssemblies[4].forces.value[2] 
+
+
+        Fz_FL = (weightFront - transfer) * leftRatio  + aeroFront/2 - lateralTransfer.value/2
+        Fz_FR = (weightFront - transfer) * rightRatio + aeroFront/2 + lateralTransfer.value/2
+        Fz_RL = (weightRear  + transfer) * leftRatio  + aeroRear/2  - lateralTransfer.value/2
+        Fz_RR = (weightRear  + transfer) * rightRatio + aeroRear/2  + lateralTransfer.value/2
 
         return [Fz_FL, Fz_FR, Fz_RL, Fz_RR]
     end

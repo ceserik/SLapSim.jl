@@ -237,7 +237,6 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     mass             = carParameter{carVar}(1200.0, "Mass", "kg", :tunable)
     motorForce       = carParameter{carVar}(7100.0, "motorForce", "N")
     lateralForce     = carParameter{carVar}(0.0, "lateral Force", "N")
-    lateralTransfer  = carParameter{carVar}(0.0, "lateral load transfer", "N")
     brakeBias        = carParameter{carVar}(0.7, "brake bias front", "-", :tunable)
     CL               = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
@@ -257,6 +256,8 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     tireFR = createR20_pacejka(motor, gearbox)
     tireRL = createR20_pacejka(motor, gearbox)
     tireRR = createR20_pacejka(motor, gearbox)
+
+    
 
     drivetrain = Drivetrain(
         [motor],
@@ -301,7 +302,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     control_descriptor = VarEntry[
         VarEntry("torque",  [ drivetrain.motors[1].torque => 0]),
         VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
-        #VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
+        VarEntry("lateral transfer", [suspension.lateralTransfer => 0]),
         VarEntry("brake", [brakeCommand => 0]),
     ]
 
@@ -354,8 +355,8 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
 
 
         ## suspension calc
-        suspension.setInput(chassis)
-        forces = suspension.calculate(ax,aeroForces[1],aero.CoP.value)
+        suspension.setInput(chassis,wheelAssemblies)
+        forces = suspension.calculate(ax,aeroForces[1],aero.CoP.value,optiModel)
         for i in eachindex(forces)
             drivetrain.tires[i].forces.value[3] = forces[i]
         end
@@ -376,8 +377,12 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         end
 
         for i in eachindex(wheelAssemblies)
-
             wheelAssemblies[i].getTorque(drivetrain.tires[i].forces.value)
+        end
+
+
+        if !isnothing(optiModel)
+            @constraint(optiModel, suspension.lateralTransfer.value == (chassis.CoG_Z_pos.value / chassis.track.value) * sum(wa.forces.value[2] for wa in wheelAssemblies))
         end
 
 
@@ -408,7 +413,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         n,
         powerLimit,
         lateralForce,
-        lateralTransfer,
+        suspension.lateralTransfer,
         brakeBias,
         nControls,
         nStates,
