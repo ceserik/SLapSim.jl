@@ -39,9 +39,6 @@ function naiveProcessing(track::Track)
 
     theta = atan.(dy, dx) ./ ds
     curvature = diff(theta)
-    #curvature = [curvature[1]; curvature] #the curvature is shifted left by differentiating theta
-    # so I copied the first element to shift it to right
-    # for theta  icopied last vlaues, probably not correct but OK for now
 
     theta = [theta; theta[end]]
     curvature = [curvature; curvature[end]]
@@ -116,8 +113,6 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     @objective(model, Min, sum(ds .* (r .* u.^2 .+ x_dev .+ y_dev)))
 
     # Dynamic constraints
-    
-
     if closedTrack
         @constraint(model, z_x[end] == z_x[1])
         @constraint(model, z_y[end] == z_y[1])
@@ -142,27 +137,25 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     th_traj = value.(z_th)
 
     itp = lobotom.createInterpolator(value(Xall),value(Uall),s_all)
-    #ssss = LinRange(s_all[1],s_all[end],546)
-    
-    # plot all four state components on the same axis
-    #fig_interp = Figure()
-    #ax_interp = Axis(fig_interp[1,1], xlabel = "s", ylabel = "State value", title = "State Interpolation - LobattoIIIA")
-    #colors = (:red, :blue, :green, :black)
-    #labels = ("curvature", "theta", "x", "y")
-    #for stav in 1:4
-    #    scatter!(ax_interp, s_all, value.(Xall[:,stav]), label = "Actual - "*labels[stav], color = colors[stav], markersize = 5)
-    #    lines!(ax_interp, ssss, itp(collect(s_all[1]:0.1:s_all[end]))[:,stav], label = "Interpolated - "*labels[stav], color = colors[stav])
-    #end
-    #axislegend(ax_interp)
-    #display(GLMakie.Screen(), fig_interp)
 
     track.x = x_traj
     track.y = y_traj
     track.curvature = C_traj
     track.theta = th_traj
-    track.sampleDistances = s_traj    
+    track.sampleDistances = s_traj
     track.fcurve = itp
-#    @infiltrate
+
+    # Stretch track parameters
+    s_new_endpoints = [s_traj[1], s_traj[end]]
+    stretch(v) = length(v) == length(s_tmp) ?
+        interp1(s_tmp, Float64.(v), s_traj) :
+        interp1(s_new_endpoints, [Float64(v[1]), Float64(v[1])], s_traj)
+    track.widthR      = stretch(track.widthR)
+    track.widthL      = stretch(track.widthL)
+    track.rho         = stretch(track.rho)
+    track.μ           = stretch(track.μ)
+    track.inclination = stretch(track.inclination)
+
     return (x_traj, y_traj, C_traj, th_traj)
 
 end
@@ -218,7 +211,7 @@ function kml2cart(path::String)
 end
 
 function csv2track(path::String;
-                   vis::Bool = false,
+                   vis::Bool = true,
                    ds::Float64 = 2.0,
                    smooth_factor::Float64 = 1.0,
                    closedTrack::Bool = false,
@@ -321,13 +314,8 @@ function csv2track(path::String;
 
     smooth_by_OCP(track, smooth_factor, ds, closedTrack)
 
-    s_new = track.sampleDistances
-    track.widthR = interp1(s_raw, width_r, s_new)
-    track.widthL = interp1(s_raw, width_l, s_new)
-    track.rho = fill(rho, length(track.x))
-    track.μ = fill(μ, length(track.x))
-    track.s = s_new
-
+    track.s = track.sampleDistances
+    
     if vis
         plotTrack(track)
         plotTrackStates(track)
@@ -336,40 +324,6 @@ function csv2track(path::String;
     return track
 end
 
-function berlinTrack(; path::Union{Nothing,String} = nothing,
-                     vis::Bool = false,
-                     ds::Float64 = 2.0,
-                     smooth_factor::Float64 = 1.0,
-                     closedTrack::Bool = false,
-                     flipXY::Bool = false)
-    candidate_paths = String[]
-    if path === nothing
-        push!(candidate_paths, joinpath(@__DIR__, "berlin_208.csv"))
-        push!(candidate_paths, joinpath(@__DIR__, "berlin_2018.csv"))
-    else
-        push!(candidate_paths, path)
-        if !isabspath(path)
-            push!(candidate_paths, joinpath(@__DIR__, path))
-        end
-    end
-
-    csv_path = nothing
-    for candidate in candidate_paths
-        if isfile(candidate)
-            csv_path = candidate
-            break
-        end
-    end
-
-    csv_path === nothing && error("Could not find Berlin track CSV. Checked: $(join(candidate_paths, ", "))")
-
-    return csv2track(csv_path;
-                     vis = vis,
-                     ds = ds,
-                     smooth_factor = smooth_factor,
-                     closedTrack = closedTrack,
-                     flipXY = flipXY)
-end
 
 function kml2track(path::String,closeTrack::Bool,flip    )
     A = kml2cart(path)
@@ -398,11 +352,10 @@ function kml2track(path::String,closeTrack::Bool,flip    )
         (s) -> 0.0,
         [0.0]
         )
+        
+        smooth_by_OCP(track,1.0,0.4,closeTrack)
         trackfig = Figure()
         ax = Axis(trackfig[1,1],aspect=DataAspect())
-
-        smooth_by_OCP(track,1.0,0.4,closeTrack)
-
         plotTrack(track)
     return track
 
@@ -421,19 +374,16 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     end
 
     # get centerline and heading from track
-
     vals = track.fcurve.(s)         # vector of 4-tuples
     xc  = getindex.(vals, 3)
     yc  = getindex.(vals, 4)
     thc = getindex.(vals, 2)
-
-    # ignore 4th component or collect it similarly with getindex.(vals,4)   
+ 
     xc =  xc
     yc =  yc
     thc = thc
 
-    # lane limits (broadcast to match shapes)
-
+    # lane limits
     xc_lim1 = - track.widthL .* sin.(thc)
     xc_lim2 = - track.widthR .* sin.(thc)
 
@@ -473,53 +423,35 @@ function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::V
 end
 
 # Build a Track_interpolated from an existing Track.
-# Reuses track.sampleDistances as s_nodes and constructs scalar callables for each
-# field by linear interpolation over those nodes. Constant or unset fields fall
-# back to a constant function so callers can always evaluate them at any s.
 function interpolate_track(track::Track)
     s_nodes = collect(Float64.(track.sampleDistances))
     N = length(s_nodes)
     N >= 2 || error("interpolate_track: need at least two sample distances, got $(N)")
-
-    # Helper that returns a callable f(s) for a per-node vector. If the vector
-    # length doesn't match N (e.g. it was never resampled and still holds a
-    # single element), the callable returns the first value as a constant.
-    function _callable(vec::AbstractVector{<:Real}, default::Float64)
-        if length(vec) == N
-            v = collect(Float64.(vec))
-            return s -> interp1(s_nodes, v, s)
-        elseif length(vec) >= 1
-            c = Float64(vec[1])
-            return s -> c
-        else
-            return s -> default
-        end
-    end
-
-    x_fun        = _callable(track.x,           0.0)
-    y_fun        = _callable(track.y,           0.0)
-    heading_fun  = _callable(track.theta,       0.0)
-    curv_fun     = _callable(track.curvature,   0.0)
-    widthL_fun   = _callable(track.widthL,      0.0)
-    widthR_fun   = _callable(track.widthR,      0.0)
-    rho_fun      = _callable(track.rho,         RHO_SEA_LEVEL)
-    mu_fun       = _callable(track.μ,           1.0)
-    incl_fun     = _callable(track.inclination, 0.0)
+    #@infiltrate
+    x_itp       = interpolate((s_nodes,), collect(Float64.(track.x)),           Gridded(Linear()))
+    y_itp       = interpolate((s_nodes,), collect(Float64.(track.y)),           Gridded(Linear()))
+    heading_itp = interpolate((s_nodes,), collect(Float64.(track.theta)),       Gridded(Linear()))
+    curv_itp    = interpolate((s_nodes,), collect(Float64.(track.curvature)),   Gridded(Linear()))
+    widthL_itp  = interpolate((s_nodes,), collect(Float64.(track.widthL)),      Gridded(Linear()))
+    widthR_itp  = interpolate((s_nodes,), collect(Float64.(track.widthR)),      Gridded(Linear()))
+    rho_itp     = interpolate((s_nodes,), collect(Float64.(track.rho)),         Gridded(Linear()))
+    mu_itp      = interpolate((s_nodes,), collect(Float64.(track.μ)),           Gridded(Linear()))
+    incl_itp    = interpolate((s_nodes,), collect(Float64.(track.inclination)), Gridded(Linear()))
 
     # Compatibility fcurve(s) -> (curvature, theta, x, y) matching make_fcurve order.
-    fcurve_compat = s -> (curv_fun(s), heading_fun(s), x_fun(s), y_fun(s))
+    fcurve_compat = s -> (curv_itp(s), heading_itp(s), x_itp(s), y_itp(s))
 
     return Track_interpolated(
         s_nodes,
-        x_fun,
-        y_fun,
-        heading_fun,
-        curv_fun,
-        widthL_fun,
-        widthR_fun,
-        rho_fun,
-        mu_fun,
-        incl_fun,
+        x_itp,
+        y_itp,
+        heading_itp,
+        curv_itp,
+        widthL_itp,
+        widthR_itp,
+        rho_itp,
+        mu_itp,
+        incl_itp,
         fcurve_compat,
     )
 end

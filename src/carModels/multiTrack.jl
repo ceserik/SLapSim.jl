@@ -76,7 +76,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
 
     state_descriptor = VarEntry[
         VarEntry("vx",    [velocity => 1]),
-        VarEntry("vy",    [velocity => 2],                          -5.0,    5.0),
+        VarEntry("vy",    [velocity => 2],                          -1.5,    1.5),
         VarEntry("psi",   [psi => 0]),
         VarEntry("omega", [angularVelocity => 3]),
         VarEntry("n",     [n => 0]),

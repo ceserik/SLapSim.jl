@@ -52,12 +52,6 @@ function skidpad(vis::Bool = false, ds::Float64 = 0.5)
         smooth_factor = 0.5
         smooth_by_OCP(track, smooth_factor, ds, false)
 
-        # Update arrays to match the new track length after smoothing
-        track.widthR = fill(w_r, length(track.x))
-        track.widthL = fill(w_l, length(track.x))
-        track.rho = fill(rho, length(track.x))
-        track.μ = fill(μ, length(track.x))
-
         if vis == true
                 plotTrack(track)
                 plotTrackStates(track)

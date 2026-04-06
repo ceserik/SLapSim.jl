@@ -22,17 +22,20 @@ end
 
 
 struct Track_interpolated
-    s_nodes::Vector{Float64}      
-    x::Function                   
-    y::Function                   
-    heading::Function             
-    curvature::Function           
-    widthL::Function              
-    widthR::Function              
-    air_density::Function         
-    friction_c::Function          
-    inclination::Function         
-    fcurve::Function              
+    s_nodes::Vector{Float64}
+    # Field types are left as Any so we can store either Interpolations
+    # objects (built once in interpolate_track) or plain closures. They are all
+    # callable as f(s).
+    x::Any
+    y::Any
+    heading::Any
+    curvature::Any
+    widthL::Any
+    widthR::Any
+    air_density::Any
+    friction_c::Any
+    inclination::Any
+    fcurve::Any
 end
 
 
@@ -174,8 +177,8 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
         X,
         Y,
         [0.0],      # theta
-        fill(w_r, length(X)),  # widthR
-        fill(w_l, length(X)),  # widthL
+        [w_r],      # widthR
+        [w_l],      # widthL
         [0.0],      # inclination
         [0.0],      # slope
         s->(0.0),   # fcurve
@@ -184,19 +187,11 @@ function doubleTurn(vis::Bool = false,ds::Float64 =0.5)
     
     smooth_factor = 1e1
     smooth_by_OCP(track, smooth_factor,ds, false)
-    
-    # Update the width arrays to match the new track length after smoothing
-    track.widthR = fill(w_r, length(track.x))
-    track.widthL = fill(w_l, length(track.x))
-    track.rho    = fill(rho, length(track.x))
-    track.μ      = fill(μ  , length(track.x))
-    
-    #track.fcurve = make_fcurve(track.sampleDistances, track.x, track.y, track.theta, track.curvature)
-    
+
     if vis == 1
         plotTrack(track)
     end
-    
+
     return track
 end
 
@@ -231,11 +226,6 @@ function figureEight(vis::Bool = false, ds::Float64 = 0.5)
 
     smooth_factor = 1e2
     smooth_by_OCP(track, smooth_factor, ds, true)
-
-    track.widthR = fill(w_r, length(track.x))
-    track.widthL = fill(w_l, length(track.x))
-    track.rho    = fill(rho, length(track.x))
-    track.μ      = fill(μ,   length(track.x))
 
     if vis == 1
         plotTrack(track)

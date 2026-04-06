@@ -44,7 +44,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-0
+    error_threshold = 1e-1
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion

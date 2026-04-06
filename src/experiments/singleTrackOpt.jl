@@ -62,8 +62,8 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path, false, true)
-track = doubleTurn(false,0.1)
+track = kml2track(path, false, true)
+#track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
 car = createTwintrack(true,track)
