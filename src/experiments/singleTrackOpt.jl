@@ -59,15 +59,16 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 #track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
-#track = doubleTurn(true,0.1)
+track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path, false, true)
+#track = kml2track(path, false, true)
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
-car = createTwintrack(true,track)
+#car = createTwintrack(true,track)
 #car = formulaE2026()
+car = createBus()
 problem.car = car
 
 plotTrackStates(track)
@@ -78,8 +79,8 @@ model = make_ipopt_model()
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
 #optiResult = findOptimalTrajectory(track,car,model,sampleDistances,initialization)
-segments = Int64(round(track.sampleDistances[end]/3))
-pol_order = 2
+segments = Int64(round(track.sampleDistances[end]/2))
+pol_order = 4
 #optiResult, optiResult_interp = find_optimal_trajectory2(problem,segments,pol_order,"Radau")
 t_solve = @elapsed begin
     optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Lobatto")
@@ -129,12 +130,14 @@ if 1 == 1
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     
 #    sensitivityAnalysis(problem)
-    try
-        plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque", "drivetrain.motors[3].torque", "drivetrain.motors[4].torque" ],"wheelAssemblies[1].steeringAngle",["drivetrain.tires[1].brakingForce","drivetrain.tires[2].brakingForce","drivetrain.tires[3].brakingForce","drivetrain.tires[4].brakingForce"])
-
-    catch
-        plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ],"wheelAssemblies[1].steeringAngle")
-    end
+    plot_parameters(snapshots, car,
+        ["drivetrain.motors[3].torque", "drivetrain.motors[4].torque"],
+        ["wheelAssemblies[1].steeringAngle", "wheelAssemblies[2].steeringAngle"],
+        ["wheelAssemblies[5].steeringAngle", "wheelAssemblies[6].steeringAngle"],
+        ["drivetrain.tires[1].brakingForce", "drivetrain.tires[2].brakingForce",
+         "drivetrain.tires[3].brakingForce", "drivetrain.tires[4].brakingForce",
+         "drivetrain.tires[5].brakingForce", "drivetrain.tires[6].brakingForce"],
+    )
     plot_parameters(snapshots, car,
         "carParameters.velocity" => 1,
         "carParameters.velocity" => 2,

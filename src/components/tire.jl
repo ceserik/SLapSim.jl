@@ -90,8 +90,7 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
         if isnothing(model)
             lessContraint(Fx_s^2 + Fy_s^2, Fz_s^2, nothing)
         else
-            ε = @variable(model, lower_bound=0.0)
-            @constraint(model, Fx_s^2 + Fy_s^2 + ε == Fz_s^2)
+            @constraint(model, Fx_s^2 + Fy_s^2  <= Fz_s^2)
         end
     end
 
@@ -181,7 +180,7 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
         μFz = frictionCoefficient.value * forces.value[3]
         fx = forces.value[1] / μFz
         fy = forces.value[2] / μFz
-        lessContraint(fx^2 + fy^2, 1.0, model)
+        lessContraint(fx^2 + fy^2, 1.1, model) #crucial to remove oscilatory behavior with bus, should look deeper into tire model suitable for optimisation
     end
 
     function setupObservables(ax::Axis)

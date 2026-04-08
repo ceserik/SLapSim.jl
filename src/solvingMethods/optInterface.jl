@@ -19,7 +19,8 @@ function make_ipopt_model()
     JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
     #JuMP.set_optimizer_attribute(model, "print_timing_statistics", "yes")
     for (k, v) in [
-        ("ma57_pre_alloc",     100.0),     
+        ("ma57_pre_alloc",     100.0),   
+        ("mu_strategy", "adaptive") ,
         ("alpha_for_y",                      "safer-min-dual-infeas"),
         ("recalc_y",                         "yes"),
         ("recalc_y_feas_tol",                1e-4),
@@ -30,9 +31,9 @@ function make_ipopt_model()
         ("nlp_scaling_obj_target_gradient",  1.0),
         ("nlp_scaling_min_value",            1e-6),
         ("jacobian_regularization_value",    1e-6),
-        ("bound_relax_factor",               1e-8),
+        ("bound_relax_factor",               1e-6),
         ("mumps_pivtol",                     1e-4),
-        ("min_refinement_steps",             2),
+        ("min_refinement_steps",             4),
         ("max_refinement_steps",             20),
         ("acceptable_dual_inf_tol",          1e-1),
     ]

@@ -1,22 +1,32 @@
 using SLapSim
-function createBus()
-    velocity = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s")
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s")
+function createBus(track::Union{Track,Nothing}=nothing)
 
-    mass = carParameter{carVar}(12000.0, "Mass", "kg")
-    motorForce = carParameter{carVar}(3000.0, "motorForce", "N")
-    lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
+    if isnothing(track)
+        widthR = 3.0
+        widthL = 3.0
+    else
+        widthL = maximum(track.widthL)
+        widthR = maximum(track.widthR)
+    end
+
+    velocity        = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 30.0])
+    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-5.0, 5.0])
+
+    mass            = carParameter{carVar}(12000.0, "Mass", "kg")
+    motorForce      = carParameter{carVar}(3000.0, "motorForce", "N")
+    lateralForce    = carParameter{carVar}(0.0, "lateral Force", "N")
     lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
-    brakeBias = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
-    CL = carParameter{carVar}(0.0, "Lift Coefficient", "-")
-    CD = carParameter{carVar}(6.0, "Drag Coefficient", "-")
-    powerLimit = carParameter{carVar}(300000.0, "PowerLimit", "W")
-    psi = carParameter{carVar}(0.0, "heading", "rad")
-    n = carParameter{carVar}(0.0, "Distance from centerline", "m")
-    nControls = carParameter{carVar}(3.0, "number of controlled parameters", "-")
-    inertia = carParameter{carVar}(30000.0, "Inertia", "kg*m^2")
-    nStates = carParameter{carVar}(6.0, "number of car states", "-")
-    s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
+    brakeBias       = carParameter{carVar}(0.6, "brake bias front", "-", :tunable)
+    CL              = carParameter{carVar}(0.0, "Lift Coefficient", "-")
+    CD              = carParameter{carVar}(6.0, "Drag Coefficient", "-")
+    powerLimit      = carParameter{carVar}(300000.0, "PowerLimit", "W")
+    psi             = carParameter{carVar}(0.0, "heading", "rad", :static, [-4pi, 4pi])
+    n               = carParameter{carVar}(0.0, "Distance from centerline", "m", :static, [-widthR+1.5, widthL-1.5])
+    brakeCommand    = carParameter{carVar}(0.0, "brake command", "N", :control, [-500000.0, 0.0])
+    nControls       = carParameter{carVar}(3.0, "number of controlled parameters", "-")
+    inertia         = carParameter{carVar}(30000.0, "Inertia", "kg*m^2")
+    nStates         = carParameter{carVar}(6.0, "number of car states", "-")
+    s               = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
 
     # rear axle spacing: 1.3m between the two rear axles
     rearAxleSpacing = 1.3
@@ -34,7 +44,7 @@ function createBus()
     end
 
     # 6 tires from formula, override dimensions
-    tires = [createR20lin(motors[i], gearboxes[i]) for i in 1:6]
+    tires = [createR20_pacejka(motors[i], gearboxes[i]) for i in 1:6]
     for t in tires
         t.radius.value = 0.5
         t.width.value = 0.315
@@ -54,15 +64,12 @@ function createBus()
 
     drivetrain = Drivetrain(motors, gearboxes, tires, accu)
 
-    # aero from formula, override for bus (no downforce, high drag)
     aero = createBasicAero()
-    aero.CL.value = 0.0
+    aero.CL.value = -0.2
     aero.CD.value = 6.0
 
-    # suspension - use simple suspension but returns 6 forces for double rear axle
     suspension = createBusSuspension()
 
-    # chassis from formula, override dimensions
     chassis = createCTU25chassis()
     chassis.mass.value = 12000.0
     chassis.wheelbase.value = 6.0
@@ -75,44 +82,63 @@ function createBus()
     cogOffsetX = (chassis.CoG_X_pos.value - 0.5) * chassis.wheelbase.value
     cogOffsetY = (chassis.CoG_Y_pos.value - 0.5) * chassis.track.value
     rearCenter = -chassis.wheelbase.value / 2 - cogOffsetX
-    wheelAssemblyFL  = createBusWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyFL  = createBusWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX,  chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyFR  = createBusWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, -chassis.track.value / 2 - cogOffsetY, 0]))
-    wheelAssemblyRL1 = createBasicWheelAssembly(Vector{carVar}([rearCenter + rearAxleSpacing / 2, chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyRL1 = createBasicWheelAssembly(Vector{carVar}([rearCenter + rearAxleSpacing / 2,  chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyRR1 = createBasicWheelAssembly(Vector{carVar}([rearCenter + rearAxleSpacing / 2, -chassis.track.value / 2 - cogOffsetY, 0]))
-    wheelAssemblyRL2 = createBasicWheelAssembly(Vector{carVar}([rearCenter - rearAxleSpacing / 2, chassis.track.value / 2 - cogOffsetY, 0]))
+    wheelAssemblyRL2 = createBasicWheelAssembly(Vector{carVar}([rearCenter - rearAxleSpacing / 2,  chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyRR2 = createBasicWheelAssembly(Vector{carVar}([rearCenter - rearAxleSpacing / 2, -chassis.track.value / 2 - cogOffsetY, 0]))
 
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL1, wheelAssemblyRR1, wheelAssemblyRL2, wheelAssemblyRR2]
 
-    function controlMapping(controls::AbstractVector)
-        # front motors off
-        drivetrain.motors[1].torque.value = controls[1]
-        drivetrain.motors[2].torque.value = controls[1]
-        # rear motors - all 4 rear wheels get same torque (controls[1])
-        drivetrain.motors[3].torque.value = controls[1]
-        drivetrain.motors[4].torque.value = controls[1]
-        drivetrain.motors[5].torque.value = controls[1]
-        drivetrain.motors[6].torque.value = controls[1]
-        # front steering only
-        wheelAssemblies[1].steeringAngle.value = controls[2]
-        wheelAssemblies[2].steeringAngle.value = controls[2]
+    state_descriptor = VarEntry[
+        VarEntry("vx",    [velocity => 1]),
+        VarEntry("vy",    [velocity => 2],          -5.0,  5.0),
+        VarEntry("psi",   [psi => 0]),
+        VarEntry("omega", [angularVelocity => 3]),
+        VarEntry("n",     [n => 0]),
+        VarEntry("t",     [s => 0]),
+    ]
 
-        wheelAssemblies[5].steeringAngle.value = controls[3]
-        wheelAssemblies[6].steeringAngle.value = controls[3]
+    control_descriptor = VarEntry[
+        VarEntry("torque", [
+            #drivetrain.motors[1].torque => 0,
+            #drivetrain.motors[2].torque => 0,
+            drivetrain.motors[3].torque => 0,
+            drivetrain.motors[4].torque => 0,
+            #drivetrain.motors[5].torque => 0,
+            #drivetrain.motors[6].torque => 0,
+        ]),
+        VarEntry("steering_front", [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
+        VarEntry("steering_rear",  [wheelAssemblies[5].steeringAngle => 0, wheelAssemblies[6].steeringAngle => 0]),
+        VarEntry("brake", [brakeCommand => 0]),
+    ]
+
+    nControls.value = Float64(length(control_descriptor))
+    nStates.value   = Float64(length(state_descriptor))
+
+    function controlMapping(controls::AbstractVector)
+        apply_mapping!(control_descriptor, controls)
+        frontRatio = chassis.CoG_X_pos.value
+        rearRatio  = 1 - chassis.CoG_X_pos.value
+        leftRatio  = 1 - chassis.CoG_Y_pos.value
+        rightRatio = chassis.CoG_Y_pos.value
+
+        drivetrain.tires[1].brakingForce.value = brakeCommand.value * frontRatio * leftRatio           # FL
+        drivetrain.tires[2].brakingForce.value = brakeCommand.value * frontRatio * rightRatio          # FR
+        drivetrain.tires[3].brakingForce.value = brakeCommand.value * rearRatio  * leftRatio  / 2      # RL1
+        drivetrain.tires[4].brakingForce.value = brakeCommand.value * rearRatio  * rightRatio / 2      # RR1
+        drivetrain.tires[5].brakingForce.value = brakeCommand.value * rearRatio  * leftRatio  / 2      # RL2
+        drivetrain.tires[6].brakingForce.value = brakeCommand.value * rearRatio  * rightRatio / 2      # RR2
     end
 
     function stateMapping(states::AbstractVector)
-        velocity.value .= [states[1], states[2], 0.0]
-        psi.value = states[3]
-        angularVelocity.value .= [0.0, 0.0, states[4]]
-        n.value = states[5]
-        s.value = states[6]
-        return car
+        apply_mapping!(state_descriptor, states)
     end
 
     function anyTrack(track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
 
-        for wa in car.wheelAssemblies
+        for wa in wheelAssemblies
             wa.setVelocity(angularVelocity.value, velocity.value)
         end
 
@@ -120,9 +146,9 @@ function createBus()
             drivetrain.tires[i].setVelocity(wheelAssemblies[i].velocityTire.value)
         end
 
-        for i in eachindex(car.drivetrain.gearboxes)
-            car.drivetrain.gearboxes[i].setTorque(car.drivetrain.motors[i].torque.value)
-            car.drivetrain.gearboxes[i].compute()
+        for i in eachindex(drivetrain.gearboxes)
+            drivetrain.gearboxes[i].setTorque(drivetrain.motors[i].torque.value)
+            drivetrain.gearboxes[i].compute()
         end
 
         aeroForces = aero.compute(velocity.value[1], isnothing(track) ? RHO_SEA_LEVEL : track.rho[1])
@@ -132,40 +158,36 @@ function createBus()
             drivetrain.tires[i].forces.value[3] = forces[i]
         end
 
-        for i in eachindex(car.drivetrain.tires)
-            car.drivetrain.tires[i].compute(car.drivetrain.gearboxes[i].torqueOut.value, optiModel)
+        for i in eachindex(drivetrain.tires)
+            drivetrain.tires[i].compute(drivetrain.gearboxes[i].torqueOut.value, optiModel)
         end
 
-######################################################CONSTRAINTS###########################
-        # constrain all motors
-        for i in eachindex(car.drivetrain.motors)
-            car.drivetrain.motors[i].constraints(drivetrain.motors[i].torque.value, optiModel)
+        ######################################################CONSTRAINTS###########################
+        for i in eachindex(drivetrain.motors)
+            #drivetrain.motors[i].constraints(drivetrain.motors[i].torque.value, optiModel)
         end
-        # front steering constraint
-        car.wheelAssemblies[1].constraints(optiModel)
-        # hitbox
-        car.chassis.hitbox(car.carParameters.n.value, track, optiModel)
-        for tire in car.drivetrain.tires
+        #wheelAssemblies[1].constraints(optiModel)
+        chassis.hitbox(n.value, track, optiModel)
+        for tire in drivetrain.tires
             tire.tireConstraints(optiModel)
         end
 
-        for i in eachindex(car.wheelAssemblies)
-            car.wheelAssemblies[i].getTorque(car.drivetrain.tires[i].forces.value)
+        for i in eachindex(wheelAssemblies)
+            wheelAssemblies[i].getTorque(drivetrain.tires[i].forces.value)
         end
 
-        cogForce = zero(car.wheelAssemblies[1].forces.value)
-        cogMoment = zero(car.wheelAssemblies[1].forces.value)
-        for i in eachindex(car.wheelAssemblies)
-            cogForce = cogForce .+ car.wheelAssemblies[i].forces.value
-            cogMoment = cogMoment + car.wheelAssemblies[i].torque.value
+        cogForce  = zero(wheelAssemblies[1].forces.value)
+        cogMoment = zero(wheelAssemblies[1].forces.value)
+        for i in eachindex(wheelAssemblies)
+            cogForce  = cogForce  .+ wheelAssemblies[i].forces.value
+            cogMoment = cogMoment  + wheelAssemblies[i].torque.value
         end
 
         cogForce = cogForce .+ [aeroForces.drag, 0.0, 0.0]
-        dv = cogForce / car.carParameters.mass.value - angularVelocity.value × velocity.value
-        dangularVelocity = cogMoment / car.carParameters.inertia.value
+        dv = cogForce ./ mass.value - angularVelocity.value × velocity.value
+        dangularVelocity = cogMoment ./ inertia.value
         dx = [dv[1], dv[2], angularVelocity.value[3], dangularVelocity[3]]
         return dx
-
     end
 
     p = CarParameters(
@@ -184,7 +206,9 @@ function createBus()
         brakeBias,
         nControls,
         nStates,
-        s
+        s,
+        state_descriptor,
+        control_descriptor,
     )
 
     car = Car(
@@ -197,9 +221,9 @@ function createBus()
         aero,
         suspension,
         chassis,
-        [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL1, wheelAssemblyRR1, wheelAssemblyRL2, wheelAssemblyRR2],
-        nothing,
-        nothing,
+        wheelAssemblies,
+        state_descriptor,
+        control_descriptor,
     )
     return car
 end
