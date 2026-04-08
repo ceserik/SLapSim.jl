@@ -1,11 +1,14 @@
 function initializeSolution_interpolation(car::Car, track::Track, segments::Int64; vref=5.0)
     println("started initialization")
     max_steer = car.wheelAssemblies[1].maxAngle.value
+    # Constrants of controller
     Kv = 3 * car.carParameters.mass.value / 280.0
     Kp, Kd = 3.0   , 2.0
     nControls = Int64(car.carParameters.nControls.value)
 
     function ctrl(s, x)
+        # PD controller + feedfw on steering, D is derived from lateral speed of car, cars heading and tracks heading
+        # P controller on speed
         th = track.fcurve(s)[2]
         ε = atan(sin(x[3] - th), cos(x[3] - th))  # wrap to [-π, π]
         n_dot = x[1] * sin(ε) + x[2] * cos(ε)
@@ -21,7 +24,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     s_span = (track.sampleDistances[1], track.sampleDistances[end])
     s_save = LinRange(s_span..., segments)
 
-    # Live debug plot
+    # Live debug plot, because sometimes the initilization gets stuck(if the controller onstant are not good for vehicle)
     labels = ["vx", "vy", "ψ", "ψ̇", "n", "t", "torque", "steering"]
     fig = Figure(size=(1200, 800))
     debug_axes = [Axis(fig[div(i-1, 3)+1, mod(i-1, 3)+1], title=labels[i]) for i in eachindex(labels)]
@@ -43,11 +46,14 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
         end
     end
 
+    # This is the actual ODEProblem which is solved car+track+controller
+    # Note that problem is not solved in time but in PATH
     prob = ODEProblem((du, x, _, s) -> begin
         torque, steering = ctrl(s, x)
         du .= carODE_path(car, track, s, [torque, steering, zeros(nControls - 2)...], x, nothing)
     end, x0, s_span)
 
+    # Plotting during initialization is super slow...
     sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4, callback=cb)
     #sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4)
     println()
@@ -59,8 +65,10 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
         u[i, 1], u[i, 2] = ctrl(s[i], view(x, i, :))
     end
 
+    # Finally interpolate the states and controls obtained during initialization for track
     initialization = make_result_interpolation(x, u, s)
 
+    #Plot initialization
     fig_path = Figure()
     ax_path = Axis(fig_path[1, 1], aspect=DataAspect(), title="Initialization")
     plotCarPath_interpolated(track, initialization, ax_path)

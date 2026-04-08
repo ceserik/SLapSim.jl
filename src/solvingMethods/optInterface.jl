@@ -9,7 +9,7 @@ using HSL_jll
 function make_ipopt_model()
     model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
     #set_attribute(model, "hsllib", HSL_jll.libhsl_path)
-    #set_attribute(model, "linear_solver", "ma57")
+    #set_attribute(model, "linear_solver", "ma97")
     #model = Model(Ipopt.Optimizer)
     #set_attribute(model, "pardisolib", "/home/riso/Downloads/panua-pardiso-20240229-linux/lib/libpardiso.so")
     #set_attribute(model, "linear_solver", "pardiso")
@@ -58,8 +58,8 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
     error_threshold = 999#1e-
 
     # Find and insert nodes for segments with error > 1e-3
-    segment_edges = collect(segment_edges)  # Convert LinRange to Vector for insertion
-    for i = length(segment_errors):-1:1  # Iterate backwards to avoid index shifting issues
+    segment_edges = collect(segment_edges) 
+    for i = length(segment_errors):-1:1  
         if segment_errors[i] > error_threshold
             s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
             insert!(segment_edges, i + 1, s_mid)
@@ -118,7 +118,7 @@ end;
 #poradie car,track,k,s,u,x
 
 
-#here I need to define transfomation of ODE with respect to time to ODE with respect to path
+
 function time2path(car::Car, track::Track, k::Union{Int64,Float64}, model::Union{Nothing,JuMP.Model})
     #track.mapping(track,instantTrack,s)
     dxdt = car.carFunction(track, model)
@@ -151,16 +151,10 @@ end
 
 function findOptimalTrajectory(track::Track, car::Car, model::JuMP.Model, sampleDistances, initialization=nothing)
     N = length(sampleDistances)
-
-    #fill track parameters which are constant along track, should be automatized
-    track.rho = fill(track.rho[1], N)
-    track.μ = fill(track.μ[1], N)
-
-    nStates = Int(car.carParameters.nStates.value)
     s = sampleDistances
-    #create inputs for car model #create instance of track parameters
-
     #determine sizes of inputs and states
+    
+    nStates = Int(car.carParameters.nStates.value)
     nControls = Int(round(car.carParameters.nControls.value))
 
     function f(x, u, s, model)
@@ -263,6 +257,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
     car = problem.car
     model = problem.model
 
+    #get size of control and state vector
     nControls = Int64(car.carParameters.nControls.value)
     nStates = Int64(car.carParameters.nStates.value)
     x = nothing
@@ -274,11 +269,16 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         return dxds
     end
 
+    #initialize solution = drive PD controller along centerline, one controller for all cars right now, but controller should be put inside car structure in future
     initialization = initializeSolution_interpolation(car, track, Int64(round(track.sampleDistances[end] * 2)))
+    # Create sampling points for track
     segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
 
-
+    #From track that has data in vectors: vector of X, vector of Y vector of curvature ... create track that uses functions to describe its states
+    # the interpoation function should be from the smoothing, but i am using basic interpolation of julia, work for future
     track_interp = interpolate_track(track)
+
+    #this is used  to create constraints on state n, which gets its constraints from track width
     n_state_index = findfirst(e -> e.name == "n", car.carParameters.state_descriptor)
 
     clear = 0
@@ -286,16 +286,16 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
     while clear == 0 && iterations <= 50
         clear = 1
         iterations += 1
-        # Characteristic scales so optimizer variables are O(1)
         #@infiltrate
+
+        # Scaling of controls and states, scaling is derived from bounds setup when creating a car
+        # These functions 
         x_scale = get_scales(car.carParameters.state_descriptor)
         u_scale = get_scales(car.carParameters.control_descriptor)
         x_lb_static, x_ub_static = get_bounds(car.carParameters.state_descriptor)
         u_lb_static, u_ub_static = get_bounds(car.carParameters.control_descriptor)
 
-        # Wrap bounds as functions of s. All entries return the static value;
-        # the lateral state ("n", if present) gets per-node envelope-tightened
-        # bounds from Track_interpolated. Margin kept at 0.6.
+        # state "n" needs special constraints
         margin = car.chassis.track.value/2
         function x_lb_fun(s)
             v = copy(x_lb_static)
@@ -319,7 +319,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
             x_lb=x_lb_fun, x_ub=x_ub_fun, u_lb=u_lb_fun, u_ub=u_ub_fun)
         println("creating constraints")
 
-        #Add parameters
+        # Add parameters for sensitivity analysis, makes the problem little bigger, because parameters of car are now variables that ipopt sees
         #(params, tunables) = setParameters(car, model)
         #problem.params = params
         xd = RKadaptive.createConstraints(segment_edges, initialization)
@@ -329,6 +329,7 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         segment_edges = xd[5]
 
         # State bounds: [vx, vy, ψ, ω, n, t]
+        #these should be depending on scenario: autox, endurance,... I  should create new struct to specify this
         @constraint(model, X[1, 1] .<= 10)      # vx
         @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
         @constraint(model, X[1, 4] .== 0)     # ω
@@ -351,20 +352,23 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         x = value.(X)
         u = value.(U)
         problem.model = model
-#        problem.params = params
+        # The resulting control is not just a vector for each state, but it is a function of path with fancy interpolation depending on discretization method
         problem.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
+
+        # Here you can use the result of previous optimisiation as warm start, sometimes works very good sometimes very bad
         #initialization = make_result_interpolation(x, u, s_all)
-        println("resetting parameters")
+        println("resetting parameters for sensitivity analysis")
+        #problem.params = params
         #resetParameters(tunables)
+
+        # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refind and optimization ends
         (segment_edges, clear, segment_errors) = refineMesh(problem, segment_edges, s_all, pol_order)
 
         if clear == 0
+            #create clear model for next iteration
             model = make_ipopt_model()
         end
-
         println("Sum of all errors: ", sum(segment_errors))
-
-
     end
     out = Result(x, u[1:end-1, :], s_all)
     return out, problem.optiResult

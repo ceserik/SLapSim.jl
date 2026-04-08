@@ -6,14 +6,13 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
     τ_ref  = tableau.c
     w_bary = barycentric_weights(τ_ref)
 
-    # Bound arguments are callables s -> Vector{Float64} so the caller can
-    # impose s-dependent (per-node) bounds. For static bounds, the caller passes
-    # a constant closure; nothing in the builder needs to know whether the
-    # bounds vary along the path.
-    function _eval_bound(b, s, n)
-        v = b(s)
-        length(v) == n || error("bound function returned vector of length $(length(v)), expected $(n) at s=$(s)")
-        return v
+    # Evaluate a bound function at path position and verify that it returns the expected number of entries.
+    function _eval_bound(bound_fn, s, expected_length)
+        bound_values = bound_fn(s)
+        length(bound_values) == expected_length || error(
+            "bound function returned vector of length $(length(bound_values)), " *
+            "expected $(expected_length) at s=$(s)")
+        return bound_values
     end
 
     function createDynamicConstraints(segment_edges, initialization)
