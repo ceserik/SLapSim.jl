@@ -57,9 +57,10 @@ and store a snapshot of every `carParameter` value.
 Usage:
     snapshots = snapshot_car(car, optiResult_interp, track)
 """
-function snapshot_car(car::Car, optiResult, track::Track)
+function snapshot_car(car::Car, optiResult, track::Track; sample_step=0.3)
+    sample_points = isnothing(sample_step) ? optiResult.path : collect(optiResult.path[1]:sample_step:optiResult.path[end])
     snapshots = CarSnapshot[]
-    for s in optiResult.path
+    for s in sample_points
         x = optiResult.states(s)
         u = optiResult.controls(s)
         car.controlMapping(u)
@@ -131,43 +132,50 @@ get_states(car::Car)   = get_entries_by_role(car, :state)
 get_controls(car::Car) = get_entries_by_role(car, :control)
 
 """
-    plot_states_controls(car, optiResult; fig=nothing)
+    _varentry_to_key(entry, params) -> String or Pair{String,Int}
 
-Plot all states and controls from `optiResult` in separate subplots,
-labelled using each VarEntry's name and unit from its target parameter.
+Map a VarEntry to the snapshot parameter key used by plot_parameters.
 """
-function plot_states_controls(car::Car, optiResult; sample_step=0.1)
-    states_desc   = get_states(car)
-    controls_desc = get_controls(car)
-    path = collect(optiResult.path[1]:sample_step:optiResult.path[end])
-
-    _unit(e) = e.targets[1].first.unit
-
-    fig_states = Figure()
-    for (i, entry) in enumerate(states_desc)
-        ax = Axis(fig_states[i, 1], ylabel="$(entry.name) [$(_unit(entry))]")
-        vals = [optiResult.states(s)[i] for s in path]
-        lines!(ax, path, vals)
+function _varentry_to_key(entry::VarEntry, params::Dict{String, carParameter})
+    target_param, idx = first(entry.targets)
+    for (k, v) in params
+        if v === target_param
+            return idx == 0 ? k : k => idx
+        end
     end
-    axes_states = [contents(fig_states[i, 1])[1] for i in eachindex(states_desc)]
-    linkxaxes!(axes_states...)
-    axes_states[end].xlabel = "path [m]"
-    fig_states[0, :] = Label(fig_states, "States", tellwidth=false)
-    display(GLMakie.Screen(), fig_states)
+    return entry.name
+end
 
-    fig_controls = Figure()
-    for (i, entry) in enumerate(controls_desc)
-        ax = Axis(fig_controls[i, 1], ylabel="$(entry.name) [$(_unit(entry))]")
-        vals = [optiResult.controls(s)[i] for s in path]
-        lines!(ax, path, vals)
-    end
-    axes_controls = [contents(fig_controls[i, 1])[1] for i in eachindex(controls_desc)]
-    linkxaxes!(axes_controls...)
-    axes_controls[end].xlabel = "path [m]"
-    fig_controls[0, :] = Label(fig_controls, "Controls", tellwidth=false)
-    display(GLMakie.Screen(), fig_controls)
+"""
+    plot_states_controls(car, optiResult, track; sample_step=0.3)
+
+Plot all states and controls in two separate windows, using plot_parameters.
+"""
+function plot_states_controls(car::Car, optiResult, track::Track; sample_step=0.3)
+    snapshots = snapshot_car(car, optiResult, track; sample_step=sample_step)
+    snapshots_nodes = snapshot_car(car, optiResult, track; sample_step=nothing)
+    params = collect_carParameters(car)
+    state_keys   = [_varentry_to_key(e, params) for e in get_states(car)]
+    control_keys = [_varentry_to_key(e, params) for e in get_controls(car)]
+
+    fig_states   = plot_parameters(snapshots, car, state_keys...)
+    fig_controls = plot_parameters(snapshots, car, control_keys...)
+
+    # Overlay discrete collocation nodes as X markers
+    _overlay_nodes!(fig_states, snapshots_nodes, state_keys)
+    _overlay_nodes!(fig_controls, snapshots_nodes, control_keys)
 
     return fig_states, fig_controls
+end
+
+function _overlay_nodes!(fig, snapshots_nodes, keys)
+    for (i, key) in enumerate(keys)
+        ax = contents(fig[i, 1])[1]
+        param_key = key isa Pair ? key[1] : key
+        idx = key isa Pair ? key[2] : 0
+        s, vals = get_scalar_values(snapshots_nodes, param_key, idx)
+        scatter!(ax, s, vals, marker=:xcross, markersize=20, color=:black)
+    end
 end
 
 """
