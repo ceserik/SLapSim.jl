@@ -75,19 +75,19 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
 
     state_descriptor = VarEntry[
-        VarEntry("vx",    [velocity => 1]),
-        VarEntry("vy",    [velocity => 2],                          -1.5,    1.5),
-        VarEntry("psi",   [psi => 0]),
-        VarEntry("omega", [angularVelocity => 3]),
-        VarEntry("n",     [n => 0]),
-        VarEntry("t",     [s => 0]),
+        VarEntry("vx",    [velocity => 1],          :state),
+        VarEntry("vy",    [velocity => 2], -1.5, 1.5, :state),
+        VarEntry("psi",   [psi => 0],               :state),
+        VarEntry("omega", [angularVelocity => 3],   :state),
+        VarEntry("n",     [n => 0],                 :state),
+        VarEntry("t",     [s => 0],                 :state),
     ]
 
     control_descriptor = VarEntry[
-        VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0]),
-        VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
-        VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0]),
-        VarEntry("brake", [brakeCommand => 0]),
+        VarEntry("torque_rear",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0], :control),
+        VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0], :control),
+        VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0], :control),
+        VarEntry("brake", [brakeCommand => 0], :control),
     ]
 #    @infiltrate
     nControls.value = Float64(length(control_descriptor))
@@ -291,19 +291,19 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
 
 
     state_descriptor = VarEntry[
-        VarEntry("vx",    [velocity => 1]),
-        VarEntry("vy",    [velocity => 2],                          -5.0,    5.0),
-        VarEntry("psi",   [psi => 0]),
-        VarEntry("omega", [angularVelocity => 3]),
-        VarEntry("n",     [n => 0]),
-        VarEntry("t",     [s => 0]),
+        VarEntry("vx",    [velocity => 1],          :state),
+        VarEntry("vy",    [velocity => 2], -5.0, 5.0, :state),
+        VarEntry("psi",   [psi => 0],               :state),
+        VarEntry("omega", [angularVelocity => 3],   :state),
+        VarEntry("n",     [n => 0],                 :state),
+        VarEntry("t",     [s => 0],                 :state),
     ]
 
     control_descriptor = VarEntry[
-        VarEntry("torque",  [ drivetrain.motors[1].torque => 0]),
-        VarEntry("steering",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0]),
-        VarEntry("lateral transfer", [suspension.lateralTransfer => 0]),
-        VarEntry("brake", [brakeCommand => 0]),
+        VarEntry("torque",           [drivetrain.motors[1].torque => 0],                                              :control),
+        VarEntry("steering",         [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0], :control),
+        VarEntry("lateral transfer", [suspension.lateralTransfer => 0],                                              :control),
+        VarEntry("brake",            [brakeCommand => 0],                                                            :control),
     ]
 
     nControls.value = Float64(length(control_descriptor))

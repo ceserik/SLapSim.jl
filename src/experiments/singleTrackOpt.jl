@@ -66,9 +66,9 @@ path = "tracks/FSCZ.kml"
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
-#car = createTwintrack(true,track)
+car = createTwintrack(true,track)
 #car = formulaE2026()
-car = createBus()
+#car = createBus()
 problem.car = car
 
 plotTrackStates(track)
@@ -129,21 +129,21 @@ if 1 == 1
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     
-#    sensitivityAnalysis(problem)
-    plot_parameters(snapshots, car,
-        ["drivetrain.motors[3].torque", "drivetrain.motors[4].torque"],
-        ["wheelAssemblies[1].steeringAngle", "wheelAssemblies[2].steeringAngle"],
-        ["wheelAssemblies[5].steeringAngle", "wheelAssemblies[6].steeringAngle"],
-        ["drivetrain.tires[1].brakingForce", "drivetrain.tires[2].brakingForce",
-         "drivetrain.tires[3].brakingForce", "drivetrain.tires[4].brakingForce",
-         "drivetrain.tires[5].brakingForce", "drivetrain.tires[6].brakingForce"],
-    )
-    plot_parameters(snapshots, car,
-        "carParameters.velocity" => 1,
-        "carParameters.velocity" => 2,
-        "carParameters.psi",
-        "carParameters.angularVelocity" => 3,
-        "carParameters.n"
-    )
+    sensitivityAnalysis(problem)
+#    plot_parameters(snapshots, car,
+#        ["drivetrain.motors[3].torque", "drivetrain.motors[4].torque"],
+#        ["wheelAssemblies[1].steeringAngle", "wheelAssemblies[2].steeringAngle"],
+#        ["wheelAssemblies[5].steeringAngle", "wheelAssemblies[6].steeringAngle"],
+#        ["drivetrain.tires[1].brakingForce", "drivetrain.tires[2].brakingForce",
+#         "drivetrain.tires[3].brakingForce", "drivetrain.tires[4].brakingForce",
+#         "drivetrain.tires[5].brakingForce", "drivetrain.tires[6].brakingForce"],
+#    )
+#    plot_parameters(snapshots, car,
+#        "carParameters.velocity" => 1,
+#        "carParameters.velocity" => 2,
+#        "carParameters.psi",
+#        "carParameters.angularVelocity" => 3,
+#        "carParameters.n"
+#    )
     animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
 end

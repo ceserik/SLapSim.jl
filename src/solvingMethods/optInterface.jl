@@ -320,8 +320,8 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         println("creating constraints")
 
         # Add parameters for sensitivity analysis, makes the problem little bigger, because parameters of car are now variables that ipopt sees
-        #(params, tunables) = setParameters(car, model)
-        #problem.params = params
+        (params, tunables) = setParameters(car, model)
+        problem.params = params
         xd = RKadaptive.createConstraints(segment_edges, initialization)
         X = xd[2]
         U = xd[3]
@@ -358,8 +358,8 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         # Here you can use the result of previous optimisiation as warm start, sometimes works very good sometimes very bad
         #initialization = make_result_interpolation(x, u, s_all)
         println("resetting parameters for sensitivity analysis")
-        #problem.params = params
-        #resetParameters(tunables)
+        problem.params = params
+        resetParameters(tunables)
 
         # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refind and optimization ends
         (segment_edges, clear, segment_errors) = refineMesh(problem, segment_edges, s_all, pol_order)

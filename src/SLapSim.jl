@@ -56,7 +56,7 @@ export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
 export setParameters, resetParameters, sensitivityAnalysis, VarEntry, get_bounds, get_scales, apply_mapping!
 export drawCar!, animateCar, animateCarDual, draw!
 export Problem_config, Result_interpolation, find_optimal_trajectory_adaptive, make_ipopt_model,plotTrackStates
-export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors,get_sampling_density,plot_on_path
+export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors,get_sampling_density,plot_on_path, plot_states_controls
 export timeSimulation_interpolated, snapshot_car, plot_parameters,createR20_pacejka, createQuasi_steady_Suspension,formulaE2026,plot_controls_on_path
 #println("SLapSim module loaded")
 

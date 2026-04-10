@@ -115,6 +115,61 @@ function list_parameters(snapshots::Vector{CarSnapshot})
     return sort(collect(keys(snapshots[1].values)))
 end
 
+# --- Role-based VarEntry accessors ---
+
+"""
+    get_entries_by_role(car, role) -> Vector{VarEntry}
+
+Return all VarEntries across state and control descriptors whose role matches.
+"""
+function get_entries_by_role(car::Car, role::Symbol)
+    all_entries = vcat(car.carParameters.state_descriptor, car.carParameters.control_descriptor)
+    return filter(e -> e.role == role, all_entries)
+end
+
+get_states(car::Car)   = get_entries_by_role(car, :state)
+get_controls(car::Car) = get_entries_by_role(car, :control)
+
+"""
+    plot_states_controls(car, optiResult; fig=nothing)
+
+Plot all states and controls from `optiResult` in separate subplots,
+labelled using each VarEntry's name and unit from its target parameter.
+"""
+function plot_states_controls(car::Car, optiResult; sample_step=0.1)
+    states_desc   = get_states(car)
+    controls_desc = get_controls(car)
+    path = collect(optiResult.path[1]:sample_step:optiResult.path[end])
+
+    _unit(e) = e.targets[1].first.unit
+
+    fig_states = Figure()
+    for (i, entry) in enumerate(states_desc)
+        ax = Axis(fig_states[i, 1], ylabel="$(entry.name) [$(_unit(entry))]")
+        vals = [optiResult.states(s)[i] for s in path]
+        lines!(ax, path, vals)
+    end
+    axes_states = [contents(fig_states[i, 1])[1] for i in eachindex(states_desc)]
+    linkxaxes!(axes_states...)
+    axes_states[end].xlabel = "path [m]"
+    fig_states[0, :] = Label(fig_states, "States", tellwidth=false)
+    display(GLMakie.Screen(), fig_states)
+
+    fig_controls = Figure()
+    for (i, entry) in enumerate(controls_desc)
+        ax = Axis(fig_controls[i, 1], ylabel="$(entry.name) [$(_unit(entry))]")
+        vals = [optiResult.controls(s)[i] for s in path]
+        lines!(ax, path, vals)
+    end
+    axes_controls = [contents(fig_controls[i, 1])[1] for i in eachindex(controls_desc)]
+    linkxaxes!(axes_controls...)
+    axes_controls[end].xlabel = "path [m]"
+    fig_controls[0, :] = Label(fig_controls, "Controls", tellwidth=false)
+    display(GLMakie.Screen(), fig_controls)
+
+    return fig_states, fig_controls
+end
+
 """
     plot_parameters(snapshots, car, keys...; fig=nothing)
 

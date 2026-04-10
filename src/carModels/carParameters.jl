@@ -13,6 +13,7 @@ struct VarEntry
     targets::Vector{Pair}  # carParameter => vector_index (0 = scalar)
     lb::Float64
     ub::Float64
+    role::Symbol  # :state or :control
 end
 
 function carParameter{T}(value::T, name::String, unit::String, role::Symbol=:static,limits::Vector{Float64} = [9999.0,-9999.0]) where T
@@ -85,14 +86,14 @@ end
 
 
 # Auto-read limits from the first target's carParameter
-function VarEntry(name::String, targets::Vector{<:Pair})
+function VarEntry(name::String, targets::Vector{<:Pair}, role::Symbol=:state)
     param = first(targets).first
-    VarEntry(name, collect(Pair, targets), param.limits[1], param.limits[2])
+    VarEntry(name, collect(Pair, targets), param.limits[1], param.limits[2], role)
 end
 
 # Explicit bounds with typed pair vector
-function VarEntry(name::String, targets::Vector{<:Pair}, lb::Real, ub::Real)
-    VarEntry(name, collect(Pair, targets), Float64(lb), Float64(ub))
+function VarEntry(name::String, targets::Vector{<:Pair}, lb::Real, ub::Real, role::Symbol=:state)
+    VarEntry(name, collect(Pair, targets), Float64(lb), Float64(ub), role)
 end
 
 function apply_mapping!(desc::Vector{VarEntry}, values::AbstractVector)
