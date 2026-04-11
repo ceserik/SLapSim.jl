@@ -95,7 +95,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
 
     function controlMapping(controls::AbstractVector)
         apply_mapping!(control_descriptor, controls)
-
+        apply_bounds!(control_descriptor)
         frontBrake = brakeCommand.value * brakeBias.value
         rearBrake = brakeCommand.value * (1 - brakeBias.value)
         drivetrain.tires[1].brakingForce.value = frontBrake

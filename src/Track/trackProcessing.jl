@@ -438,6 +438,15 @@ function interpolate_track(track::Track)
     mu_itp      = interpolate((s_nodes,), collect(Float64.(track.μ)),           Gridded(Linear()))
     incl_itp    = interpolate((s_nodes,), collect(Float64.(track.inclination)), Gridded(Linear()))
 
+    #x_itp       = Spline1D(s_nodes, collect(Float64.(track.x));           k=3, bc="nearest")
+    #y_itp       = Spline1D(s_nodes, collect(Float64.(track.y));           k=3, bc="nearest")
+    #heading_itp = Spline1D(s_nodes, collect(Float64.(track.theta));       k=3, bc="nearest")
+    #curv_itp    = Spline1D(s_nodes, collect(Float64.(track.curvature));   k=3, bc="nearest")
+    #widthL_itp  = Spline1D(s_nodes, collect(Float64.(track.widthL));      k=3, bc="nearest")
+    #widthR_itp  = Spline1D(s_nodes, collect(Float64.(track.widthR));      k=3, bc="nearest")
+    #rho_itp     = Spline1D(s_nodes, collect(Float64.(track.rho));         k=3, bc="nearest")
+    #mu_itp      = Spline1D(s_nodes, collect(Float64.(track.μ));           k=3, bc="nearest")
+    #incl_itp    = Spline1D(s_nodes, collect(Float64.(track.inclination)); k=3, bc="nearest")
     # Compatibility fcurve(s) -> (curvature, theta, x, y) matching make_fcurve order.
     fcurve_compat = track.fcurve
 

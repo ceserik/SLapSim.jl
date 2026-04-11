@@ -473,7 +473,7 @@ function create_gauss_pseudospectral_metod(f, pol_order, variant, model, nContro
             end
         end
 
-        return Result_interpolation(state_interp, control_interp, all_nodes)
+        return Result_interpolation(state_interp, control_interp, all_nodes, collect(Float64, segment_edges))
     end
 
     GaussMethod = Collocation(

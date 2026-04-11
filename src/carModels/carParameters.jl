@@ -108,6 +108,21 @@ function apply_mapping!(desc::Vector{VarEntry}, values::AbstractVector)
     end
 end
 
+function apply_bounds!(desc::Vector{VarEntry})
+    for entry in desc
+        for (param, idx) in entry.targets
+            val = idx == 0 ? param.value : param.value[idx]
+            val isa Float64 || continue
+            clamped = clamp(val, entry.lb, entry.ub)
+            if idx == 0
+                param.value = clamped
+            else
+                param.value[idx] = clamped
+            end
+        end
+    end
+end
+
 get_bounds(desc::Vector{VarEntry}) = ([e.lb for e in desc], [e.ub for e in desc])
 
 function get_scales(desc::Vector{VarEntry})

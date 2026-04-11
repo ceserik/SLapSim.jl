@@ -135,7 +135,7 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
             return [_bary_eval(τ_ref, w_bary, u_seg[:, k], τ_eval) for k in 1:nControls]
         end
  
-        return Result_interpolation(state_interp, control_interp, s_all)
+        return Result_interpolation(state_interp, control_interp, s_all, collect(Float64, segment_edges))
     end
  
     LobattoIIIAMethod = Collocation(

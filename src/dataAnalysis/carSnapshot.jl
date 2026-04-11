@@ -162,19 +162,27 @@ function plot_states_controls(car::Car, optiResult, track::Track; sample_step=0.
     fig_controls = plot_parameters(snapshots, car, control_keys...)
 
     # Overlay discrete collocation nodes as X markers
-    _overlay_nodes!(fig_states, snapshots_nodes, state_keys)
-    _overlay_nodes!(fig_controls, snapshots_nodes, control_keys)
+    edges = Set(optiResult.segment_edges)
+    _overlay_nodes!(fig_states, snapshots_nodes, state_keys, edges)
+    _overlay_nodes!(fig_controls, snapshots_nodes, control_keys, edges)
 
     return fig_states, fig_controls
 end
 
-function _overlay_nodes!(fig, snapshots_nodes, keys)
+function _overlay_nodes!(fig, snapshots_nodes, keys, edges::Set)
     for (i, key) in enumerate(keys)
         ax = contents(fig[i, 1])[1]
         param_key = key isa Pair ? key[1] : key
         idx = key isa Pair ? key[2] : 0
         s, vals = get_scalar_values(snapshots_nodes, param_key, idx)
-        scatter!(ax, s, vals, marker=:xcross, markersize=20, color=:black)
+        is_edge = [si ∈ edges for si in s]
+        # Segment edges in red, interior collocation points in black
+        if any(is_edge)
+            scatter!(ax, s[is_edge], vals[is_edge], marker=:xcross, markersize=20, color=:red)
+        end
+        if any(.!is_edge)
+            scatter!(ax, s[.!is_edge], vals[.!is_edge], marker=:xcross, markersize=20, color=:black)
+        end
     end
 end
 

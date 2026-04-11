@@ -202,7 +202,7 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
             return [_bary_eval(nodes_LG, w_u, u_seg[:, k], τ_eval) for k in 1:size(u_seg, 2)]
         end
 
-        return Result_interpolation(state_interp, control_interp, all_s)
+        return Result_interpolation(state_interp, control_interp, all_s, collect(Float64, segment_edges))
     end
 
     GaussMethod = Collocation(

@@ -55,7 +55,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 999#1e-
+    error_threshold = 1e-1
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges) 
@@ -91,6 +91,7 @@ struct Result_interpolation
     states
     controls
     path
+    segment_edges
 end
 
 function make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s_states::Vector{Float64}, s_controls::Vector{Float64})
@@ -99,7 +100,7 @@ function make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix
 
     states_interp(t) = [itp(t) for itp in state_interps]
     controls_interp(t) = [itp(t) for itp in control_interps]
-    return Result_interpolation(states_interp, controls_interp, s_states)
+    return Result_interpolation(states_interp, controls_interp, s_states, Float64[])
 end
 
 make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s::Vector{Float64}) = make_result_interpolation(x, u, s, s)
