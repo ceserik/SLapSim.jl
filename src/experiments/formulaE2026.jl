@@ -65,8 +65,8 @@ plotTrackStates(track)
 model = make_ipopt_model()
 problem.model = model
 
-segments = Int64(round(track.sampleDistances[end] / 3))
-pol_order = 2
+segments = Int64(round(track.sampleDistances[end] / 6))
+pol_order = 3
 
 t_solve = @elapsed begin
     optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Lobatto")
@@ -82,7 +82,7 @@ if 1 == 1
 
     snapshots = snapshot_car(car, optiResult_interp, track)
 
-    #sensitivityAnalysis(problem)
+    sensitivityAnalysis(problem)
 
     plot_parameters(snapshots, car,
         "drivetrain.motors[1].torque",
@@ -127,7 +127,7 @@ if 1 == 1
     spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
     display(GLMakie.Screen(), fig_jac)
 
-
+    plot_states_controls(car, optiResult_interp, track; sample_step=0.1)
 
 end
 

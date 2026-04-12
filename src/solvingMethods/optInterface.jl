@@ -34,7 +34,7 @@ function make_ipopt_model()
         ("bound_relax_factor",               1e-6),
         ("mumps_pivtol",                     1e-4),
         ("min_refinement_steps",             4),
-        ("max_refinement_steps",             20),
+        ("max_refinement_steps",             100),
         ("acceptable_dual_inf_tol",          1e-1),
     ]
         JuMP.set_optimizer_attribute(model, k, v)

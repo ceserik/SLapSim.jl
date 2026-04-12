@@ -2,7 +2,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     println("started initialization")
     max_steer = car.wheelAssemblies[1].maxAngle.value
     # Constrants of controller
-    Kv = 3 * car.carParameters.mass.value / 280.0
+    Kv = 6 * car.carParameters.mass.value / 280.0
     Kp, Kd = 3.0   , 2.0
     nControls = Int64(car.carParameters.nControls.value)
 

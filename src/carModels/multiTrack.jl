@@ -11,7 +11,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         widthR = maximum(track.widthR)
     end
 
-    velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 60.0])
+    velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [3.0, 60.0])
     angularVelocity  = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-10.0, 10.0])
 
     mass             = carParameter{carVar}(280.0, "Mass", "kg", :tunable, [200.0, 320.0])
