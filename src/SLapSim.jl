@@ -3,8 +3,13 @@ using GLMakie
 using LinearAlgebra
 using StaticArrays
 using JuMP, Ipopt, Zygote, DiffOpt
+using MadNLP, MadNLPGPU
+using CUDA
+using HSL_jll
 using ControlSystemsBase
 using OrdinaryDiffEq
+using DifferentiationInterface
+using Interpolations
 using FastGaussQuadrature
 using Infiltrator
 const carVar = Union{Float64, JuMP.VariableRef,JuMP.AffExpr,JuMP.NonlinearExpr,JuMP.QuadExpr}
@@ -36,6 +41,7 @@ include("carModels/bus.jl")
 
 #solving solvingMethods
 include("solvingMethods/massPointSolver.jl")
+include("solvingMethods/experiment.jl")
 include("solvingMethods/optInterface.jl")
 include("dataAnalysis/sensitivityAnalysis.jl")
 
@@ -49,13 +55,19 @@ include("solvingMethods/adaptiveRK.jl")
 
 # Export public functions
 export Car, Track, Track_interpolated, interpolate_track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, csv2track, berlinTrack, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack, createBasicWheelAssembly,figureEight, carParameter, CarParameters
-export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,find_optimal_trajectory2,get_diff_matix, skidpad, create_gauss_legendre
+export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,get_diff_matix, skidpad, create_gauss_legendre
 export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
 export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
 export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
 export setParameters, resetParameters, sensitivityAnalysis, VarEntry, get_bounds, get_scales, apply_mapping!
 export drawCar!, animateCar, animateCarDual, draw!
-export Problem_config, Result_interpolation, find_optimal_trajectory_adaptive, make_ipopt_model,plotTrackStates
+export Result_interpolation, find_optimal_trajectory_adaptive, plotTrackStates
+# New experiment API
+export Experiment, Discipline, Open, Closed
+export SolverBackend, IpoptBackend, MadNLPBackend
+export AnalysisConfig, GlobalConstraint, EnergyBudget
+export build_model, run_experiment!, run_analysis!
+export apply_boundary_conditions!, apply_global!
 export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors,get_sampling_density,plot_on_path, plot_states_controls
 export timeSimulation_interpolated, snapshot_car, plot_parameters,createR20_pacejka, createQuasi_steady_Suspension,formulaE2026,plot_controls_on_path
 #println("SLapSim module loaded")

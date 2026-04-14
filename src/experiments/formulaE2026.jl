@@ -3,6 +3,8 @@ using SLapSim
 using GLMakie
 import MathOptInterface as MOI
 using DiffOpt
+using UnicodePlots
+using SparseArrays
 
 detect = Sys.islinux()
 if detect
@@ -47,9 +49,6 @@ update_theme!(
 
 GLMakie.closeall()
 
-performSensitivity = false
-problem = Problem_config(nothing, nothing, nothing, nothing, nothing; performSensitivity=performSensitivity)
-
 #track = figureEight(true, 0.1)
 track = csv2track("src/Track/berlin_2018.csv")
 #track = singleTurn(50.0, 5.0, true)
@@ -57,81 +56,79 @@ track = csv2track("src/Track/berlin_2018.csv")
 #path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
 
-problem.track = track
 car = formulaE2026(track)
-problem.car = car
 
 plotTrackStates(track)
 
-model = make_ipopt_model(performSensitivity=problem.performSensitivity)
-problem.model = model
+exp = Experiment(
+    car = car,
+    track = track,
+    discipline = Closed(),                              # Formula E is a closed lap
+    solver = IpoptBackend(
+        linear_solver = "ma97",
+        performSensitivity = false,
+        print_timing = true,
+    ),
+    global_constraints = GlobalConstraint[],            # e.g. [EnergyBudget(1.0e7)]
+    analysis = AnalysisConfig(
+        plot_path       = true,
+        plot_states     = true,
+        plot_jacobian   = true,
+        plot_hessian    = true,
+        animate         = true,
+        animation_path  = "results/animation_formulaE.mp4",
+        time_simulation = true,
+        sensitivity     = false,
+    ),
+)
 
 segments = Int64(round(track.sampleDistances[end] / 6))
 pol_order = 3
+run_experiment!(exp, segments, pol_order; variant="Lobatto")
 
-t_solve = @elapsed begin
-    optiResult, optiResult_interp = find_optimal_trajectory_adaptive(problem, segments, pol_order, "Lobatto")
-end
-println("Solve time: $(round(t_solve, digits=2)) s")
-problem.optiResult = optiResult_interp
+# ---------------------------------------------------------------------------
+# Custom per-parameter plots (not yet generic enough for run_analysis!).
+# ---------------------------------------------------------------------------
+snapshots = snapshot_car(car, exp.optiResult, track)
 
-if 1 == 1
+plot_parameters(snapshots, car,
+    "drivetrain.motors[1].torque",
+    "wheelAssemblies[1].steeringAngle",
+    ["drivetrain.tires[1].brakingForce", "drivetrain.tires[2].brakingForce",
+     "drivetrain.tires[3].brakingForce", "drivetrain.tires[4].brakingForce"]
+)
+plot_parameters(snapshots, car,
+    "carParameters.velocity" => 1,
+    "carParameters.velocity" => 2,
+    "carParameters.psi",
+    "carParameters.angularVelocity" => 3,
+    "carParameters.n"
+)
+plot_parameters(snapshots, car,
+    ["drivetrain.tires[1].forces" => 3, "drivetrain.tires[2].forces" => 3],
+    ["drivetrain.tires[3].forces" => 3, "drivetrain.tires[4].forces" => 3]
+)
 
-
-    fig = nothing
-    ax = nothing
-
-    snapshots = snapshot_car(car, optiResult_interp, track)
-
-    if problem.performSensitivity
-        sensitivityAnalysis(problem)
-    end
-
-    plot_parameters(snapshots, car,
-        "drivetrain.motors[1].torque",
-        "wheelAssemblies[1].steeringAngle",
-        ["drivetrain.tires[1].brakingForce", "drivetrain.tires[2].brakingForce",
-         "drivetrain.tires[3].brakingForce", "drivetrain.tires[4].brakingForce"]
-    )
-    plot_parameters(snapshots, car,
-        "carParameters.velocity" => 1,
-         "carParameters.velocity" =>2,
-        "carParameters.psi",
-        "carParameters.angularVelocity" => 3,
-        "carParameters.n"
-    )
-    plot_parameters(snapshots, car,
-        ["drivetrain.tires[1].forces" => 3, "drivetrain.tires[2].forces" => 3],
-        ["drivetrain.tires[3].forces" => 3, "drivetrain.tires[4].forces" => 3]
-    )
-
-    fig = Figure()
-    ax = Axis(fig[1, 1], aspect=DataAspect())
-    plotCarPath_interpolated(track, optiResult_interp, ax)
-    screen = display(GLMakie.Screen(), fig)
-
-    getError([1, 5], problem)
-    sol = timeSimulation_interpolated(car, optiResult_interp, track)
-    lines!(ax, getindex.(sol.u, 5), getindex.(sol.u, 6), label="Simulated in time")
-    axislegend(ax, position=:rt)
-
-    animateCarDual(track, optiResult_interp, car; speedup=1,
-        view_radius=car.chassis.wheelbase.value * 3, cam_offset=3.0,
-        savepath="results/animation_formulaE.mp4")
-
+# ---------------------------------------------------------------------------
+# Jacobian/Hessian inspection (inlined; included scripts reference `problem`).
+# ---------------------------------------------------------------------------
+if exp.analysis.plot_jacobian || exp.analysis.plot_hessian
+    problem = exp                                       # legacy name used in includes
+    model = exp.model                                   # jacobian.jl/hessian_test2.jl reference `model`
     include("../dataAnalysis/jacobian.jl")
     include("../dataAnalysis/hessian_test2.jl")
-    println("jacobian")
-    println(UnicodePlots.spy(jacobian))
-    println("hessian")
-    println(UnicodePlots.spy(H_star))
-    fig_jac = Figure()
-    ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
-    spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
-    display(GLMakie.Screen(), fig_jac)
-
-    plot_states_controls(car, optiResult_interp, track; sample_step=0.1)
-
+    if exp.analysis.plot_jacobian
+        println("jacobian")
+        println(UnicodePlots.spy(jacobian))
+        fig_jac = Figure()
+        ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
+        spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
+        display(GLMakie.Screen(), fig_jac)
+    end
+    if exp.analysis.plot_hessian
+        println("hessian")
+        println(UnicodePlots.spy(H_star))
+    end
 end
 
 

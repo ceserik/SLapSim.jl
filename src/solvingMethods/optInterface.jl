@@ -1,70 +1,4 @@
 
-using SLapSim
-using JuMP
-using OrdinaryDiffEq
-using DifferentiationInterface
-using Interpolations
-using HSL_jll
-using MadNLP,MadNLPGPU
-using CUDA
-
-
-function make_ipopt_model(; performSensitivity::Bool=false)
-    # DiffOpt wrapping is only needed for sensitivity analysis and adds overhead.
-    model = performSensitivity ? DiffOpt.nonlinear_diff_model(Ipopt.Optimizer) : Model(Ipopt.Optimizer)
-    #set_attribute(model, "hsllib", HSL_jll.libhsl_path)
-    #set_attribute(model, "linear_solver", "ma97")
-    #set_attribute(model, "ma97_order", "metis")        # better ordering for banded problems
-    #set_attribute(model, "hessian_approximation", "limited-memory")
-    #model = Model(Ipopt.Optimizer)
-    #set_attribute(model, "pardisolib", "/home/riso/Downloads/panua-pardiso-20240229-linux/lib/libpardiso.so")
-    #set_attribute(model, "linear_solver", "pardiso")
-
-    #model = DiffOpt.nonlinear_diff_model( MadNLP.Optimizer)
-    #JuMP.set_optimizer_attribute(model, "array_type", CuArray)
-    #JuMP.set_optimizer_attribute(model, "linear_solver", CUDSSSolver)
-
-
-    #JuMP.set_optimizer_attribute(model, "max_iter", 3000)
-    #JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
-    JuMP.set_optimizer_attribute(model, "print_timing_statistics", "yes")
-    #set_attribute(model, "mumps_mem_percent", 200)      # extra memory allowance (%)
-    #set_attribute(model, "mumps_pivtol", 1e-6)           # pivot tolerance
-    #set_attribute(model, "mumps_pivtolmax", 0.1)          # max pivot tolerance
-    #set_attribute(model, "mumps_permuting_scaling", 7)    # scaling strategy
-    #set_attribute(model, "mumps_scaling", 77)             # matrix scaling
-
-    set_attribute(model, "mu_strategy", "monotone")     # less aggressive barrier reduction
-    set_attribute(model, "mu_init", 1e-2)                # start with larger barrier
-    set_attribute(model, "acceptable_tol", 1e-4)         # accept "good enough" solution earlier
-    set_attribute(model, "acceptable_iter", 10)           # after 10 acceptable iterations, stop
-
-
-    for (k, v) in [
-        ("ma57_pre_alloc",     100.0),   
-        ("mu_strategy", "adaptive") ,
-        ("alpha_for_y",                      "safer-min-dual-infeas"),
-        ("recalc_y",                         "yes"),
-        ("recalc_y_feas_tol",                1e-4),
-        ("adaptive_mu_globalization",        "kkt-error"),
-        ("quality_function_balancing_term",  "cubic"),
-        ("mu_min",                           1e-10),
-        ("nlp_scaling_constr_target_gradient", 1.0),
-        ("nlp_scaling_obj_target_gradient",  1.0),
-        ("nlp_scaling_min_value",            1e-6),
-        ("jacobian_regularization_value",    1e-6),
-        ("bound_relax_factor",               1e-6),
-        ("mumps_pivtol",                     1e-4),
-        ("min_refinement_steps",             4),
-        ("max_refinement_steps",             100),
-        ("acceptable_dual_inf_tol",          1e-1),
-        
-    ]
-     #   JuMP.set_optimizer_attribute(model, k, v)
-    end
-    return model
-end
-
 function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symbol=:ode)
     error_itp = getErrors(problem; method=error_method)
     segment_errors = zeros(length(segment_edges) - 1)
@@ -101,20 +35,6 @@ struct Result
     path::Vector{Float64}
 end
 
-
-mutable struct Problem_config
-    car::Union{Nothing,Car}
-    track::Union{Nothing,Track}
-    model::Union{Nothing,JuMP.Model}
-    optiResult
-    params
-    performSensitivity::Bool
-end
-
-# Keyword constructor so existing call sites using positional `nothing`s still work,
-# and new code can opt into sensitivity via a keyword.
-Problem_config(car, track, model, optiResult, params; performSensitivity::Bool=false) =
-    Problem_config(car, track, model, optiResult, params, performSensitivity)
 
 struct Result_interpolation
     states
@@ -222,75 +142,11 @@ function findOptimalTrajectory(track::Track, car::Car, model::JuMP.Model, sample
     return out, out_interp
 end
 
-function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_order::Int64, variant)
-    track = problem.track
-    car = problem.car
-    model = problem.model
-    function F(x, u, s)
-        #@infiltrate
-        dxds = carODE_path(car, track, s, u, x, model)
-        return dxds
-    end
-
-    function f(x, u, s, model)
-        dxds = carODE_path(car, track, s, u, x, model)
-        return dxds
-    end
-
-    nControls = Int64(car.carParameters.nControls.value)
-    nStates = Int64(car.carParameters.nStates.value)
-    initialization = initializeSolution_interpolation(car, track, 1000)
-
-    Gauss_legendre = create_gauss_legendre(F, pol_order, variant, model, nControls, nStates, track; car=car)
-    #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
-    tunables = carParameter[]
-    if problem.performSensitivity
-        (params, tunables) = setParameters(car, model)
-        problem.params = params
-    end
-
-
-    #xd = Gauss_radau.createConstraints(segments,initialization);
-    xd = Gauss_legendre.createConstraints(segments, initialization)
-    X = xd[2]
-    U = xd[3]
-    s_all = xd[4]
-    segment_edges = xd[5]
-
-    @constraint(model, X[1, 1] .<= 10)      # vx
-    @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
-    @constraint(model, X[1, 4] .== 0)     # ω
-    @constraint(model, X[1, 6] .== 0)      # t
-    @constraint(model, X[1, 2] .== 0) # intial vy
-
-    @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
-    u_scale = !isnothing(car.control_desc) ? get_scales(car.control_desc) : ones(nControls)
-    control_reg = 1e-5 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
-    @objective(model, Min, X[end, 6] + control_reg)
-
-
-    optimize!(model)
-    if problem.performSensitivity
-        resetParameters(tunables)
-    end
-    x = value.(X)
-    u = value.(U)
-
-    # Interpolate using the LGR polynomial from the optimisation (Garg et al. 2010)
-    out_interp = Gauss_legendre.createInterpolator(x, u, s_all, segment_edges)
-    #out_interp = Gauss_radau.createInterpolator(x, u, s_all, segment_edges)
-    #out_interp = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
-
-    out = Result(x, u[1:end-1, :], s_all)
-    return out, out_interp
-end
-
-
-
-function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int64, pol_order::Int64, variant)
-    track = problem.track
-    car = problem.car
-    model = problem.model
+function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_order::Int64, variant)
+    track = exp.track
+    car = exp.car
+    model = exp.model
+    performSensitivity = wants_sensitivity(exp.solver)
 
     #get size of control and state vector
     nControls = Int64(car.carParameters.nControls.value)
@@ -356,9 +212,9 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
 
         # Add parameters for sensitivity analysis, makes the problem little bigger, because parameters of car are now variables that ipopt sees
         tunables = carParameter[]
-        if problem.performSensitivity
+        if performSensitivity
             (params, tunables) = setParameters(car, model)
-            problem.params = params
+            exp.params = params
         end
         xd = RKadaptive.createConstraints(segment_edges, initialization)
         X = xd[2]
@@ -366,13 +222,13 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         s_all = xd[4]
         segment_edges = xd[5]
 
-        # State bounds: [vx, vy, ψ, ω, n, t]
-        #these should be depending on scenario: autox, endurance,... I  should create new struct to specify this
-        @constraint(model, X[1, 1] .<= 10)      # vx
-        @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
-        @constraint(model, X[1, 4] .== 0)     # ω
-        @constraint(model, X[1, 6] .== 0)      # t
-        @constraint(model, X[1, 2] .== 0) # intial vy
+        # Boundary conditions are supplied by the discipline.
+        apply_boundary_conditions!(exp.discipline, model, X, track)
+
+        # Global (lap-integral) constraints from the experiment.
+        for gc in exp.global_constraints
+            apply_global!(gc, model, X, U, car, s_all)
+        end
 
         @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
         control_reg = 0#1e-4 * sum((U[i, j] / u_scale[j])^2 for i in axes(U, 1), j in axes(U, 2))
@@ -389,27 +245,27 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
 
         x = value.(X)
         u = value.(U)
-        problem.model = model
+        exp.model = model
         # The resulting control is not just a vector for each state, but it is a function of path with fancy interpolation depending on discretization method
-        problem.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
+        exp.optiResult = RKadaptive.createInterpolator(x, u, s_all, segment_edges)
 
         # Here you can use the result of previous optimisiation as warm start, sometimes works very good sometimes very bad
         #initialization = make_result_interpolation(x, u, s_all)
-        if problem.performSensitivity
+        if performSensitivity
             println("resetting parameters for sensitivity analysis")
-            problem.params = params
+            exp.params = params
             resetParameters(tunables)
         end
 
         # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refind and optimization ends
-        (segment_edges, clear, segment_errors) = refineMesh(problem, segment_edges, s_all, pol_order)
+        (segment_edges, clear, segment_errors) = refineMesh(exp, segment_edges, s_all, pol_order)
 
         if clear == 0
             #create clear model for next iteration
-            model = make_ipopt_model(performSensitivity=problem.performSensitivity)
+            model = build_model(exp.solver)
         end
         println("Sum of all errors: ", sum(segment_errors))
     end
     out = Result(x, u[1:end-1, :], s_all)
-    return out, problem.optiResult
+    return out, exp.optiResult
 end

@@ -323,7 +323,7 @@ function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo)
 end
 
 
-function plot_controls_on_path(problem::Problem_config, optiResult_interp; error_itp=nothing)
+function plot_controls_on_path(problem, optiResult_interp; error_itp=nothing)
     n_controls = Int(problem.car.carParameters.nControls.value)
     desc = problem.car.control_desc
     plots = [(s -> optiResult_interp.controls(s)[i],
