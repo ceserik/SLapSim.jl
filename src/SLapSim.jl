@@ -47,6 +47,8 @@ include("dataAnalysis/sensitivityAnalysis.jl")
 
 include("animation/drawCar.jl")
 include("dataAnalysis/validation.jl")
+include("dataAnalysis/jacobian.jl")
+include("dataAnalysis/hessian_test2.jl")
 include("solvingMethods/initialization.jl")
 include("dataAnalysis/carSnapshot.jl")
 include("solvingMethods/myCollocation.jl")
@@ -70,6 +72,7 @@ export build_model, run_experiment!, run_analysis!
 export apply_boundary_conditions!, apply_global!
 export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors,get_sampling_density,plot_on_path, plot_states_controls
 export timeSimulation_interpolated, snapshot_car, plot_parameters,createR20_pacejka, createQuasi_steady_Suspension,formulaE2026,plot_controls_on_path
+export compute_optimal_jacobian, compute_optimal_hessian, plot_jacobian_spy, plot_hessian_spy
 #println("SLapSim module loaded")
 
 end # module

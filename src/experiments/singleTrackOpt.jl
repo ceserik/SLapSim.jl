@@ -5,6 +5,7 @@ import MathOptInterface as MOI
 using UnoSolver
 using UnicodePlots
 using DiffOpt
+using HSL_jll                      # exposes HSL_jll.libhsl_path for Ipopt's hsllib attribute
 
 
 #dark theme detector for linux KDE with kde-cli-tools installed
@@ -62,8 +63,8 @@ GLMakie.closeall()
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path, false, true)
-#track = doubleTurn(false, 0.1)
+#track = kml2track(path, false, true)
+track = doubleTurn(false, 0.1)
 #track = skidpad(false)
 
 car = createTwintrack(true, track)
@@ -75,15 +76,28 @@ plotTrackStates(track)
 # ---------------------------------------------------------------------------
 # Experiment configuration — flip flags to change behavior.
 # ---------------------------------------------------------------------------
+# All Ipopt options in one dict — add/remove keys freely, no struct edits needed.
+# See https://coin-or.github.io/Ipopt/OPTIONS.html for the full list.
+ipopt_attrs = Dict{String,Any}(
+    "linear_solver"          => "ma97",
+    "hsllib"                 => HSL_jll.libhsl_path,   # needed for ma27/57/97
+    "max_iter"               => 3000,
+    "tol"                    => 1e-6,
+    "mu_strategy"            => "adaptive",
+    "mu_init"                => 1e-2,
+    "acceptable_tol"         => 1e-4,
+    "acceptable_iter"        => 10,
+    "print_timing_statistics"=> "yes",
+    # "hessian_approximation" => "limited-memory",
+)
+
 exp = Experiment(
     car = car,
     track = track,
     discipline = Open(v_start=5.0),             # or Closed() for periodic BCs
     solver = IpoptBackend(
-        linear_solver = "mumps",
         performSensitivity = false,
-        print_timing = true,
-        # extra_attributes = Dict("mu_init" => 1e-3),
+        attributes = ipopt_attrs,
     ),
     # Example: cap total drive energy at 10 MJ. Leave vector empty for no global constraints.
     global_constraints = GlobalConstraint[],    # e.g. [EnergyBudget(1.0e7)]
@@ -107,27 +121,8 @@ segments = Int64(round(track.sampleDistances[end] / 2))
 pol_order = 2
 run_experiment!(exp, segments, pol_order; variant="Lobatto")
 
-# ---------------------------------------------------------------------------
-# Extra analysis that isn't yet wired into run_analysis! (lives here for now).
-# ---------------------------------------------------------------------------
-if exp.analysis.plot_jacobian || exp.analysis.plot_hessian
-    problem = exp      # legacy variable name used inside included scripts
-    model = exp.model  # jacobian.jl/hessian_test2.jl reference `model` directly
-    include("../dataAnalysis/jacobian.jl")
-    include("../dataAnalysis/hessian_test2.jl")
-    if exp.analysis.plot_jacobian
-        println("jacobian")
-        println(UnicodePlots.spy(jacobian))
-        fig_jac = Figure()
-        ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
-        spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
-        display(GLMakie.Screen(), fig_jac)
-    end
-    if exp.analysis.plot_hessian
-        println("hessian")
-        println(UnicodePlots.spy(H_star))
-    end
-end
+# Jacobian/Hessian spy plots are handled by run_analysis! via
+# AnalysisConfig.plot_jacobian / plot_hessian.
 
 # Sampling density plot (not yet a flag in AnalysisConfig — kept inline).
 sampling_density = get_sampling_density(exp.optiResult.path);

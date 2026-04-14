@@ -3,8 +3,6 @@ using SLapSim
 using GLMakie
 import MathOptInterface as MOI
 using DiffOpt
-using UnicodePlots
-using SparseArrays
 
 detect = Sys.islinux()
 if detect
@@ -60,14 +58,28 @@ car = formulaE2026(track)
 
 plotTrackStates(track)
 
+
+# See https://coin-or.github.io/Ipopt/OPTIONS.html for the full list.
+ipopt_attrs = Dict{String,Any}(
+    "linear_solver"          => "mumps",
+    # "hsllib"                 => HSL_jll.libhsl_path,  # needed when linear_solver is ma27/57/97
+    "max_iter"               => 3000,
+    "tol"                    => 1e-6,
+    "mu_strategy"            => "adaptive",
+    "mu_init"                => 1e-2,
+    "acceptable_tol"         => 1e-4,
+    "acceptable_iter"        => 10,
+    "print_timing_statistics"=> "yes",
+    # "hessian_approximation" => "limited-memory",
+)
+
 exp = Experiment(
     car = car,
     track = track,
-    discipline = Closed(),                              # Formula E is a closed lap
+    discipline = Open(),                              # Formula E is a closed lap
     solver = IpoptBackend(
-        linear_solver = "ma97",
         performSensitivity = false,
-        print_timing = true,
+        attributes = ipopt_attrs,
     ),
     global_constraints = GlobalConstraint[],            # e.g. [EnergyBudget(1.0e7)]
     analysis = AnalysisConfig(
@@ -75,7 +87,7 @@ exp = Experiment(
         plot_states     = true,
         plot_jacobian   = true,
         plot_hessian    = true,
-        animate         = true,
+        animate         = false,
         animation_path  = "results/animation_formulaE.mp4",
         time_simulation = true,
         sensitivity     = false,
@@ -109,27 +121,7 @@ plot_parameters(snapshots, car,
     ["drivetrain.tires[3].forces" => 3, "drivetrain.tires[4].forces" => 3]
 )
 
-# ---------------------------------------------------------------------------
-# Jacobian/Hessian inspection (inlined; included scripts reference `problem`).
-# ---------------------------------------------------------------------------
-if exp.analysis.plot_jacobian || exp.analysis.plot_hessian
-    problem = exp                                       # legacy name used in includes
-    model = exp.model                                   # jacobian.jl/hessian_test2.jl reference `model`
-    include("../dataAnalysis/jacobian.jl")
-    include("../dataAnalysis/hessian_test2.jl")
-    if exp.analysis.plot_jacobian
-        println("jacobian")
-        println(UnicodePlots.spy(jacobian))
-        fig_jac = Figure()
-        ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
-        spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
-        display(GLMakie.Screen(), fig_jac)
-    end
-    if exp.analysis.plot_hessian
-        println("hessian")
-        println(UnicodePlots.spy(H_star))
-    end
-end
+
 
 
 

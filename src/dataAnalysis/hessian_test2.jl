@@ -20,11 +20,16 @@ function fill_off_diagonal(H)
     return ret
 end
 
+"""
+    compute_optimal_hessian(model) -> Matrix
+
+Build the MOI nonlinear evaluator on `model` and return the Hessian of the
+Lagrangian at the current primal / dual solution. Off-diagonals are mirrored
+so the returned matrix is dense-symmetric.
+"""
 function compute_optimal_hessian(model::Model)
     rows = Any[]
     nlp = MOI.Nonlinear.Model()
-    
-    # Get constraints directly from the backend in index order
     for (F, S) in list_of_constraint_types(model)
         if F == VariableRef || S <: MOI.AbstractScalarSet && F == VariableRef
             continue  # Skip variable bounds
@@ -36,14 +41,13 @@ function compute_optimal_hessian(model::Model)
             MOI.Nonlinear.add_constraint(nlp, object.func, object.set)
         end
     end
-    
+
     MOI.Nonlinear.set_objective(nlp, objective_function(model))
     x = all_variables(model)
     nlp_backend = MOI.Nonlinear.SparseReverseMode()
     evaluator = MOI.Nonlinear.Evaluator(nlp, nlp_backend, index.(x))
     MOI.initialize(evaluator, [:Hess])
     hessian_sparsity = MOI.hessian_lagrangian_structure(evaluator)
-    #print(hessian_sparsity)
 
     I = [i for (i, _) in hessian_sparsity]
     J = [j for (_, j) in hessian_sparsity]
@@ -52,9 +56,20 @@ function compute_optimal_hessian(model::Model)
     H = SparseArrays.sparse(I, J, V, length(x), length(x))
     return Matrix(fill_off_diagonal(H))
 end
-H_star = compute_optimal_hessian(model)
-fig_hess = Figure()
-ax_hess = Axis(fig_hess[1, 1], title="Hessian", yreversed=true)
-spy!(ax_hess, SparseArrays.sparse(H_star))
-display(GLMakie.Screen(), fig_hess)
-UnicodePlots.spy(H_star)
+
+"""
+    plot_hessian_spy(model) -> H_star
+
+Compute the Hessian of the Lagrangian on `model` and render a UnicodePlots spy
+to stdout plus a GLMakie spy window. Returns the dense Hessian.
+"""
+function plot_hessian_spy(model::Model)
+    H_star = compute_optimal_hessian(model)
+    println("hessian")
+    println(UnicodePlots.spy(H_star))
+    fig_hess = Figure()
+    ax_hess = Axis(fig_hess[1, 1], title="Hessian", yreversed=true)
+    spy!(ax_hess, SparseArrays.sparse(H_star))
+    display(GLMakie.Screen(), fig_hess)
+    return H_star
+end

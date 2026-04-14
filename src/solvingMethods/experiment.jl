@@ -70,35 +70,38 @@ end
 abstract type SolverBackend end
 
 """
-    IpoptBackend(; linear_solver="ma97", hessian=:exact, performSensitivity=false, ...)
+    IpoptBackend(; performSensitivity=false, attributes=Dict())
 
-Ipopt configuration. `linear_solver` is one of "mumps", "ma27", "ma57", "ma97",
-"pardiso". HSL solvers use `HSL_jll.libhsl_path` by default.
+Ipopt configuration. Every Ipopt option lives in `attributes` so you can add or
+remove keys without touching this struct. `performSensitivity=true` wraps the
+model with DiffOpt for reverse-mode parameter sensitivities.
+
+Example:
+    IpoptBackend(attributes = Dict(
+        "linear_solver"          => "ma97",
+        "hsllib"                 => HSL_jll.libhsl_path,
+        "max_iter"               => 3000,
+        "tol"                    => 1e-6,
+        "mu_strategy"            => "adaptive",
+        "print_timing_statistics"=> "yes",
+    ))
 """
 Base.@kwdef mutable struct IpoptBackend <: SolverBackend
-    linear_solver::String = "ma97"
-    hsllib::Union{Nothing,String} = nothing          # defaults to HSL_jll.libhsl_path
-    hessian::Symbol = :exact                         # :exact or :limited_memory
-    performSensitivity::Bool = false                 # wraps model in DiffOpt
-    print_timing::Bool = false
-    max_iter::Int = 3000
-    tol::Float64 = 1e-6
-    extra_attributes::Dict{String,Any} = Dict{String,Any}()
+    performSensitivity::Bool = false
+    attributes::Dict{String,Any} = Dict{String,Any}()
 end
 
 """
-    MadNLPBackend(; linear_solver=:cpu, ...)
+    MadNLPBackend(; attributes=Dict())
 
-MadNLP configuration. `linear_solver=:cpu` uses MadNLP's default CPU solver.
-`linear_solver=:gpu` uses CUDSS on NVIDIA GPU via MadNLPGPU (requires CUDA).
+MadNLP configuration. Every MadNLP option lives in `attributes`. For GPU:
+    MadNLPBackend(attributes = Dict(
+        "array_type"    => CUDA.CuArray,
+        "linear_solver" => MadNLPGPU.CUDSSSolver,
+    ))
 """
 Base.@kwdef mutable struct MadNLPBackend <: SolverBackend
-    linear_solver::Symbol = :cpu                     # :cpu or :gpu
-    hessian::Symbol = :exact
-    max_iter::Int = 3000
-    tol::Float64 = 1e-6
-    print_timing::Bool = false
-    extra_attributes::Dict{String,Any} = Dict{String,Any}()
+    attributes::Dict{String,Any} = Dict{String,Any}()
 end
 
 
@@ -145,33 +148,7 @@ function build_model(b::IpoptBackend)
     model = b.performSensitivity ?
         DiffOpt.nonlinear_diff_model(Ipopt.Optimizer) :
         Model(Ipopt.Optimizer)
-
-    if startswith(b.linear_solver, "ma")
-        hsllib = isnothing(b.hsllib) ? HSL_jll.libhsl_path : b.hsllib
-        set_attribute(model, "hsllib", hsllib)
-    end
-    set_attribute(model, "linear_solver", b.linear_solver)
-    set_attribute(model, "max_iter", b.max_iter)
-    set_attribute(model, "tol", b.tol)
-    if b.hessian == :limited_memory
-        set_attribute(model, "hessian_approximation", "limited-memory")
-    end
-    if b.print_timing
-        set_attribute(model, "print_timing_statistics", "yes")
-    end
-    # Sensible defaults for the trajectory optimization problems in this project.
-    # These were historically hardcoded in `make_ipopt_model`; move into defaults
-    # so they can still be overridden via `extra_attributes`.
-    defaults = Dict{String,Any}(
-        "mu_strategy"    => "monotone",
-        "mu_init"        => 1e-2,
-        "acceptable_tol" => 1e-4,
-        "acceptable_iter" => 10,
-    )
-    for (k, v) in defaults
-        haskey(b.extra_attributes, k) || set_attribute(model, k, v)
-    end
-    for (k, v) in b.extra_attributes
+    for (k, v) in b.attributes
         set_attribute(model, k, v)
     end
     return model
@@ -179,14 +156,7 @@ end
 
 function build_model(b::MadNLPBackend)
     model = Model(MadNLP.Optimizer)
-    set_attribute(model, "max_iter", b.max_iter)
-    set_attribute(model, "tol", b.tol)
-    if b.linear_solver == :gpu
-        # NOTE: requires `using CUDA, MadNLPGPU` in the caller scope.
-        set_attribute(model, "array_type", CUDA.CuArray)
-        set_attribute(model, "linear_solver", MadNLPGPU.CUDSSSolver)
-    end
-    for (k, v) in b.extra_attributes
+    for (k, v) in b.attributes
         set_attribute(model, k, v)
     end
     return model
@@ -339,6 +309,13 @@ function run_analysis!(exp::Experiment)
             view_radius = car.chassis.wheelbase.value * 3,
             cam_offset = 3.0,
             savepath = an.animation_path)
+    end
+
+    if an.plot_jacobian
+        plot_jacobian_spy(exp.model)
+    end
+    if an.plot_hessian
+        plot_hessian_spy(exp.model)
     end
     return nothing
 end
