@@ -5,19 +5,41 @@ using OrdinaryDiffEq
 using DifferentiationInterface
 using Interpolations
 using HSL_jll
+using MadNLP,MadNLPGPU
+using CUDA
 
-function make_ipopt_model()
-    model = DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
+
+function make_ipopt_model(; performSensitivity::Bool=false)
+    # DiffOpt wrapping is only needed for sensitivity analysis and adds overhead.
+    model = performSensitivity ? DiffOpt.nonlinear_diff_model(Ipopt.Optimizer) : Model(Ipopt.Optimizer)
     #set_attribute(model, "hsllib", HSL_jll.libhsl_path)
     #set_attribute(model, "linear_solver", "ma97")
+    #set_attribute(model, "ma97_order", "metis")        # better ordering for banded problems
+    #set_attribute(model, "hessian_approximation", "limited-memory")
     #model = Model(Ipopt.Optimizer)
     #set_attribute(model, "pardisolib", "/home/riso/Downloads/panua-pardiso-20240229-linux/lib/libpardiso.so")
     #set_attribute(model, "linear_solver", "pardiso")
 
+    #model = DiffOpt.nonlinear_diff_model( MadNLP.Optimizer)
+    #JuMP.set_optimizer_attribute(model, "array_type", CuArray)
+    #JuMP.set_optimizer_attribute(model, "linear_solver", CUDSSSolver)
+
 
     #JuMP.set_optimizer_attribute(model, "max_iter", 3000)
-    JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
-    #JuMP.set_optimizer_attribute(model, "print_timing_statistics", "yes")
+    #JuMP.set_optimizer_attribute(model, "nlp_scaling_method", "gradient-based")
+    JuMP.set_optimizer_attribute(model, "print_timing_statistics", "yes")
+    #set_attribute(model, "mumps_mem_percent", 200)      # extra memory allowance (%)
+    #set_attribute(model, "mumps_pivtol", 1e-6)           # pivot tolerance
+    #set_attribute(model, "mumps_pivtolmax", 0.1)          # max pivot tolerance
+    #set_attribute(model, "mumps_permuting_scaling", 7)    # scaling strategy
+    #set_attribute(model, "mumps_scaling", 77)             # matrix scaling
+
+    set_attribute(model, "mu_strategy", "monotone")     # less aggressive barrier reduction
+    set_attribute(model, "mu_init", 1e-2)                # start with larger barrier
+    set_attribute(model, "acceptable_tol", 1e-4)         # accept "good enough" solution earlier
+    set_attribute(model, "acceptable_iter", 10)           # after 10 acceptable iterations, stop
+
+
     for (k, v) in [
         ("ma57_pre_alloc",     100.0),   
         ("mu_strategy", "adaptive") ,
@@ -36,8 +58,9 @@ function make_ipopt_model()
         ("min_refinement_steps",             4),
         ("max_refinement_steps",             100),
         ("acceptable_dual_inf_tol",          1e-1),
+        
     ]
-        JuMP.set_optimizer_attribute(model, k, v)
+     #   JuMP.set_optimizer_attribute(model, k, v)
     end
     return model
 end
@@ -55,7 +78,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-1
+    error_threshold = 1000e-1
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges) 
@@ -85,7 +108,13 @@ mutable struct Problem_config
     model::Union{Nothing,JuMP.Model}
     optiResult
     params
+    performSensitivity::Bool
 end
+
+# Keyword constructor so existing call sites using positional `nothing`s still work,
+# and new code can opt into sensitivity via a keyword.
+Problem_config(car, track, model, optiResult, params; performSensitivity::Bool=false) =
+    Problem_config(car, track, model, optiResult, params, performSensitivity)
 
 struct Result_interpolation
     states
@@ -214,8 +243,11 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
 
     Gauss_legendre = create_gauss_legendre(F, pol_order, variant, model, nControls, nStates, track; car=car)
     #Gauss_radau = create_gauss_pseudospectral_metod(F,pol_order,variant,model,nControls,nStates,track);
-    (params, tunables) = setParameters(car, model)
-    problem.params = params
+    tunables = carParameter[]
+    if problem.performSensitivity
+        (params, tunables) = setParameters(car, model)
+        problem.params = params
+    end
 
 
     #xd = Gauss_radau.createConstraints(segments,initialization);
@@ -238,7 +270,9 @@ function find_optimal_trajectory2(problem::Problem_config, segments::Int64, pol_
 
 
     optimize!(model)
-    resetParameters(tunables)
+    if problem.performSensitivity
+        resetParameters(tunables)
+    end
     x = value.(X)
     u = value.(U)
 
@@ -321,8 +355,11 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
         println("creating constraints")
 
         # Add parameters for sensitivity analysis, makes the problem little bigger, because parameters of car are now variables that ipopt sees
-        (params, tunables) = setParameters(car, model)
-        problem.params = params
+        tunables = carParameter[]
+        if problem.performSensitivity
+            (params, tunables) = setParameters(car, model)
+            problem.params = params
+        end
         xd = RKadaptive.createConstraints(segment_edges, initialization)
         X = xd[2]
         U = xd[3]
@@ -358,16 +395,18 @@ function find_optimal_trajectory_adaptive(problem::Problem_config, segments::Int
 
         # Here you can use the result of previous optimisiation as warm start, sometimes works very good sometimes very bad
         #initialization = make_result_interpolation(x, u, s_all)
-        println("resetting parameters for sensitivity analysis")
-        problem.params = params
-        resetParameters(tunables)
+        if problem.performSensitivity
+            println("resetting parameters for sensitivity analysis")
+            problem.params = params
+            resetParameters(tunables)
+        end
 
         # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refind and optimization ends
         (segment_edges, clear, segment_errors) = refineMesh(problem, segment_edges, s_all, pol_order)
 
         if clear == 0
             #create clear model for next iteration
-            model = make_ipopt_model()
+            model = make_ipopt_model(performSensitivity=problem.performSensitivity)
         end
         println("Sum of all errors: ", sum(segment_errors))
     end

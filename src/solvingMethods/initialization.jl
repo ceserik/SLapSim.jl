@@ -2,8 +2,8 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     println("started initialization")
     max_steer = car.wheelAssemblies[1].maxAngle.value
     # Constrants of controller
-    Kv = 6 * car.carParameters.mass.value / 280.0
-    Kp, Kd = 3.0   , 2.0
+    Kv = 12 * car.carParameters.mass.value / 280.0
+    Kp, Kd = 1.0   , 2.0
     nControls = Int64(car.carParameters.nControls.value)
 
     function ctrl(s, x)
@@ -54,8 +54,8 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     end, x0, s_span)
 
     # Plotting during initialization is super slow...
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4, callback=cb)
-    #sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4)
+    #sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4, callback=cb)
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff()), saveat=s_save, reltol=1e-4, abstol=1e-4)
     println()
 
     x = hcat(sol.u...)'

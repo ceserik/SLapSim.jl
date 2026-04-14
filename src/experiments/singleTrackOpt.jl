@@ -6,6 +6,7 @@ using UnoSolver
 using UnicodePlots
 using DiffOpt
 
+
 #dark theme detector for linux KDE with kde-cli-tools installed
 detect = Sys.islinux()
 if detect
@@ -50,7 +51,8 @@ update_theme!(
 
 GLMakie.closeall()
 
-problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
+performSensitivity = false
+problem = Problem_config(nothing, nothing, nothing, nothing, nothing; performSensitivity=performSensitivity)
 
 
 #car = createSimplestSingleTrack()
@@ -59,10 +61,10 @@ problem = Problem_config(nothing, nothing, nothing, nothing,nothing)
 
 #track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
-track = doubleTurn(true,0.1)
+#track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path, false, true)
+track = kml2track(path, false, true)
 #track = doubleTurn(false,0.1)
 #track = skidpad(false)
 problem.track = track
@@ -74,7 +76,7 @@ problem.car = car
 plotTrackStates(track)
 #UnoSolver.Optimizer
 
-model = make_ipopt_model()
+model = make_ipopt_model(performSensitivity=problem.performSensitivity)
 
 problem.model = model
 #model = JuMP.Model(() -> UnoSolver.Optimizer(preset="ipopt"))
@@ -129,7 +131,9 @@ if 1 == 1
     snapshots = snapshot_car(car, optiResult_interp, track)
     #plot_parameters(snapshots, car,    ["drivetrain.motors[1].torque" , "drivetrain.motors[2].torque" ,"drivetrain.motors[3].torque","drivetrain.motors[4].torque"],"wheelAssemblies[1].steeringAngle")
     
-    sensitivityAnalysis(problem)
+    if problem.performSensitivity
+        sensitivityAnalysis(problem)
+    end
     animateCarDual(track, optiResult_interp, car; speedup=1, view_radius= car.chassis.wheelbase.value*3,cam_offset=3.0, savepath="results/animation.mp4")
     plot_states_controls(car, optiResult_interp, track; sample_step=0.1)
 

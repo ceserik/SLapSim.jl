@@ -47,7 +47,8 @@ update_theme!(
 
 GLMakie.closeall()
 
-problem = Problem_config(nothing, nothing, nothing, nothing, nothing)
+performSensitivity = false
+problem = Problem_config(nothing, nothing, nothing, nothing, nothing; performSensitivity=performSensitivity)
 
 #track = figureEight(true, 0.1)
 track = csv2track("src/Track/berlin_2018.csv")
@@ -62,7 +63,7 @@ problem.car = car
 
 plotTrackStates(track)
 
-model = make_ipopt_model()
+model = make_ipopt_model(performSensitivity=problem.performSensitivity)
 problem.model = model
 
 segments = Int64(round(track.sampleDistances[end] / 6))
@@ -82,7 +83,9 @@ if 1 == 1
 
     snapshots = snapshot_car(car, optiResult_interp, track)
 
-    sensitivityAnalysis(problem)
+    if problem.performSensitivity
+        sensitivityAnalysis(problem)
+    end
 
     plot_parameters(snapshots, car,
         "drivetrain.motors[1].torque",

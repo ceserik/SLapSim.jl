@@ -252,7 +252,7 @@ function animateCarDual(track::Track, result, car::Car; fps::Int=30, speedup::Re
         t_uniform = collect(t_start:(1.0/fps/speedup):t_end)
 
         n_total = length(t_uniform)
-        record(fig, savepath; framerate=fps, compression=23) do io
+        GLMakie.record(fig, savepath; framerate=fps, compression=23) do io
             for (i, t) in enumerate(t_uniform)
                 s = time2s(t)
                 state = result.states(s)
