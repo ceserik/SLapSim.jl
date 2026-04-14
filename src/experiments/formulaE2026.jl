@@ -4,46 +4,7 @@ using GLMakie
 import MathOptInterface as MOI
 using DiffOpt
 
-detect = Sys.islinux()
-if detect
-    x = "kreadconfig6"
-    option1 = "--key"
-    option2 = "LookAndFeelPackage"
-    try
-        xd = read(`$x $option1 $option2`, String)
-        is_dark = occursin("dark", lowercase(xd))
-        println("Is dark theme: ", is_dark)
-        if is_dark
-            set_theme!(theme_dark())
-        else
-            set_theme!(Makie.current_default_theme())
-        end
-    catch
-        println("Could not detect dark theme")
-    end
-end
-
-update_theme!(
-    fontsize = 11,
-    fonts = (; regular = "Latin Modern Roman", bold = "Latin Modern Roman Bold"),
-    palette = (color = Makie.to_colormap(:tab10),),
-    colormap = :turbo,
-    Axis = (
-        titlesize = 13,
-        xlabelsize = 12,
-        ylabelsize = 12,
-        xticklabelsize = 10,
-        yticklabelsize = 10,
-    ),
-    Legend = (
-        labelsize = 11,
-        titlesize = 12,
-    ),
-    Colorbar = (
-        ticklabelsize = 10,
-        labelsize = 11,
-    ),
-)
+setup_plot_theme!()
 
 GLMakie.closeall()
 
@@ -62,15 +23,17 @@ plotTrackStates(track)
 # See https://coin-or.github.io/Ipopt/OPTIONS.html for the full list.
 ipopt_attrs = Dict{String,Any}(
     "linear_solver"          => "mumps",
+
     # "hsllib"                 => HSL_jll.libhsl_path,  # needed when linear_solver is ma27/57/97
-    "max_iter"               => 3000,
-    "tol"                    => 1e-6,
-    "mu_strategy"            => "adaptive",
-    "mu_init"                => 1e-2,
-    "acceptable_tol"         => 1e-4,
-    "acceptable_iter"        => 10,
+    #"max_iter"               => 3000,
+    #"tol"                    => 1e-6,
+    #"mu_strategy"            => "adaptive",
+    #"mu_init"                => 1e-2,
+    #"acceptable_tol"         => 1e-4,
+    #"acceptable_iter"        => 10,
     "print_timing_statistics"=> "yes",
-    # "hessian_approximation" => "limited-memory",
+    #"hessian_approximation" => "limited-memory",
+    "alpha_for_y" => "safer-min-dual-infeas"
 )
 
 exp = Experiment(

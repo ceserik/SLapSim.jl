@@ -46,6 +46,7 @@ include("solvingMethods/optInterface.jl")
 include("dataAnalysis/sensitivityAnalysis.jl")
 
 include("animation/drawCar.jl")
+include("animation/themeUtils.jl")
 include("dataAnalysis/validation.jl")
 include("dataAnalysis/jacobian.jl")
 include("dataAnalysis/hessian_test2.jl")
@@ -63,6 +64,7 @@ export createCTU25gearbox, createFischerMotor, createR20lin, createPepikCTU25, c
 export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
 export setParameters, resetParameters, sensitivityAnalysis, VarEntry, get_bounds, get_scales, apply_mapping!
 export drawCar!, animateCar, animateCarDual, draw!
+export detect_dark_theme!, apply_slapsim_theme!, setup_plot_theme!
 export Result_interpolation, find_optimal_trajectory_adaptive, plotTrackStates
 # New experiment API
 export Experiment, Discipline, Open, Closed

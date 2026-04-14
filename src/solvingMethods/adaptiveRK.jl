@@ -84,8 +84,8 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
                     #@infiltrate     
                     fxSum += tableau.a[stage, col] * F[col]
                 end
-                ## quadrature constraint
-                @constraint(model, X[segment_start_idx+stage-1, :] .== X[segment_start_idx, :] + h_all[segment] * fxSum)
+                ## quadrature constraint (written in scaled/raw space so residuals are O(1))
+                @constraint(model, X_raw[segment_start_idx+stage-1, :] .== X_raw[segment_start_idx, :] .+ h_all[segment] .* fxSum ./ x_scale)
                 f(X[segment_start_idx+stage-1, :], U[segment_start_idx+stage-1, :], s_all[segment_start_idx+stage-1], model)
                 #@infiltrate
             end
