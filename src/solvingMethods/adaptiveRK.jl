@@ -74,41 +74,44 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         U = U_raw .* u_scale'
 
         # === Intermediate-F variant (comment this block out to revert to inline f) ===
-        # Split dynamics: F_raw[i,:] == f(X,U,s)/x_scale as equality, then quadrature
-        # is linear in F_raw → sparse hessian rows, faster AD (odow tip, ExaModels pattern).
-        #F_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
-        #for i = 1:totalPoints, j = 1:nStates
-        #    F_raw[i, j] = @variable(model)
-        #end
-        #for i = 1:totalPoints
-        #    dx_i = f(X[i, :], U[i, :], s_all[i], model)
-        #    @constraint(model, F_raw[i, :] .== dx_i ./ x_scale)
-        #end
-        #segment_start_idx = 1
-        #for segment = 1:number_of_segments
-        #    for stage = 2:stages
-        #        fxSum = sum(tableau.a[stage, col] .* F_raw[segment_start_idx+col-1, :] for col in 1:stages)
-        #        @constraint(model, X_raw[segment_start_idx+stage-1, :] .== X_raw[segment_start_idx, :] .+ h_all[segment] .* fxSum)
-        #    end
-        #    segment_start_idx = segment_start_idx + stages - 1
-        #end
-        # === end intermediate-F variant ===
-
-        # Original inline variant (kept for easy toggle):
+         #Split dynamics: F_raw[i,:] == f(X,U,s)/x_scale as equality, then quadrature
+         #is linear in F_raw → sparse hessian rows, faster AD (odow tip, ExaModels pattern).
+        F_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
+        for i = 1:totalPoints, j = 1:nStates
+            F_raw[i, j] = @variable(model)
+        end
+        for i = 1:totalPoints
+            dx_i = f(X[i, :], U[i, :], s_all[i], model)
+            @constraint(model, F_raw[i, :] .== dx_i ./ x_scale)
+        end
         segment_start_idx = 1
-        f(X[segment_start_idx, :], U[segment_start_idx, :], s_all[segment_start_idx], model)
         for segment = 1:number_of_segments
-            F = [f(X[segment_start_idx+col-1, :], U[segment_start_idx+col-1, :], s_all[segment_start_idx+col-1], nothing) for col in 1:stages]
             for stage = 2:stages
-                fxSum = zeros(NonlinearExpr, nStates)
-                for col = 1:stages
-                    fxSum += tableau.a[stage, col] * F[col]
-                end
-                @constraint(model, X_raw[segment_start_idx+stage-1, :] .== X_raw[segment_start_idx, :] .+ h_all[segment] .* fxSum ./ x_scale)
-                f(X[segment_start_idx+stage-1, :], U[segment_start_idx+stage-1, :], s_all[segment_start_idx+stage-1], model)
+                fxSum = sum(tableau.a[stage, col] .* F_raw[segment_start_idx+col-1, :] for col in 1:stages)
+                @constraint(model, X_raw[segment_start_idx+stage-1, :] .== X_raw[segment_start_idx, :] .+ h_all[segment] .* fxSum)
             end
             segment_start_idx = segment_start_idx + stages - 1
         end
+        # === end intermediate-F variant ===
+
+        # Original inline variant (kept for easy toggle):
+        #segment_start_idx = 1
+        #f(X[segment_start_idx, :], U[segment_start_idx, :], s_all[segment_start_idx], model)
+        #for segment = 1:number_of_segments
+        #    F = [f(X[segment_start_idx+col-1, :], U[segment_start_idx+col-1, :], s_all[segment_start_idx+col-1], nothing) for col in 1:stages]
+        #    # === odow intermediate-F toggle: uncomment 2 lines below to split dynamics into aux vars (sparser hessian, ~2× faster) ===
+        #    #F_aux = [@variable(model) for _=1:nStates, _=1:stages]
+        #    #@constraint(model, F_aux .== hcat(F...)); F = [F_aux[:,col] for col in 1:stages]
+        #    for stage = 2:stages
+        #        fxSum = zeros(NonlinearExpr, nStates)
+        #        for col = 1:stages
+        #            fxSum += tableau.a[stage, col] * F[col]
+        #        end
+        #        @constraint(model, X_raw[segment_start_idx+stage-1, :] .== X_raw[segment_start_idx, :] .+ h_all[segment] .* fxSum ./ x_scale)
+        #        f(X[segment_start_idx+stage-1, :], U[segment_start_idx+stage-1, :], s_all[segment_start_idx+stage-1], model)
+        #    end
+        #    segment_start_idx = segment_start_idx + stages - 1
+        #end
 
         #initialize all states and controls (set on raw O(1) variables)
         for idx = eachindex(s_all)

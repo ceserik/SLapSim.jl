@@ -320,11 +320,11 @@ post-processing is enabled in `exp.analysis`. Results land in `exp.result`.
 function run_experiment!(exp::Experiment, segments::Int64, pol_order::Int64; variant::String="Lobatto")
     exp.model = build_model(exp.solver)
     t_solve = @elapsed begin
-        _, interp = find_optimal_trajectory_adaptive(exp, segments, pol_order, variant)
+        _, interp = find_optimal_trajectory_adaptive(exp, segments, pol_order, variant);
     end
-    println("Solve time: $(round(t_solve, digits=2)) s")
-    exp.optiResult = interp
-    run_analysis!(exp)
+    println("Solve time: $(round(t_solve, digits=2)) s");
+    exp.optiResult = interp;
+    run_analysis!(exp);
     return exp
 end
 
@@ -1974,7 +1974,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     return initialization
 end;
 
-
+# =============================================START OF EXECUTION===========================================================================
 track = figureEight(); 
 car = createTwintrack();
 
@@ -2008,6 +2008,7 @@ exp = Experiment(
     ),
 )
 
-segments = Int64(round(track.sampleDistances[end] *2))
-pol_order = 2
-run_experiment!(exp, segments, pol_order; variant="Lobatto")
+segments = Int64(round(track.sampleDistances[end] *2)) #control size of the problem by seelcting segments per meter, now it is 2 segments per meter
+pol_order = 2 # order of aproximating polynomial
+run_experiment!(exp, segments, pol_order; variant="Lobatto"); # cretes problem and solves it
+nothing

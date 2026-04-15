@@ -81,25 +81,35 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     ####
     # Initialize the optimization problem
     model = JuMP.Model(Ipopt.Optimizer)
-        function f(z::Vector{JuMP.VariableRef}, u::Vector{JuMP.VariableRef},s::Float64,nothing)
-            return [u; z[1]; cos(z[2]); sin(z[2])]
-        end
-
-        function f(z::Union{Vector{Float64},Vector{VariableRef}}, u::Union{Vector{Float64},Vector{VariableRef}},s::Float64,nothing)
-            return [u; z[1]; cos(z[2]); sin(z[2])]
-        end
+    function f(z::AbstractVector, u::AbstractVector, s::Real, model)
+        return [u[1]; z[1]; cos(z[2]); sin(z[2])]
+    end
 
     Lobattostage = 2
-    lobotom = createLobattoIIIA(Lobattostage,f)
+    nStates = 4
+    nControls = 1
 
-    samplingPoints = length(s_traj)
-    spl = Spline1D(s_traj, s_traj)
-    xd = lobotom.createConstraints(f,4,1,spl,s_traj,model,[C_init  th_init x_smpl y_smpl],diff(C_init))
+    X_init = hcat(C_init, th_init, x_smpl, y_smpl)
+    U_init = reshape(diff(C_init), :, 1)
+    initialization = make_result_interpolation(X_init, U_init, collect(s_traj), collect(s_traj[1:end-1]))
+
+    # Adaptive method defaults to bounds +/- scale, so choose generous scales from initialization.
+    x_scale = 2.0 .* max.(vec(maximum(abs.(X_init), dims=1)), [1e-2, 1.0, 1.0, 1.0])
+    u_scale = [2.0 * max(maximum(abs.(U_init)), 1e-3)]
+
+    lobotom = createLobattoIIIA_Adaptive(f, Lobattostage, model, nControls, nStates, track;
+        x_scale=x_scale, u_scale=u_scale)
+
+    segment_edges = collect(s_traj)
+    xd = lobotom.createConstraints(segment_edges, initialization)
     Xall = xd[2]
     Uall = xd[3]
-    Z = xd[4]
-    u = xd[5]
-    s_all = xd[6]
+    s_all = xd[4]
+    segment_edges = xd[5]
+
+    Z = Xall
+    u = Uall[1:end-1, 1]
+    s_nodes = s_all
     
     z_C = Z[:, 1]
     z_th= Z[:, 2]
@@ -136,20 +146,23 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     C_traj = value.(z_C)
     th_traj = value.(z_th)
 
-    itp = lobotom.createInterpolator(value(Xall),value(Uall),s_all)
+    itp = lobotom.createInterpolator(value(Xall), value(Uall), s_all, segment_edges)
 
     track.x = x_traj
     track.y = y_traj
     track.curvature = C_traj
     track.theta = th_traj
-    track.sampleDistances = s_traj
-    track.fcurve = itp
+    track.sampleDistances = s_nodes
+    track.fcurve = s -> begin
+        vals = itp.states(s)
+        return (vals[1], vals[2], vals[3], vals[4])
+    end
 
     # Stretch track parameters
-    s_new_endpoints = [s_traj[1], s_traj[end]]
+    s_new_endpoints = [s_nodes[1], s_nodes[end]]
     stretch(v) = length(v) == length(s_tmp) ?
-        interp1(s_tmp, Float64.(v), s_traj) :
-        interp1(s_new_endpoints, [Float64(v[1]), Float64(v[1])], s_traj)
+        interp1(s_tmp, Float64.(v), s_nodes) :
+        interp1(s_new_endpoints, [Float64(v[1]), Float64(v[1])], s_nodes)
     track.widthR      = stretch(track.widthR)
     track.widthL      = stretch(track.widthL)
     track.rho         = stretch(track.rho)
