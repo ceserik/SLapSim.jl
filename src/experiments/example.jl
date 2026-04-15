@@ -6,13 +6,116 @@ using  OrdinaryDiffEq
 using DiffEqCallbacks
 using DifferentiationInterface
 using LinearAlgebra
+
+# Type definitions (used by Motor, Tire, etc. structs)
+const carVar = Union{Float64, JuMP.VariableRef, JuMP.AffExpr,
+                     JuMP.NonlinearExpr, JuMP.QuadExpr}
+
+mutable struct carParameter{T}
+    value::T
+    name::String
+    unit::String
+    size::Tuple{Int,Int}  # To store dimensions of the value (1,1) for scalar, (n,1) for vector, (n,m) for matrix
+    role::Symbol  # :control, :state, :static parameter, :tunable parameter
+    limits::Vector{Float64}
+end
+
+"""
+I have created example that has the same problems as my bigger project. I used functions from my project and put them into single file the file, but it has 2000 lines :/ , I hope this form can be useful for you :sweat_smile:. 
+The ODE function that describes the car dynamics is on line 1234. it is composed of different vehicle components, like motor, tire chassis, which define transformations of forces.
+
+Collocation which creates constraints is on line 1505,
+
+
+
+It really seems that the main issue is the number of terms inside constraints, I have 9 variables that describe the car model at each point at the track, the model contains  lot of transformations of forces between tires, wheel carries, CoG... So that may be too much :D
+Should just add more variables to the model, or are there some other things that can increase the speed?
+
+File is here, it works on my machine, pease let me know if it doesnt work for you.
+
+https://github.com/ceserik/SLapSim.jl/blob/main/src/experiments/example.jl
+
+these are all the packages required
+```
+using Pkg
+Pkg.activate(".")
+Pkg.add([
+"JuMP",
+"Ipopt",
+"Zygote",
+"Dierckx",
+"DSP",
+"Interpolations",
+"RungeKutta",
+"OrdinaryDiffEq",
+"DiffEqCallbacks",
+"DifferentiationInterface",
+])
+"""
+
+
+
+# Component structs - defined early to avoid forward references
+mutable struct Accumulator
+    capacity::carParameter{carVar}
+    maxPower::carParameter{carVar}
+    minPower::carParameter{carVar}
+    voltage::carParameter{carVar}
+    current::carParameter{carVar}
+    SoC::carParameter{carVar}
+    mass::carParameter{carVar}
+    resistance::carParameter{carVar}
+end
+
+mutable struct Gearbox{F,G}
+    ratio::carParameter{carVar}
+    torqueIn::carParameter{carVar}
+    angularFrequencyIn::carParameter{carVar}
+    torqueOut::carParameter{carVar}
+    angularFrequencyOut::carParameter{carVar}
+    loss::carParameter{carVar}
+    compute::F
+    setTorque::G
+end
+
+mutable struct Motor{F1,F2}
+    torque::carParameter{carVar} #actual torque
+    angularFrequency::carParameter{carVar} #actual angular freuency
+    mass::carParameter{carVar}
+    loss::carParameter{carVar} #actual power loss
+    power::carParameter{carVar} # actual power draw
+    torqueSpeedFunction::F1 #mapping speed to max torque
+    constraints::F2
+end
+
+mutable struct Tire{F1,F2,F3,F4,F5}
+    radius::carParameter{carVar}
+    width::carParameter{carVar}
+    inertia::carParameter{carVar}
+    mass::carParameter{carVar}
+    velocity::carParameter{Vector{carVar}}
+    angularFrequency::carParameter{carVar}
+    forces::carParameter{Vector{carVar}}
+    slipAngle::carParameter{carVar}
+    slipRatio::carParameter{carVar}
+    compute::F1
+    tireConstraints::F2
+    setVelocity::F3
+    maxSLipAngle::carParameter{carVar}
+    scalingForce::carParameter{carVar}
+    frictionCoefficient::carParameter{carVar}
+    rollingResistance::carParameter{carVar}
+    brakingForce::carParameter{carVar}
+    setupObservables::F4
+    updateObservables::F5
+end
+
 mutable struct Drivetrain
     motors::Vector{Motor}
     gearboxes::Vector{Gearbox}
     tires::Vector{Tire}
     accumulators::Accumulator
 end
-
 struct Result
     states::Matrix{Float64}
     controls::Matrix{Float64}
@@ -44,6 +147,88 @@ function greaterContraint(a,b,model=nothing)
         @constraint(model,a>=b)
     end
     return a
+end
+
+# Struct definitions needed by Car
+struct VarEntry
+    name::String
+    targets::Vector{Pair}  # carParameter => vector_index (0 = scalar)
+    lb::Float64
+    ub::Float64
+    role::Symbol  # :state or :control
+end
+
+mutable struct CarParameters
+    mass::carParameter{carVar}
+    inertia::carParameter{carVar}
+    motorForce::carParameter{carVar}
+    CL::carParameter{carVar}
+    CD::carParameter{carVar}
+    velocity::carParameter{Vector{carVar}}
+    angularVelocity::carParameter{Vector{carVar}}
+    psi::carParameter{carVar}
+    n::carParameter{carVar}
+    powerLimit::carParameter{carVar}
+    lateralForce::carParameter{carVar}
+    lateralTransfer::carParameter{carVar}
+    brakeBias::carParameter{carVar}
+    nControls::carParameter{carVar}
+    nStates::carParameter{carVar}
+    s::carParameter{carVar}
+    state_descriptor::Vector{VarEntry}
+    control_descriptor::Vector{VarEntry}
+end
+
+mutable struct Aero{F1,F2,F3}
+    CL::carParameter{carVar}
+    CD::carParameter{carVar}
+    CoP::carParameter{carVar}
+    compute::F1
+    setupObservables::F2
+    updateObservables::F3
+end
+
+mutable struct Chassis{F1,F2,F3}
+    mass::carParameter{carVar}
+    hitbox::F1
+    wheelbase::carParameter{carVar}
+    track::carParameter{carVar}
+    CoG_X_pos::carParameter{carVar}
+    CoG_Y_pos::carParameter{carVar}
+    CoG_Z_pos::carParameter{carVar}
+    width::carParameter{carVar}
+    setupObservables::F2
+    updateObservables::F3
+end
+
+mutable struct Suspension{F1,F2}
+    tlong::carParameter{carVar}
+    tlat::carParameter{carVar}
+    theave::carParameter{carVar}
+    stiffnessLong::carParameter{carVar}
+    dampingLong::carParameter{carVar}
+    stiffnessLat::carParameter{carVar}
+    dampingLat::carParameter{carVar}
+    stiffnessHeave::carParameter{carVar}
+    dampingHeave::carParameter{carVar}
+    lateralTransfer::carParameter{carVar}
+    calculate::F1
+    setInput ::F2
+end
+
+mutable struct WheelAssembly{F1,F2,F3,F4,F5}
+    position::carParameter{Vector{carVar}}
+    velocityPivot::carParameter{Vector{carVar}}
+    velocityTire::carParameter{Vector{carVar}}
+    maxAngle::carParameter{carVar}
+    steeringAngle::carParameter{carVar}
+    forces::carParameter{Vector{carVar}}
+    torque::carParameter{Vector{carVar}}
+    constraints::F1
+    setVelocity::F2
+    getTorque::F3
+    setupObservables::F4
+    updateObservables::F5
 end
 
 mutable struct Car
@@ -186,6 +371,38 @@ Base.@kwdef mutable struct AnalysisConfig
     results_path::String = "results/"
 end
 
+
+# Track structs needed by Experiment
+mutable struct Track
+    curvature::Vector{Float64}
+    rho::Vector{Float64}
+    μ::Vector{Float64}
+    sampleDistances::Vector{Float64}
+    mapping::Function
+    x::Vector{Float64}
+    y::Vector{Float64}
+    theta::Vector{Float64}
+    widthR::Vector{Float64}
+    widthL::Vector{Float64}
+    inclination::Vector{Float64}
+    slope::Vector{Float64}
+    fcurve::Function
+    s::Vector{Float64}
+end
+
+struct Track_interpolated
+    s_nodes::Vector{Float64}
+    x::Any
+    y::Any
+    heading::Any
+    curvature::Any
+    widthL::Any
+    widthR::Any
+    air_density::Any
+    friction_c::Any
+    inclination::Any
+    fcurve::Any
+end
 
 # ---------------------------------------------------------------------------
 # Experiment — the top-level container.
@@ -384,28 +601,6 @@ function run_analysis!(exp::Experiment)
 end
 
 
-
-const carVar = Union{Float64, JuMP.VariableRef, JuMP.AffExpr,
-                     JuMP.NonlinearExpr, JuMP.QuadExpr}
-
-mutable struct carParameter{T}
-    value::T
-    name::String
-    unit::String
-    size::Tuple{Int,Int}  # To store dimensions of the value (1,1) for scalar, (n,1) for vector, (n,m) for matrix
-    role::Symbol  # :control, :state, :static parameter, :tunable parameter
-    limits::Vector{Float64}
-end
-
-
-struct VarEntry
-    name::String
-    targets::Vector{Pair}  # carParameter => vector_index (0 = scalar)
-    lb::Float64
-    ub::Float64
-    role::Symbol  # :state or :control
-end
-
 function carParameter{T}(value::T, name::String, unit::String, role::Symbol=:static,limits::Vector{Float64} = [9999.0,-9999.0]) where T
     if isa(value, AbstractArray)
         size_tuple = (length(value), 1)  # For vectors, treat as (n,1)
@@ -440,27 +635,6 @@ function Base.show(io::IO, ::MIME"text/plain", p::carParameter)
     println(io, "  Size:   $(p.size)")
     println(io, "  Role:   $(p.role)")
     print(io,   "  Limits: $(p.limits)")
-end
-
-mutable struct CarParameters
-    mass::carParameter{carVar}
-    inertia::carParameter{carVar}
-    motorForce::carParameter{carVar}
-    CL::carParameter{carVar}
-    CD::carParameter{carVar}
-    velocity::carParameter{Vector{carVar}}
-    angularVelocity::carParameter{Vector{carVar}}
-    psi::carParameter{carVar}
-    n::carParameter{carVar}
-    powerLimit::carParameter{carVar}
-    lateralForce::carParameter{carVar}
-    lateralTransfer::carParameter{carVar}
-    brakeBias::carParameter{carVar}
-    nControls::carParameter{carVar}
-    nStates::carParameter{carVar}
-    s::carParameter{carVar}
-    state_descriptor::Vector{VarEntry}
-    control_descriptor::Vector{VarEntry}
 end
 
 # Pretty printing for CarParameters
@@ -520,16 +694,6 @@ function get_scales(desc::Vector{VarEntry})
 end
 
 
-mutable struct Accumulator
-    capacity::carParameter{carVar}
-    maxPower::carParameter{carVar}
-    minPower::carParameter{carVar}
-    voltage::carParameter{carVar}
-    current::carParameter{carVar}
-    SoC::carParameter{carVar}
-    mass::carParameter{carVar}
-    resistance::carParameter{carVar}
-end
 Base.show(io::IO, ::MIME"text/plain", obj::Accumulator) = prettyPrintComponent(io, obj)
 
 
@@ -556,14 +720,6 @@ function createPepikCTU25()
     return ACP
 end
 
-mutable struct Aero{F1,F2,F3}
-    CL::carParameter{carVar}
-    CD::carParameter{carVar}
-    CoP::carParameter{carVar}
-    compute::F1
-    setupObservables::F2
-    updateObservables::F3
-end
 #Base.show(io::IO, ::MIME"text/plain", obj) = prettyPrintComponent(io, obj)
 
 const RHO_SEA_LEVEL = 1.225
@@ -603,19 +759,6 @@ function createBasicAero(; CL_a::Float64 = -5.0, CD_a::Float64 = 2.0, CoP_a::Flo
         updateObservables,
     )
     return aero
-end
-
-mutable struct Chassis{F1,F2,F3}
-    mass::carParameter{carVar}
-    hitbox::F1
-    wheelbase::carParameter{carVar}
-    track::carParameter{carVar}
-    CoG_X_pos::carParameter{carVar}
-    CoG_Y_pos::carParameter{carVar}
-    CoG_Z_pos::carParameter{carVar}
-    width::carParameter{carVar}
-    setupObservables::F2
-    updateObservables::F3
 end
 
 function createCTU25chassis(; mass_p::Float64 = 280.0, wheelbase_p::Float64 = 1.525, track_p::Float64 = 1.2, CoGx::Float64 = 0.5, CogY::Float64 = 0.5, width_p::Float64 = 1.525)
@@ -658,17 +801,6 @@ function createCTU25chassis(; mass_p::Float64 = 280.0, wheelbase_p::Float64 = 1.
 end
 
 
-mutable struct Gearbox{F,G}
-    ratio::carParameter{carVar}
-    torqueIn::carParameter{carVar}
-    angularFrequencyIn::carParameter{carVar}
-    torqueOut::carParameter{carVar}
-    angularFrequencyOut::carParameter{carVar}
-    loss::carParameter{carVar}
-    compute::F
-    setTorque::G
-end
-
 Base.show(io::IO, ::MIME"text/plain", obj::Gearbox) = prettyPrintComponent(io, obj)
 
 function createCTU25gearbox(ratio_p::Float64 = 11.46)
@@ -701,15 +833,7 @@ function createCTU25gearbox(ratio_p::Float64 = 11.46)
     )
 end
 
-mutable struct Motor{F1,F2}
-    torque::carParameter{carVar} #actual torque
-    angularFrequency::carParameter{carVar} #actual angular freuency
-    mass::carParameter{carVar} 
-    loss::carParameter{carVar} #actual power loss
-    power::carParameter{carVar} # actual power draw
-    torqueSpeedFunction::F1 #mapping speed to max torque
-    constraints::F2
-end
+
 Base.show(io::IO, ::MIME"text/plain", obj::Motor) = prettyPrintComponent(io, obj)
 
 function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float64=29.0)
@@ -738,25 +862,6 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
         constraints
     )
     return motor
-end
-
-mutable struct Suspension{F1,F2}
-    tlong::carParameter{carVar}
-    tlat::carParameter{carVar}
-    theave::carParameter{carVar}
-
-    stiffnessLong::carParameter{carVar}
-    dampingLong::carParameter{carVar}
-
-    stiffnessLat::carParameter{carVar}
-    dampingLat::carParameter{carVar}
-
-    stiffnessHeave::carParameter{carVar}
-    dampingHeave::carParameter{carVar}
-    lateralTransfer::carParameter{carVar}
-    calculate::F1
-    setInput ::F2
-    # da sa posuvat pitch center???
 end
 
 Base.show(io::IO, ::MIME"text/plain", obj::Suspension) = prettyPrintComponent(io, obj)
@@ -927,20 +1032,6 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
     )
 end
 
-mutable struct WheelAssembly{F1,F2,F3,F4,F5}
-    position::carParameter{Vector{carVar}}
-    velocityPivot::carParameter{Vector{carVar}}
-    velocityTire::carParameter{Vector{carVar}}
-    maxAngle::carParameter{carVar}
-    steeringAngle::carParameter{carVar}
-    forces::carParameter{Vector{carVar}}
-    torque::carParameter{Vector{carVar}}
-    constraints::F1
-    setVelocity::F2
-    getTorque::F3
-    setupObservables::F4
-    updateObservables::F5
-end
 Base.show(io::IO, ::MIME"text/plain", obj::WheelAssembly) = prettyPrintComponent(io, obj)
 
 function createBasicWheelAssembly(position::Vector{carVar})
@@ -1295,41 +1386,6 @@ function barycentric_weights(x)
 end
 
 
-mutable struct Track
-    curvature::Vector{Float64}
-    rho::Vector{Float64}
-    μ::Vector{Float64}
-    sampleDistances::Vector{Float64} #rename to sample distances samplingDistance
-    mapping::Function
-    x::Vector{Float64}
-    y::Vector{Float64}
-    theta::Vector{Float64}
-    widthR::Vector{Float64}
-    widthL::Vector{Float64}
-    inclination::Vector{Float64}
-    slope::Vector{Float64}
-    fcurve::Function
-    s::Vector{Float64}
-end
-
-
-
-struct Track_interpolated
-    s_nodes::Vector{Float64}
-    # Field types are left as Any so we can store either Interpolations
-    # objects (built once in interpolate_track) or plain closures. They are all
-    # callable as f(s).
-    x::Any
-    y::Any
-    heading::Any
-    curvature::Any
-    widthL::Any
-    widthR::Any
-    air_density::Any
-    friction_c::Any
-    inclination::Any
-    fcurve::Any
-end
 
 function make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s_states::Vector{Float64}, s_controls::Vector{Float64})
     state_interps = [linear_interpolation(s_states, x[:, i]) for i in 1:size(x, 2)]
@@ -1422,7 +1478,7 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         X = X_raw .* x_scale'
         U = U_raw .* u_scale'
 
-        # === odow test ===
+        # ============================ Odow test ==========================================
         #F_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
         #for i = 1:totalPoints, j = 1:nStates
         #    F_raw[i, j] = @variable(model)
