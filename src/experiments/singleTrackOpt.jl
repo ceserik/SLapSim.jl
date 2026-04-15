@@ -1,11 +1,10 @@
 using Revise
 using SLapSim
 using GLMakie
-import MathOptInterface as MOI
-using UnoSolver
-using UnicodePlots
-using DiffOpt
 using HSL_jll                      # exposes HSL_jll.libhsl_path for Ipopt's hsllib attribute
+using CUDA
+using MadNLP
+using MadNLPGPU
 
 
 #dark theme detector for linux KDE with kde-cli-tools installed
@@ -43,7 +42,10 @@ ipopt_attrs = Dict{String,Any}(
 
     # "hsllib"                 => HSL_jll.libhsl_path,  # needed when linear_solver is ma27/57/97
     #"max_iter"               => 3000,
-    #"tol"                    => 1e-6,
+    #"tol"                    => 1e-2,
+    #"constr_viol_tol" => 1e-2,
+    #"compl_inf_tol"   => 1e-2,
+    #"dual_inf_tol"    => 1e-1,
     #"mu_strategy"            => "adaptive",
     #"mu_init"                => 1e-2,
     #"acceptable_tol"         => 1e-4,
@@ -51,6 +53,11 @@ ipopt_attrs = Dict{String,Any}(
     "print_timing_statistics"=> "yes",
     #"hessian_approximation" => "limited-memory",
     "alpha_for_y" => "safer-min-dual-infeas"
+)
+
+madnlp_attrs = Dict{String,Any}(
+    "array_type"    => CUDA.CuArray,
+    "linear_solver" => MadNLPGPU.CUDSSSolver,
 )
 
 exp = Experiment(
@@ -61,6 +68,9 @@ exp = Experiment(
         performSensitivity = false,
         attributes = ipopt_attrs,
     ),
+    #solver = MadNLPBackend(
+    #    attributes = madnlp_attrs,
+    #),
     # Example: cap total drive energy at 10 MJ. Leave vector empty for no global constraints.
     global_constraints = GlobalConstraint[],    # e.g. [EnergyBudget(1.0e7)]
     analysis = AnalysisConfig(
@@ -84,7 +94,7 @@ pol_order = 2
 run_experiment!(exp, segments, pol_order; variant="Lobatto")
 
 
-sampling_density = get_sampling_density(exp.optiResult.path);
+sampling_density = get_sampling_density(exp.optiResult.path); # this may silently change emanigwhen higher than 2 pol order is used may cause bugs
 plot_on_path(exp, sampling_density, "sampling density");
 
 snapshots = snapshot_car(car, exp.optiResult, track)
