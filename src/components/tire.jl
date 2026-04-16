@@ -172,8 +172,19 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         α = slipAngle.value * 1
         D = forces.value[3] * frictionCoefficient.value
-        forces.value[2] = D * sin(C * atan(B * α - E * (B * α - atan(B * α))))
-        forces.value[1] = inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value
+
+        if isnothing(optiModel)
+            forces.value[2] = D * sin(C * atan(B * α - E * (B * α - atan(B * α))))
+            forces.value[1] = inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value
+        else
+            sf = scalingForce.value
+            fy_raw = @variable(optiModel)
+            fx_raw = @variable(optiModel)
+            @constraint(optiModel, fy_raw == (D * sin(C * atan(B * α - E * (B * α - atan(B * α))))) / sf)
+            @constraint(optiModel, fx_raw == (inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value) / sf)
+            forces.value[2] = fy_raw * sf
+            forces.value[1] = fx_raw * sf
+        end
     end
 
     function tireConstraints(model=nothing)

@@ -74,8 +74,6 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         U = U_raw .* u_scale'
 
         # === Intermediate-F variant (comment this block out to revert to inline f) ===
-         #Split dynamics: F_raw[i,:] == f(X,U,s)/x_scale as equality, then quadrature
-         #is linear in F_raw → sparse hessian rows, faster AD (odow tip, ExaModels pattern).
         F_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
         for i = 1:totalPoints, j = 1:nStates
             F_raw[i, j] = @variable(model)
@@ -87,7 +85,10 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         segment_start_idx = 1
         for segment = 1:number_of_segments
             for stage = 2:stages
-                fxSum = sum(tableau.a[stage, col] .* F_raw[segment_start_idx+col-1, :] for col in 1:stages)
+                fxSum = @variable(model, [1:nStates])
+                @constraint(model, fxSum .== sum(tableau.a[stage, col] .* F_raw[segment_start_idx+col-1, :] for col in 1:stages))
+
+                #fxSum = sum(tableau.a[stage, col] .* F_raw[segment_start_idx+col-1, :] for col in 1:stages)
                 @constraint(model, X_raw[segment_start_idx+stage-1, :] .== X_raw[segment_start_idx, :] .+ h_all[segment] .* fxSum)
             end
             segment_start_idx = segment_start_idx + stages - 1

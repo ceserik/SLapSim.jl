@@ -18,12 +18,12 @@ GLMakie.closeall()
 #car_fn = createSimplestSingleTrack
 #car_fn = createBus
 
-track = figureEight(true, 0.1)
+#track = figureEight(true, 0.1)
 #track = singleTurn(50.0,5.0,true)
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path, false, true)
+track = kml2track(path, false, true)
 #track = doubleTurn(false, 0.1)
 #track = skidpad(false)
 
