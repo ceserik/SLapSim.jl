@@ -178,10 +178,12 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
             forces.value[1] = inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value
         else
             sf = scalingForce.value
+            fy_expr = (D * sin(C * atan(B * α - E * (B * α - atan(B * α))))) / sf
+            fx_expr = (inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value) / sf
             fy_raw = @variable(optiModel)
             fx_raw = @variable(optiModel)
-            @constraint(optiModel, fy_raw == (D * sin(C * atan(B * α - E * (B * α - atan(B * α))))) / sf)
-            @constraint(optiModel, fx_raw == (inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value) / sf)
+            @constraint(optiModel, fy_raw == fy_expr)
+            @constraint(optiModel, fx_raw == fx_expr)
             forces.value[2] = fy_raw * sf
             forces.value[1] = fx_raw * sf
         end

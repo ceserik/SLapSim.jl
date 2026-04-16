@@ -1,29 +1,29 @@
 
-function lessContraint(a,b,model=nothing)
+function lessContraint(a::carVar, b::carVar, model::Union{JuMP.Model,Nothing}=nothing)
     if isnothing(model)
-        a = min(a,b)
+        return min(a, b)
     else
-        @constraint(model,a<=b)
+        @constraint(model, a <= b)
+        return a
     end
-    return a
 end
 
-function greaterContraint(a,b,model=nothing)
+function greaterContraint(a::carVar, b::carVar, model::Union{JuMP.Model,Nothing}=nothing)
     if isnothing(model)
-        a = max(a,b)
+        return max(a, b)
     else
-        @constraint(model,a>=b)
+        @constraint(model, a >= b)
+        return a
     end
-    return a
 end
 
-function equalConstraint(a,b,model=nothing)
+function equalConstraint(a::carVar, b::carVar, model::Union{JuMP.Model,Nothing}=nothing)
     if isnothing(model)
-        a = b
+        return b
     else
-        @constraint(model,a==b)
-    end    
-    return a
+        @constraint(model, a == b)
+        return a
+    end
 end
 
 
