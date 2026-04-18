@@ -8,7 +8,7 @@
 \documentclass[twoside]{ctuthesis}
 
 \ctusetup{
-	preprint = \today,% footer timestamp
+%	preprint = \today,% footer timestamp
 %	mainlanguage = english,
 %	titlelanguage = czech,
 	mainlanguage = english,
@@ -108,15 +108,131 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 
 % Only for testing purposes
 \listfiles
+\usepackage{lmodern}
 \usepackage[pagewise]{lineno}
 \usepackage{lipsum,blindtext}
 \usepackage{mathrsfs} % provides \mathscr used in the ridiculous examples
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc}
 
 \begin{document}
 
 \maketitle
 
 \chapter{Introduction}
+\section{Motivation}
+Topic of this thesis is motivated, by my work in Formula Student team eForce Prague Formula, where I worked on real-time vehicle dynamics control software. There I got intricately exposed to problems faced by racing teams, such as should we increase the aerodynamic downforce at the cost of higher drag? Should we put accumulator in the middle of vehicle, to decrease moment of inertia? Should the aerodynamics be designed for straight line drive, or for steady state turning? How to use limited energy from accumulator more effectively, how faster can we go if we made better power limiting algorithm? How large the accumulator should be? Which torque allocation algorithm should be used? How to design the suspension kinematics to maximize the tire utilization? Is rear wheel steering worth it?  All of these problems can be analyzed by using purpose built tool, good engineering practices or using pen and paper with heavily simplified model. Formula student season is 10 months for development and construction of the vehicle, 2 months for competition. That puts enormous pressure on deciding on vehicle concept fast. In my opinion what formula student teams need is a tool to quickly evaluate different car concepts.
+
+\section{Goals}
+Goal of this thesis is to lay the groundwork for a tool which would be able to quickly and reliably evaluate different vehicle concepts. For each of the problems above, a different complexity of the vehicle model is sufficient, e.g.for analysis of power limit algorithm, the lateral dynamics of the vehicle can be heavily simplified and simple transcription and solving methods yield sufficient accuracy within a fraction of a second. Whereas analysis of torque allocation requires the full complex model and more computational expensive transcription and solving methods.
+
+For fast and sufficiently accurate vehicle simulation it is crucial to explore and compare various methods of transcribing the optimal control problem, such as collocation, pseudospectral collocation and Runge Kutta methods.
+
+
+\section{Structure of thesis}
+\begin{enumerate}
+	\item ODE models of cars
+	\item Solving methods: time marching forward, backward pass, NLP,
+	\item Collocation (p, h, hp refinement), integral + differential form (Gauss-Radau, Legendre, Lobatto)
+	\item Implementation overview, Algorithmic differentiation, JUMP/Examples/InfiniteOpt + Julia, Python/MATLAB, CasADi, interior point solvers
+	\item Actual implementation and results
+	\item Conclusion
+\end{enumerate}
+
+
+\part{Theory}
+\chapter{Vehicle modelling framework}
+\section{Model like in MSD}
+The structure of the vehicle model has to allow extending/changing components, so that different vehicle concepts can be simulated, with minimal coding. Book in\cite{brown_engineering_2006} introduces modelling guidelines/technique/framewrok to do exactly this.
+ADD DESCRIPRION OF THE BROWN GRAPH THEORY HERE. veloity goes one direction and forces go the other direction, must give better description.
+
+Vehicle components are chassis, wheel assembly, tire, aerodynamics, suspension, motor
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=3cm, minimum height=2.5cm, align=center},
+		arr/.style={->, thick}
+	]
+
+	\node[box] (wa) {Wheel\\Assembly};
+
+	% Top-left input: omega, v
+	\draw[arr] (-3.5, 0.5) -- node[above] {$\vec{\omega},\, \vec{v}$} ($(wa.west)+(0,0.5)$);
+
+	% Top-right output: v_tire
+	\draw[arr] ($(wa.east)+(0,0.5)$) -- node[above] {$\vec{v}_{tire}$} (3.5, 0.5);
+
+	% Bottom-left output: F_CoG, M_CoG
+	\draw[arr] ($(wa.west)+(0,-0.5)$) -- node[below] {$\vec{F}_{CoG},\, \vec{M}_{CoG}$} (-4.5, -0.5);
+
+	% Bottom-right input: F_tire
+	\draw[arr] (3.5, -0.5) -- node[below] {$\vec{F}_{tire}$} ($(wa.east)+(0,-0.5)$);
+
+	\end{tikzpicture}
+	\caption{Wheel Assembly component: velocity inputs (top-left) transform to tire frame (top-right), tire forces (bottom-right) transform to forces and moments on CoG (bottom-left).}
+	\label{fig:wheel_assembly}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=3cm, minimum height=2.5cm, align=center},
+		arr/.style={->, thick}
+	]
+
+	\node[box] (tire) {Tire};
+
+	% Left input: v_tire (top)
+	\draw[arr] (-4, 0.4) -- node[above] {$\vec{v}_{tire}$} ($(tire.west)+(0,0.4)$);
+
+	% Left input: T_in (bottom)
+	\draw[arr] (-4, -0.4) -- node[above] {$T_{in}$} ($(tire.west)+(0,-0.4)$);
+
+	% F_x exits right-bottom, inner bend
+	\draw[arr] ($(tire.east)+(0,-0.4)$) -- (2.8, -0.4) -- (2.8, -2) -- node[below] {$F_x$} (-4, -2);
+
+	% F_y exits right-top, outer bend
+	\draw[arr] ($(tire.east)+(0,0.4)$) -- (3.4, 0.4) -- (3.4, -2.6) -- node[below] {$F_y$} (-4, -2.6);
+
+	% Top input: F_z (normal force from suspension)
+	\draw[arr] (0, 2) -- node[right] {$F_z$} (tire.north);
+
+	\end{tikzpicture}
+	\caption{Tire component: velocity and torque inputs (left) produce lateral and longitudinal forces (right), normal force input from suspension (top).}
+	\label{fig:tire}
+\end{figure}
+
+\section{Tire modelling}
+\subsection{Linear tire}
+\subsection{Pacejka}
+\subsection{Extended Pacejka}
+\section{Chassis model}
+\section{Wheel Assembly model}
+\section{Aerodynamics model}
+\section{Suspension model}
+\section{Gearbox model}
+\section{Accumulator model}
+
+\section{Car models}
+\subsection{mass Point}
+\subsection{singletrack}
+\subsection{Formula Student twintrack}
+\subsection{FormulaE twintrack}
+
+
+\chapter{Solving methods}
+\section{Time marching}
+\section{forward backward pass}
+\section{Nonlinear programming}
+\subsection{RK methods}
+\subsection{collocation}
+
+\part{Implementation}
+
+\chapter{Direct methods of solving optimal control problem}
+
+
 \section{Conditions of optimality for constrainednoptimization}
 This chapeter derives conditions which given popint must satisfy if it is optimal, Algorithms for finding these points will be described in next chapter. My goal is to buid the theory in digestable way,for people not fluent in nonlinear optimisation I will start with simple example to explain main ideas clearly
 and then generalise it to create optimisation framework. Very good intuitive itroduction is given in this youtube video \cite{cite:48}
@@ -185,6 +301,9 @@ gauss legendre collocation
 N is in number of collocation points, order of approximating polynomial is then  for LG = 2N-1, for LGR = 2N-2, for LGL = 2N-3
 
 \subsection{quadrature rules}
+
+
+
 
 
 \part{My Party}
