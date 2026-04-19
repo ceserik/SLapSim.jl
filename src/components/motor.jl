@@ -1,11 +1,12 @@
-mutable struct Motor{F1,F2}
+mutable struct Motor{F1,F2,F3}
     torque::carParameter{carVar} #actual torque
     angularFrequency::carParameter{carVar} #actual angular freuency
-    mass::carParameter{carVar} 
+    mass::carParameter{carVar}
     loss::carParameter{carVar} #actual power loss
     power::carParameter{carVar} # actual power draw
     torqueSpeedFunction::F1 #mapping speed to max torque
     constraints::F2
+    setVelocity::F3
 end
 Base.show(io::IO, ::MIME"text/plain", obj::Motor) = prettyPrintComponent(io, obj)
 
@@ -15,7 +16,7 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
     loss = carParameter{carVar}(0.0,"loss","W")
     torqueSpeedFunction = angularFrequency::Float64 -> maxTorqueVal
     mass = carParameter{carVar}(3.0,"mass??","kg")
-    power = carParameter{carVar}(3.0,"Power draw","kW")
+    power = carParameter{carVar}(0.0,"Power draw","W")
 
     function constraints(u,model=nothing)
         maxTorque = torqueSpeedFunction(0.0)
@@ -24,6 +25,10 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
         return u
     end
 
+    function setVelocity(omega::carVar)
+        angularFrequency.value = omega
+        power.value = omega * torque.value
+    end
 
     motor = Motor(
         torque,
@@ -32,7 +37,8 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
         loss,
         power,
         torqueSpeedFunction,
-        constraints
+        constraints,
+        setVelocity
     )
     return motor
 end

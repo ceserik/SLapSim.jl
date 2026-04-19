@@ -75,6 +75,9 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
 
     function setVelocity(velocityIn::Vector{carVar})
         velocity.value = velocityIn
+        #static (non-dynamic) tire: angular frequency follows longitudinal velocity.
+        #dynamic tire variants should override this and treat angularFrequency as a state.
+        angularFrequency.value = velocityIn[1] / radius.value
     end
 
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
@@ -179,6 +182,9 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
 
     function setVelocity(velocityIn::Vector{carVar})
         velocity.value = velocityIn
+        #static (non-dynamic) tire: angular frequency follows longitudinal velocity.
+        #dynamic tire variants should override this and treat angularFrequency as a state.
+        angularFrequency.value = velocityIn[1] / radius.value
     end
 
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
@@ -279,6 +285,9 @@ function create_FormulaE_pacejka(motor::Motor,gearbox::Gearbox)
 
     function setVelocity(velocityIn::Vector{carVar})
         velocity.value = velocityIn
+        #static (non-dynamic) tire: angular frequency follows longitudinal velocity.
+        #dynamic tire variants should override this and treat angularFrequency as a state.
+        angularFrequency.value = velocityIn[1] / radius.value
     end
 
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)

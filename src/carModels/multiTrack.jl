@@ -1,16 +1,5 @@
 function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothing)
 
-    if isnothing(track)
-        widthR = 1.5
-        widthL = 1.5
-    else
-        # Use full-track envelope so the static n limits are the loosest
-        # legal bounds anywhere on the track. Adaptive solver will tighten
-        # them per node from Track_interpolated. Margin kept at 0.6.
-        widthL = maximum(track.widthL)
-        widthR = maximum(track.widthR)
-    end
-
     velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [3.0, 60.0])
     angularVelocity  = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-10.0, 10.0])
 
@@ -52,11 +41,12 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         tireRR = createR20lin(motorRR, gearboxRR)
 
     end
+    accumulator = createAccumulator()
     drivetrain = Drivetrain(
         [motorFL, motorFR, motorRL, motorRR],
         [gearboxFL, gearboxFR, gearboxRL, gearboxRR],
         [tireFL, tireFR, tireRL, tireRR],
-        createAccumulator())
+        accumulator)
 
     aero = createBasicAero()
     suspension = createSimpleSuspension()
@@ -118,7 +108,6 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         end
         for wa in wheelAssemblies
             wa.setVelocity(angularVelocity.value, velocity.value)
-            wa.constraints(nothing)
         end
 
         for i in eachindex(drivetrain.tires)
@@ -131,6 +120,12 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
             drivetrain.gearboxes[i].compute()
         end
 
+        # gearing of tire velocity to motor velocity
+        for i in eachindex(drivetrain.motors)
+            drivetrain.motors[i].setVelocity(drivetrain.tires[i].angularFrequency.value * drivetrain.gearboxes[i].ratio.value)
+        end
+
+        drivetrain.accumulators.compute(drivetrain.motors)
         #compute aero
         aeroForces = aero.compute(velocity.value[1], isnothing(track) ? RHO_SEA_LEVEL : track.rho[1])
 
@@ -208,15 +203,7 @@ end
 
 
 function formulaE2026(track::Union{Track,Nothing}=nothing)
-    if isnothing(track)
-        widthR = 1.5
-        widthL = 1.5
-    else
-        # Envelope bounds: loosest legal n anywhere on the track. Per-node
-        # tightening happens later in the adaptive solver from Track_interpolated.
-        widthL = maximum(track.widthL)
-        widthR = maximum(track.widthR)
-    end
+
 
     velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 60.0])
     angularVelocity  = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-10.0, 10.0])
@@ -228,7 +215,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit       = carParameter{carVar}(270000.0, "PowerLimit", "W")
     psi              = carParameter{carVar}(0.0, "heading", "rad", :static, [-4pi, 4pi])
-    n                = carParameter{carVar}(0.0, "Distance from centerline", "m", :static, [-widthR+0.6, widthL-0.6])
+    n                = carParameter{carVar}(0.0, "Distance from centerline", "m", :static)
     inertia          = carParameter{carVar}(1260.0, "Inertia", "kg*m^2", :tunable)
     s                = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
     brakeCommand     = carParameter{carVar}(0.0, "brake command", "N", :control, [-20000.0, 0])
@@ -320,7 +307,6 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         # Transformation of velocities from cog to wheels and steering
         for wa in wheelAssemblies
             wa.setVelocity(angularVelocity.value, velocity.value)
-            wa.constraints(optiModel)
         end
         # set Tire velocities
         for i in eachindex(drivetrain.tires)

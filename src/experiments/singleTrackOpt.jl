@@ -23,8 +23,8 @@ GLMakie.closeall()
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-#track = kml2track(path, false, true)
-track = csv2track("src/Track/berlin_2018.csv")
+track = kml2track(path, false, true)
+#track = csv2track("src/Track/berlin_2018.csv")
 #track = doubleTurn(false, 0.1)
 #track = skidpad(false)
 #car = createSimplestSingleTrack(track)
@@ -100,4 +100,9 @@ sampling_density = get_sampling_density(exp.optiResult.path); # this may silentl
 plot_on_path(exp, sampling_density, "sampling density");
 
 snapshots = snapshot_car(car, exp.optiResult, track)
+
+plot_parameters(snapshots, car,
+    ["drivetrain.tires[1].forces" => 3, "drivetrain.tires[2].forces" => 3],
+    ["drivetrain.tires[3].forces" => 3, "drivetrain.tires[4].forces" => 3]
+)
 nothing  # suppress REPL echo of the large CarSnapshot vector

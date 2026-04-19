@@ -5,7 +5,7 @@ mutable struct Gearbox{F,G}
     angularFrequencyIn::carParameter{carVar}
     torqueOut::carParameter{carVar}
     angularFrequencyOut::carParameter{carVar}
-    loss::carParameter{carVar}
+    efficiency::carParameter{carVar}
     compute::F
     setTorque::G
 end
@@ -14,16 +14,16 @@ Base.show(io::IO, ::MIME"text/plain", obj::Gearbox) = prettyPrintComponent(io, o
 
 function createCTU25gearbox(ratio_p::Float64 = 11.46)
     ratio = carParameter{carVar}(ratio_p,"Gearbox ratio","-")
-    torqueIn = carParameter{carVar}(0.0,"torque in","-")
-    speedIn = carParameter{carVar}(0.0,"velocity in","rad/s")
+    torqueIn = carParameter{carVar}(0.0,"torque on motor","-")
+    angularFrequencyIn = carParameter{carVar}(0.0,"velocity on motor","rad/s")
 
-    torqueOut = carParameter{carVar}(0.0,"torque out","-")
-    angularFrequencyOut = carParameter{carVar}(0.0,"velocity out","rad/s")
-    loss = carParameter{carVar}(0.0,"loss","Watt")
+    torqueOut = carParameter{carVar}(0.0,"torque on wheel","-")
+    angularFrequencyOut = carParameter{carVar}(0.0,"velocity on wheel","rad/s")
+    efficiency = carParameter{carVar}(1.0,"efficiency","-")
 
     function compute()
-        torqueOut.value = torqueIn.value * ratio.value
-        angularFrequencyOut.value = speedIn.value / ratio.value
+        torqueOut.value = torqueIn.value * ratio.value * efficiency.value
+        angularFrequencyOut.value = angularFrequencyIn.value / ratio.value
     end
 
     function setTorque(torque::carVar)
@@ -33,10 +33,10 @@ function createCTU25gearbox(ratio_p::Float64 = 11.46)
     gearbox = Gearbox(
         ratio,
         torqueIn,
-        speedIn,
+        angularFrequencyIn,
         torqueOut,
         angularFrequencyOut,
-        loss,
+        efficiency,
         compute,
         setTorque
     )
