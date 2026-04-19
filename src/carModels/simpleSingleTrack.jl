@@ -26,7 +26,7 @@ function createSimplestSingleTrack(track::Union{Track,Nothing}=nothing)
         [motorFront, motorRear],
         [gearboxFront, gearboxRear],
         [tireFront, tireRear],
-        createPepikCTU25())
+        createAccumulator())
 
     aero = createBasicAero()
     suspension = createDummySuspension()

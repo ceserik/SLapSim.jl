@@ -11,7 +11,7 @@ end
 Base.show(io::IO, ::MIME"text/plain", obj::Accumulator) = prettyPrintComponent(io, obj)
 
 
-function createPepikCTU25()
+function createAccumulator()
     capacity = carParameter{carVar}(7.16,"ACP capacity","kWh")
     maxPower = carParameter{carVar}(80.0,"max Power out","kW")
     minPower = carParameter{carVar}(80.0,"min Power out","kW")

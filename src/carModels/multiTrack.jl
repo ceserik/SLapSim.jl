@@ -56,7 +56,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         [motorFL, motorFR, motorRL, motorRR],
         [gearboxFL, gearboxFR, gearboxRL, gearboxRR],
         [tireFL, tireFR, tireRL, tireRR],
-        createPepikCTU25())
+        createAccumulator())
 
     aero = createBasicAero()
     suspension = createSimpleSuspension()
@@ -249,7 +249,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         [motor],
         [gearbox],
         [tireFL, tireFR, tireRL, tireRR],
-        createPepikCTU25())
+        createAccumulator())
 
     aero = createBasicAero(
         CL_a  = -2.7,

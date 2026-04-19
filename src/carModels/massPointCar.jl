@@ -117,7 +117,7 @@ function createCTU25_1D()
         controlMapping,
         stateMapping,
         mapping,
-        Drivetrain(Motor[], Gearbox[], Tire[], createPepikCTU25()),  # Empty drivetrain
+        Drivetrain(Motor[], Gearbox[], Tire[], createAccumulator()),  # Empty drivetrain
         createBasicAero(),                                                  # Empty aero
         createDummySuspension(),                                           # Empty suspension
         createCTU25chassis(),                                              # Empty chassis
