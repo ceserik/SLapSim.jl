@@ -118,6 +118,7 @@ Base.@kwdef mutable struct AnalysisConfig
     animation_path::String = "results/animation.mp4"
     animation_speedup::Float64 = 1.0
     time_simulation::Bool = false                    # feedforward ODE verification
+    plot_initialization::Bool = false
     save_results::Bool = false
     results_path::String = "results/"
 end

@@ -1,7 +1,15 @@
 using SLapSim
 
 
-function createSimplestSingleTrack()
+function createSimplestSingleTrack(track::Union{Track,Nothing}=nothing)
+
+    if isnothing(track)
+        widthR = 1.5
+        widthL = 1.5
+    else
+        widthL = maximum(track.widthL)
+        widthR = maximum(track.widthR)
+    end
 
     gearboxFront = createCTU25gearbox()
     gearboxRear = createCTU25gearbox()
@@ -27,10 +35,10 @@ function createSimplestSingleTrack()
     wheelAssemblyFront = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, 0, 0]))
     wheelAssemblyRear = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2 - cogOffsetX, 0, 0]))
 
-    velocity = carParameter{Vector{carVar}}([15.0, 0.0, 0.0], "Speed X", "m/s")
-    angularVelocity = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "angular velocity", "rad/s")
+    velocity         = carParameter{Vector{carVar}}([15.0, 0.0, 0.0], "Velocity", "m/s", :static, [3.0, 60.0])
+    angularVelocity  = carParameter{Vector{carVar}}([0.0, 0.0, 1.0], "Angular Velocity", "rad/s", :static, [-10.0, 10.0])
 
-    mass = carParameter{carVar}(280.0, "Mass", "kg")
+    mass = carParameter{carVar}(280.0, "Mass", "kg", :tunable, [200.0, 320.0])
     motorForce = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce = carParameter{carVar}(0.0, "lateral Force", "N")
     lateralTransfer = carParameter{carVar}(0.0, "lateral load transfer", "N")
@@ -38,12 +46,13 @@ function createSimplestSingleTrack()
     CL = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit = carParameter{carVar}(80000.0, "PowerLimit", "W")
-    psi = carParameter{carVar}(0.0, "heading", "rad")
-    n = carParameter{carVar}(0.0, "Distance from centerline", "m")
-    nControls = carParameter{carVar}(2.0, "number of controlled parameters", "-")
-    inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2")
-    nStates = carParameter{carVar}(6.0, "number of car states", "-")
-    s = carParameter{carVar}(1.0, "longitudinal position on track", "-")
+    psi              = carParameter{carVar}(0.0, "heading", "rad", :static, [-4pi, 4pi])
+    n                = carParameter{carVar}(0.0, "Distance from centerline", "m", :static)
+    brakeCommand = carParameter{carVar}(0.0, "brake command", "N", :control, [-20000.0, 0.0])
+    nControls = carParameter{carVar}(0.0, "number of controlled parameters", "-")
+    inertia = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
+    nStates = carParameter{carVar}(0.0, "number of car states", "-")
+    s                = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
 
 
     function simplestSingleTrack(track::Union{Track,Nothing}=nothing, optiModel::Union{JuMP.Model,Nothing}=nothing)
@@ -95,25 +104,41 @@ function createSimplestSingleTrack()
         cogForce = wheelAssemblyFront.forces.value .+ wheelAssemblyRear.forces.value .+ [aeroForces.drag, 0.0, 0.0]
         cogMoment = wheelAssemblyFront.torque.value + wheelAssemblyRear.torque.value
 
-        dv = cogForce / mass.value - angVel × vel
-        dangularVelocity = cogMoment / inertia.value
+        dv = cogForce ./ mass.value - angVel × vel
+        dangularVelocity = cogMoment ./ inertia.value
         dx = [dv[1], dv[2], angVel[3], dangularVelocity[3]]
         return dx
     end
 
+    state_descriptor = VarEntry[
+        VarEntry("vx",    [velocity => 1],          :state),
+        VarEntry("vy",    [velocity => 2], -1.5, 1.5, :state),
+        VarEntry("psi",   [psi => 0],               :state),
+        VarEntry("omega", [angularVelocity => 3],   :state),
+        VarEntry("n",     [n => 0],                 :state),
+        VarEntry("t",     [s => 0],                 :state),
+    ]
+
+    control_descriptor = VarEntry[
+        VarEntry("torque_front", [drivetrain.motors[1].torque => 0], :control),
+        #VarEntry("torque_rear",  [drivetrain.motors[2].torque => 0], :control),
+        VarEntry("steering",    [wheelAssemblyFront.steeringAngle => 0], :control),
+        VarEntry("brake",       [brakeCommand => 0], :control),
+    ]
+
+    nControls.value = Float64(length(control_descriptor))
+    nStates.value   = Float64(length(state_descriptor))
+
     function controlMapping(controls::AbstractVector)
-        drivetrain.motors[1].torque.value = controls[1]
-        wheelAssemblyFront.steeringAngle.value = controls[2]
-        #drivetrain.motors[2].torque.value = controls[3]
-        
+        apply_mapping!(control_descriptor, controls)
+        frontBrake = brakeCommand.value * brakeBias.value
+        rearBrake = brakeCommand.value * (1 - brakeBias.value)
+        drivetrain.tires[1].brakingForce.value = frontBrake
+        drivetrain.tires[2].brakingForce.value = rearBrake
     end
 
     function stateMapping(states::AbstractVector)
-        velocity.value = [states[1], states[2], 0.0]
-        psi.value = states[3]
-        angularVelocity.value = [0.0, 0.0, states[4]]
-        n.value = states[5]
-        s.value = states[6]
+        apply_mapping!(state_descriptor, states)
     end
 
     p = CarParameters(
@@ -132,7 +157,9 @@ function createSimplestSingleTrack()
         brakeBias,
         nControls,
         nStates,
-        s
+        s,
+        state_descriptor,
+        control_descriptor
     )
 
     afto = Car(
@@ -146,8 +173,8 @@ function createSimplestSingleTrack()
         suspension,
         chassis,
         [wheelAssemblyFront, wheelAssemblyRear],
-        nothing,
-        nothing,
+        state_descriptor,
+        control_descriptor,
     )
     return afto
 end

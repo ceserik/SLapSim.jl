@@ -23,7 +23,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
     CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit       = carParameter{carVar}(80000.0, "PowerLimit", "W")
     psi              = carParameter{carVar}(0.0, "heading", "rad", :static, [-4pi, 4pi])
-    n                = carParameter{carVar}(0.0, "Distance from centerline", "m", :static, [-widthR+0.6, widthL-0.6])
+    n                = carParameter{carVar}(0.0, "Distance from centerline", "m", :static)
     brakeCommand     = carParameter{carVar}(0.0, "brake command", "N", :control, [-20000.0, 0.0])
     nControls        = carParameter{carVar}(0.0, "number of controlled parameters", "-")
     inertia          = carParameter{carVar}(100.0, "Inertia", "kg*m^2", :tunable)
@@ -60,17 +60,15 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
 
     aero = createBasicAero()
     suspension = createSimpleSuspension()
-
     chassis = createCTU25chassis()
     suspension.setInput(chassis)
+
     cogOffsetX = (chassis.CoG_X_pos.value - 0.5) * chassis.wheelbase.value
     cogOffsetY = (chassis.CoG_Y_pos.value - 0.5) * chassis.track.value
     wheelAssemblyFL = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyFR = createBasicWheelAssembly(Vector{carVar}([chassis.wheelbase.value / 2 - cogOffsetX, -chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyRL = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2 - cogOffsetX, chassis.track.value / 2 - cogOffsetY, 0]))
     wheelAssemblyRR = createBasicWheelAssembly(Vector{carVar}([-chassis.wheelbase.value / 2 - cogOffsetX, -chassis.track.value / 2 - cogOffsetY, 0]))
-
-    
 
     wheelAssemblies = [wheelAssemblyFL, wheelAssemblyFR, wheelAssemblyRL, wheelAssemblyRR]
 
@@ -89,7 +87,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         VarEntry("torque_front", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0], :control),
         VarEntry("brake", [brakeCommand => 0], :control),
     ]
-#    @infiltrate
+
     nControls.value = Float64(length(control_descriptor))
     nStates.value   = Float64(length(state_descriptor))
 
@@ -112,11 +110,9 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         # Transformation of velocities from cog to wheels and steering
         if !isnothing(optiModel)
             # Prevent simultaneous acceleration and braking
-            # If torque > 0 (accelerating), brake must be 0; if brake < 0 (braking), torque must be 0
             T_max = drivetrain.motors[3].torque.limits[2]  # 29 Nm
             F_max = -brakeCommand.limits[1]                # 20000 N
-            # Product complementarity: (torque/T_max) * (-brake/F_max) ≤ ε
-            # Both factors are in [0,1], so product near zero enforces mutual exclusion
+            # complementarity brake and motors cannot go againts each other
             @constraint(optiModel, (drivetrain.motors[3].torque.value / T_max) * (-brakeCommand.value / F_max) <= 0.001)
             @constraint(optiModel, (drivetrain.motors[1].torque.value / T_max) * (-brakeCommand.value / F_max) <= 0.001)
         end
@@ -135,10 +131,10 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
             drivetrain.gearboxes[i].compute()
         end
 
-
-
+        #compute aero
         aeroForces = aero.compute(velocity.value[1], isnothing(track) ? RHO_SEA_LEVEL : track.rho[1])
 
+        #compute suspension forces
         forces = suspension.calculate(aeroForces.downforce, aero.CoP.value)
         for i in eachindex(forces)
             drivetrain.tires[i].forces.value[3] = forces[i]
@@ -149,23 +145,13 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
             drivetrain.tires[i].compute(drivetrain.gearboxes[i].torqueOut.value, optiModel)
         end
 
-        ######################################################CONSTRAINTS###########################
-        # motor torque limit — one per shared control
-        #drivetrain.motors[1].constraints(drivetrain.motors[1].torque.value, optiModel) # front (controls[3])
-        #drivetrain.motors[3].constraints(drivetrain.motors[3].torque.value, optiModel) # rear  (controls[1])
-        #steering angle
-        #wheelAssemblies[1].constraints(optiModel)
-        #hitbox
-        #chassis.hitbox(n.value, track, optiModel)
         for tire in drivetrain.tires
             tire.tireConstraints(optiModel)
         end
 
         for i in eachindex(wheelAssemblies)
-
             wheelAssemblies[i].getTorque(drivetrain.tires[i].forces.value)
         end
-
 
         cogForce = zero(wheelAssemblies[1].forces.value)
         cogMoment = zero(wheelAssemblies[1].forces.value)

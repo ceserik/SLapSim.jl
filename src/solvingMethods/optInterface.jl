@@ -28,7 +28,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
     display(GLMakie.Screen(), fig)
     return segment_edges, clear, segment_errors
 end
-        
+
 struct Result
     states::Matrix{Float64}
     controls::Matrix{Float64}
@@ -161,7 +161,7 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
     end
 
     #initialize solution = drive PD controller along centerline, one controller for all cars right now, but controller should be put inside car structure in future
-    initialization = initializeSolution_interpolation(car, track, Int64(round(track.sampleDistances[end] * 2)))
+    initialization = initializeSolution_interpolation(car, track, Int64(round(track.sampleDistances[end] * 2)); plot_initialization=exp.analysis.plot_initialization)
     # Create sampling points for track
     segment_edges = LinRange(track.sampleDistances[1], track.sampleDistances[end], segments + 1)
 
@@ -186,8 +186,13 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         x_lb_static, x_ub_static = get_bounds(car.carParameters.state_descriptor)
         u_lb_static, u_ub_static = get_bounds(car.carParameters.control_descriptor)
 
-        # state "n" needs special constraints
         margin = car.chassis.track.value/2
+        
+            n_scale = max(maximum(track.widthL), maximum(track.widthR))
+            x_scale[n_state_index] = n_scale
+            x_lb_static[n_state_index] = -maximum(track.widthR) + margin
+            x_ub_static[n_state_index] = maximum(track.widthL) - margin
+        
         function x_lb_fun(s)
             v = copy(x_lb_static)
             if n_state_index !== nothing

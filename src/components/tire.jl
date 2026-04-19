@@ -79,8 +79,21 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
 
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
-        forces.value[2] = 1*slipAngle.value/maxSlipAngle.value * forces.value[3] * frictionCoefficient.value
-        forces.value[1] = inTorque/radius.value + brakingForce.value
+
+        if isnothing(optiModel)
+            forces.value[2] = 1*slipAngle.value/maxSlipAngle.value * forces.value[3] * frictionCoefficient.value
+            forces.value[1] = inTorque/radius.value + brakingForce.value
+        else
+            sf = scalingForce.value
+            fy_expr = (slipAngle.value/maxSlipAngle.value * forces.value[3] * frictionCoefficient.value) / sf
+            fx_expr = (inTorque/radius.value + brakingForce.value) / sf
+            fy_raw = @variable(optiModel)
+            fx_raw = @variable(optiModel)
+            @constraint(optiModel, fy_raw == fy_expr)
+            @constraint(optiModel, fx_raw == fx_expr)
+            forces.value[2] = fy_raw * sf
+            forces.value[1] = fx_raw * sf
+        end
     end
 
     function tireConstraints(model=nothing)

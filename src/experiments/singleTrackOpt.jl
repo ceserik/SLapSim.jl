@@ -23,10 +23,12 @@ GLMakie.closeall()
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path, false, true)
+#track = kml2track(path, false, true)
+track = csv2track("src/Track/berlin_2018.csv")
 #track = doubleTurn(false, 0.1)
 #track = skidpad(false)
-
+#car = createSimplestSingleTrack(track)
+#car = formulaE2026(track)
 car = createTwintrack(true, track)
 #car = formulaE2026()
 #car = createBus()
@@ -79,9 +81,10 @@ exp = Experiment(
         plot_states     = true,
         plot_jacobian   = true,
         plot_hessian    = true,
-        animate         = false,
+        animate         = true,
         animation_speedup = 1.0,
         time_simulation = false,
+        plot_initialization = false
     ),
 )
 

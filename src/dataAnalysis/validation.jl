@@ -312,7 +312,7 @@ function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo)
     end
 
     plotTrack(track, b_plotStartEnd=false, ax = axis)   # draw base track
-    plt = lines!(axis, carX, carY; color = vis_vars, colormap = colormap, linewidth = 4)
+    plt = lines!(axis, carX, carY; color = vis_vars, colormap = colormap, linewidth = 20)
     if created
         Colorbar(fig[1,2], plt; label = legend, width = 25)
         display(GLMakie.Screen(), fig)
