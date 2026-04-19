@@ -13,27 +13,27 @@
 %	titlelanguage = czech,
 	mainlanguage = english,
 	otherlanguages = {slovak,english},
-	title-czech = {Moje bakalářka se strašně, ale hrozně dlouhým předlouhým názvem},
-	title-english = {My Favourite Thesis; Just the Title is Soooooooo Looooong},
+	title-czech = {Metody numerického optimálního řízení pro minimalizaci času na kolo },
+	title-english = {Numerical Optimal Control for Minimum Lap Time },
 	subtitle-czech = {Cesta do tajů kdovíčeho},
-	subtitle-english = {Journey to the who-knows-what wondeland},
+	%subtitle-english = {Journey to the who-knows-what wondeland},
 	doctype = M,
-	faculty = F4,
+	faculty = F3,
 	department-czech = {Katedra matematiky},
-	department-english = {Department of Mathematics},
-	author = {Jméno Příjmení},
-	supervisor = {Prof. Krutoš Spravedlivý},
-	supervisor-address = {Ústav X, \\ Uliční 5, \\ Praha 99},
-	supervisor-specialist = {John Doe},
-	fieldofstudy-english = {Mathematical Engineering},
-	subfieldofstudy-english = {Mathematical Modelling},
-	fieldofstudy-czech = {Matematcké inženýrství},
-	subfieldofstudy-czech = {Matematické modelování},
+	department-english = {Department of Control Engineering},
+	author = {Richard Ciglanský},
+	supervisor = {doc. Ing. Zdeněk Hurák Ph.D.},
+	%supervisor-address = {Ústav X, \\ Uliční 5, \\ Praha 99},
+	%supervisor-specialist = {John Doe},
+	fieldofstudy-english = {Control engineering},
+	%subfieldofstudy-english = {Mathematical Modelling},
+	%fieldofstudy-czech = {Matematcké inženýrství},
+	%subfieldofstudy-czech = {Matematické modelování},
 	keywords-czech = {slovo, klíč},
 	keywords-english = {word, key},
-	day = 10,
-	month = 2,
-	year = 2017,
+	day = 22,
+	month = 5,
+	year = 2026,
 %	specification-file = {ctutest-zadani.pdf},
 %	front-specification = true,
 %	front-list-of-figures = false,
@@ -215,20 +215,258 @@ Vehicle components are chassis, wheel assembly, tire, aerodynamics, suspension, 
 \section{Accumulator model}
 
 \section{Car models}
-\subsection{mass Point}
-\subsection{singletrack}
-\subsection{Formula Student twintrack}
-\subsection{FormulaE twintrack}
+\subsection{Generic car model}
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=4cm, minimum height=3cm, align=center},
+		param/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=gray!15},
+		ctrl/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=blue!25},
+		state/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=green!20},
+		arr/.style={->, thick},
+	]
+
+	% Car function box
+	\node[box, minimum height=5cm] (car) at (0,0) {\large Car Function};
+
+	% Parameters on the left — mix of roles
+	\node[state] (vx)    at (-4.5,  2.0) {$v_x$ \quad state};
+	\node[state] (vy)    at (-4.5,  1.3) {$v_y$ \quad state};
+	\node[state] (psi)   at (-4.5,  0.6) {$\psi$ \quad state};
+	\node[state] (omega) at (-4.5, -0.1) {$\omega$ \quad state};
+	\node[ctrl]  (torq)  at (-4.5, -0.8) {$T_{motor}$ \quad control};
+	\node[ctrl]  (steer) at (-4.5, -1.5) {$\delta$ \quad control};
+	\node[param] (mass)  at (-4.5, -2.2) {$m$ \quad parameter};
+
+	% Arrows to car
+	\foreach \n in {vx,vy,psi,omega,torq,steer,mass} {
+		\draw[arr] (\n.east) -- ($(car.west)+(0,0)$);
+	}
+
+	% Output
+	\node[anchor=west] (dx) at (2.5, 0) {$\dot{\mathbf{x}} = [\dot{v}_x, \dot{v}_y, \dot{\psi}, \dot{\omega}]$};
+	\draw[arr] (car.east) -- (dx.west);
+
+	% Annotation showing flexibility
+	\draw[dashed, thick, blue!60] (-6.2, -1.7) rectangle (-2.8, -0.6);
+	\node[font=\scriptsize, blue!60, anchor=north] at (-4.5, -1.85) {can be any parameter};
+
+	% Legend
+	\node[state, minimum width=1.5cm] at (3.5, 2.0) {state};
+	\node[ctrl,  minimum width=1.5cm] at (3.5, 1.3) {control};
+	\node[param, minimum width=1.5cm] at (3.5, 0.6) {parameter};
+
+	\end{tikzpicture}
+	\caption{Generic car model: any \texttt{carParameter} can be assigned as state, control, or static parameter. The optimizer controls blue parameters, green parameters are integrated states, grey are fixed.}
+	\label{fig:generic_car}
+\end{figure}
+
+\subsection{Mass Point}
+\subsection{Single track}
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=2cm, minimum height=1.2cm, align=center, font=\small},
+		smallbox/.style={rectangle, draw, minimum width=1.5cm, minimum height=0.8cm, align=center, font=\scriptsize},
+		arr/.style={->, thick},
+		darr/.style={<->, thick},
+	]
+
+	% CoG
+	\node[box, minimum width=2.5cm, minimum height=1.5cm] (cog) at (0,0) {CoG\\$m, I_z$};
+
+	% Front wheel assembly
+	\node[box] (waf) at (0, 4) {WA\\Front};
+
+	% Rear wheel assembly
+	\node[box] (war) at (0, -4) {WA\\Rear};
+
+	% Front tire
+	\node[box] (tf) at (4, 4) {Tire\\Front};
+
+	% Rear tire
+	\node[box] (tr) at (4, -4) {Tire\\Rear};
+
+	% Front motor + gearbox
+	\node[smallbox] (mf) at (7, 4.4) {Motor};
+	\node[smallbox] (gf) at (7, 3.4) {Gearbox};
+
+	% Rear motor + gearbox
+	\node[smallbox] (mr) at (7, -3.6) {Motor};
+	\node[smallbox] (gr) at (7, -4.6) {Gearbox};
+
+	% Aero
+	\node[box] (aero) at (-4, 0) {Aero};
+
+	% CoG <-> Front WA (velocity down, force up)
+	\draw[arr] ($(cog.north)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\vec{v},\vec{\omega}$} ($(waf.south)+(-0.3,0)$);
+	\draw[arr] ($(waf.south)+(0.3,0)$) -- node[right, font=\scriptsize] {$\vec{F},\vec{M}$} ($(cog.north)+(0.3,0)$);
+
+	% CoG <-> Rear WA
+	\draw[arr] ($(cog.south)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\vec{v},\vec{\omega}$} ($(war.north)+(-0.3,0)$);
+	\draw[arr] ($(war.north)+(0.3,0)$) -- node[right, font=\scriptsize] {$\vec{F},\vec{M}$} ($(cog.south)+(0.3,0)$);
+
+	% Front WA <-> Front Tire (velocity right, force left)
+	\draw[arr] ($(waf.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\vec{v}_{tire}$} ($(tf.west)+(0,0.2)$);
+	\draw[arr] ($(tf.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\vec{F}_{tire}$} ($(waf.east)+(0,-0.2)$);
+
+	% Rear WA <-> Rear Tire
+	\draw[arr] ($(war.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\vec{v}_{tire}$} ($(tr.west)+(0,0.2)$);
+	\draw[arr] ($(tr.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\vec{F}_{tire}$} ($(war.east)+(0,-0.2)$);
+
+	% Motor -> Gearbox -> Tire (front)
+	\draw[arr] (mf.south) -- (gf.north);
+	\draw[arr] (gf.west) -- node[above, font=\scriptsize] {$T_{out}$} (tf.east);
+
+	% Motor -> Gearbox -> Tire (rear)
+	\draw[arr] (mr.south) -- (gr.north);
+	\draw[arr] (gr.west) -- node[above, font=\scriptsize] {$T_{out}$} (tr.east);
+
+	% Aero -> CoG
+	\draw[arr] (aero.east) -- node[above, font=\scriptsize] {$F_{drag}$} (cog.west);
+
+	% Aero -> Tires (Fz via downforce)
+	\draw[arr] (aero.north) -- (-4, 5.5) -- node[above, font=\scriptsize] {$F_z$} (4, 5.5) -- (tf.north);
+	\draw[arr] (aero.south) -- (-4, -5.5) -- node[below, font=\scriptsize] {$F_z$} (4, -5.5) -- (tr.south);
+
+	% Steering input
+	\draw[arr] (-3, 4) -- node[above, font=\scriptsize] {$\delta$} (waf.west);
+
+	\end{tikzpicture}
+	\caption{Single-track (bicycle) model computational graph. Velocity flows from CoG through wheel assemblies to tires, forces flow back. Motors provide torque through gearboxes, aerodynamics provides drag and normal forces.}
+	\label{fig:singletrack}
+\end{figure}
+
+\subsection{Formula Student twin track}
+\subsection{Formula Electric twin track}
 
 
-\chapter{Solving methods}
+\chapter{Transcription methods}
+This chapter deals with transcribing the continuos problem into discrete steps
 \section{Time marching}
-\section{forward backward pass}
+\section{Change of independent variable, time to path}
+\section{Forward backward pass}
 \section{Nonlinear programming}
+
+General NLP problems can be written as:
+\begin{equation}
+\begin{aligned}
+\min_{\mathbf{x} \in \mathbb{R}^n} \quad & f(\mathbf{x}) \\
+\text{s.t.} \quad & \mathbf{h}(\mathbf{x}) = 0 \\
+& \mathbf{g}(\mathbf{x}) \leq 0
+\end{aligned}
+\label{eq:general_nlp}
+\end{equation}
+
+
+\subsection{KKT conditions}
 \subsection{RK methods}
-\subsection{collocation}
+\subsection{collocation integral method}
+\subsection{collocation differential method}
+\subsection{hp adaptive methods}
+\chapter{Adjoint methods}
+they deserve chapter of their own
 
 \part{Implementation}
+\chapter{Tools for defining the problem CasADi,JuMP,InfiniteOpt?, Matlab +GPOPS-II/CasADi, SOCS, dymos + OpenMDAO}
+There is no shortage of these tools
+\section{Algorithmic differentation}
+\section{Matlab, GPOPS-II, CasADi}
+
+
+\section{Python}
+dymos + OpenMDAO
+
+\section{Julia}
+ExaModels, JuMP
+
+\chapter{NLP solvers,GPU exploitation???}
+Once the objective function and constraints are created, the problem is passed to NLP solver. Very popular methods are sequential quadratic solvers and interior point solvers.
+\section{Interior point methods: IPOPT, MadNLP}
+\label{sec:interior_point}
+
+Interior point solvers or barrier solvers work by simplifying the NLP into a barrier problem and solving a sequence of barrier problems, with decreasing barrier parameter. Solver used in this thesis is IPOPT \cite{wachter_implementation_2006}. Article in \cite{vanaret_implementing_2025} describes framework that unifies algorithmic components of different solvers, allowing for custom new solvers.
+
+\subsection{Barrier problem formulation}
+\label{subsec:barrier_problem_formulation}
+
+Article~\cite{wachter_implementation_2006} Describes how to transform generic NLP into form~\ref{eq:barrier_problem} $h(\mathbf{x}) \geq 0$, interior point methods solve a barrier problem.
+
+\begin{equation}
+\begin{aligned}
+\min_{\mathbf{x} \in \mathbb{R}^n} \quad & \phi_\mu(\mathbf{x}) := f(\mathbf{x}) - \mu \sum_{i=1}^{n} \ln(x_i^{(i)}) \\
+\text{s.t.} \quad & c(\mathbf{x}) = 0
+\end{aligned}
+\label{eq:barrier_problem}
+\end{equation}
+
+
+\section{Sequential quadratic programming}
+
+\chapter{My implementation, julia + JuMP}
+I have decided to use julia +JuMP, because I wanted to use free and open source software.
+
+I have already done a lot in Python and julia seemed like new interesting thing to learn. Julia is supposed to be fast and high level language, bridging the gap between C++ and python. Julia packages offer a lot of ready to use mathematical tools developed by community.
+
+JuMP~\cite{Lubin2023} (Julia for Mathematical Programming) is a modelling language and collection of optimization packages in Julia. JuMP makes it possible to create decision variables and constraints symbolically, this makes it possible to supply first and second derivative to solvers. Solver used in this thesis is IPOPT~\cite{wachter_implementation_2006} and MadNLP\cite{shin2021graph}\cite{shin2024accelerating}.
+
+
+
+
+\section{My optimization stack}
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=2.5cm, minimum height=0.9cm, align=center, font=\small},
+		leafbox/.style={rectangle, draw, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\scriptsize},
+		arr/.style={->, thick},
+	]
+
+	% Stack
+	\node[box] (julia)  at (0, 0)   {Julia};
+	\node[box] (jump)   at (0, -1.8) {JuMP};
+	\node[box] (rad)    at (0, -3.6) {Reverse AD};
+	\node[box] (ipopt)  at (-2.5, -5.4) {IPOPT};
+	\node[box] (madnlp) at (2.5, -5.4)  {MadNLP};
+
+	% IPOPT linear solvers
+	\node[leafbox] (mumps)   at (-5.5, -7.2) {MUMPS};
+	\node[leafbox] (hsl)     at (-3.0, -7.2) {MA97 MA57 MA86};
+	\node[leafbox] (pardiso) at (-0.5, -7.2) {PARDISO};
+
+	% MadNLP backends
+	\node[leafbox] (cuda)     at (2.0, -7.2) {CUDA};
+	\node[leafbox] (madmumps) at (4.5, -7.2) {MUMPS};
+
+	% Main chain
+	\draw[arr] (julia)  -- (jump);
+	\draw[arr] (jump)   -- (rad);
+	\draw[arr] (rad)    -- (ipopt);
+	\draw[arr] (rad)    -- (madnlp);
+
+	% IPOPT branches
+	\draw[arr] (ipopt)  -- (mumps);
+	\draw[arr] (ipopt)  -- (hsl);
+	\draw[arr] (ipopt)  -- (pardiso);
+
+	% MadNLP branches
+	\draw[arr] (madnlp) -- (cuda);
+	\draw[arr] (madnlp) -- (madmumps);
+
+	\end{tikzpicture}
+	\caption{Optimization software stack}
+	\label{fig:opt_stack}
+\end{figure}
+
+\section{Gauss methods as pseudospectral collocation}
+I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global collocation methods, that is one polynomial approximating the entire trajectory. I have implemented them according to~\cite{garg_overview_nodate}
+\section{Gauss methods as h-method}
+\section{Diving problem into many lower degree polynomials}
+\section{Mesh refinement methods}
+
 
 \chapter{Direct methods of solving optimal control problem}
 
@@ -277,11 +515,7 @@ $\lambda$ is  known as Lagrange multiplier,it is not some meaningless valuable t
 
 \subsection{Inequality constrained optimization}
 
-%To find the $\mathbf{x}$ which minimizes $J(\mathbf{x})$, the equation \eqref{eq:lagrange} is rewritten into the gradient of Lagrangian:
-%\begin{equation}
-	%\nabla L = \nabla J(\mathbf{x}) + \lambda \nabla c(\mathbf{x})\label{eq:lagrangean}
-%\end{equation}
-dsghdgdfg
+Covered in section \ref{subsection:barrier_problem_formulation}.
 
 \chapter{Transcription}
 this chapter deal with the problem of transcribing the continuous optimal control problem into direct optimization problem, that is with discrete states and controls. The task boils down to integrating a function by evaluating it at discrete steps, this is called quadrature. The most commonly used quadratures for optimal control are Gauss-Legendre, Gauss-Radau and Gauss-Lobatto. Methods which are using these quadratures are called pseudospectral collocation methods. These methods are representing the integral of the function using polynomial, they are called collocation methods, because they work by forcing the derivation of the approximating polynomial to be equal to right hand side of the differential equation it is solving. Key aspect of these methods is that they can represent the solution to differential equation without error up to the degree of approximating polynomial. pridat toto s konstantou ktora big O little o...
