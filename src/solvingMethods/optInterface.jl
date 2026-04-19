@@ -12,7 +12,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
         end
         segment_errors[i] = error_segment
     end
-    error_threshold = 1e-1
+    error_threshold = 100e-1
 
     # Find and insert nodes for segments with error > 1e-3
     segment_edges = collect(segment_edges) 
@@ -28,7 +28,7 @@ function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symb
     display(GLMakie.Screen(), fig)
     return segment_edges, clear, segment_errors
 end
-
+        
 struct Result
     states::Matrix{Float64}
     controls::Matrix{Float64}

@@ -65,7 +65,7 @@ exp = Experiment(
     track = track,
     discipline = Open(v_start=5.0),             # or Closed() for periodic BCs
     solver = IpoptBackend(
-        performSensitivity = false,
+        performSensitivity = true,
         attributes = ipopt_attrs,
     ),
     #solver = MadNLPBackend(
@@ -82,7 +82,6 @@ exp = Experiment(
         animate         = false,
         animation_speedup = 1.0,
         time_simulation = false,
-        sensitivity     = false,
     ),
 )
 

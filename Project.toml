@@ -5,6 +5,7 @@ authors = ["Richard <ciglanskyri@gmail.com> and contributors"]
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Compiler = "807dbc54-b67e-4c79-8afb-eafe4df6f2e1"
 ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
@@ -49,6 +50,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 CUDA = "5.11.0"
+CairoMakie = "0.15.9"
 Compiler = "0.1.1"
 ControlSystemsBase = "1.19.0"
 DSP = "0.8"

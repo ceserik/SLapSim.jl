@@ -41,7 +41,7 @@ exp = Experiment(
     track = track,
     discipline = Open(),                              # Formula E is a closed lap
     solver = IpoptBackend(
-        performSensitivity = false,
+        performSensitivity = true,
         attributes = ipopt_attrs,
     ),
     global_constraints = GlobalConstraint[],            # e.g. [EnergyBudget(1.0e7)]
@@ -53,7 +53,6 @@ exp = Experiment(
         animate         = false,
         animation_path  = "results/animation_formulaE.mp4",
         time_simulation = true,
-        sensitivity     = false,
     ),
 )
 

@@ -35,8 +35,8 @@ end
 function sensitivityAnalysis(problem)
     model = problem.model
     params = problem.params
+    results_path = problem.analysis.results_path
 
-    # Reverse mode: one pass gives ∂objective/∂p for all parameters
     DiffOpt.empty_input_sensitivities!(model)
     DiffOpt.set_reverse_objective(model, 1.0)
     try
@@ -58,5 +58,10 @@ function sensitivityAnalysis(problem)
         xticklabelrotation=π/4)
     GLMakie.barplot!(ax, 1:length(names), sensitivities)
     display(GLMakie.Screen(), fig)
+
+    mkpath(results_path)
+    CairoMakie.save(joinpath(results_path, "sensitivity.svg"), fig)
+    println("Sensitivity plot saved to $(joinpath(results_path, "sensitivity.svg"))")
+
     return Dict(zip(names, sensitivities))
 end

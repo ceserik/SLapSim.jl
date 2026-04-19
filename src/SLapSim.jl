@@ -1,5 +1,6 @@
 module SLapSim
 using GLMakie
+using CairoMakie
 using LinearAlgebra
 using StaticArrays
 using JuMP, Ipopt, Zygote, DiffOpt

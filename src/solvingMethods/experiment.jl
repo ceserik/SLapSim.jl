@@ -118,7 +118,6 @@ Base.@kwdef mutable struct AnalysisConfig
     animation_path::String = "results/animation.mp4"
     animation_speedup::Float64 = 1.0
     time_simulation::Bool = false                    # feedforward ODE verification
-    sensitivity::Bool = false                        # run sensitivityAnalysis()
     save_results::Bool = false
     results_path::String = "results/"
 end
@@ -297,10 +296,8 @@ function run_analysis!(exp::Experiment)
         plot_states_controls(car, res, track; sample_step=0.1)
     end
 
-    if an.sensitivity && wants_sensitivity(exp.solver)
+    if wants_sensitivity(exp.solver)
         sensitivityAnalysis(exp)
-    elseif an.sensitivity
-        @warn "AnalysisConfig.sensitivity=true but solver backend does not support sensitivity; skipping."
     end
 
     if an.animate
