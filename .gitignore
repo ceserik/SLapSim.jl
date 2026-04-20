@@ -14,3 +14,7 @@ thesis/thesis.synctex(busy)
 src/playground/*
 TODO
 results/*.mp4
+results/*
+sync/*
+!sync/.gitkeep
+CLAUDE.md
