@@ -67,7 +67,7 @@ exp = Experiment(
     track = track,
     discipline = Open(v_start=5.0),             # or Closed() for periodic BCs
     solver = IpoptBackend(
-        performSensitivity = true,
+        performSensitivity = false,
         attributes = ipopt_attrs,
     ),
     #solver = MadNLPBackend(
@@ -76,12 +76,12 @@ exp = Experiment(
     # Example: cap total drive energy at 10 MJ. Leave vector empty for no global constraints.
     global_constraints = GlobalConstraint[],    # e.g. [EnergyBudget(1.0e7)]
     analysis = AnalysisConfig(
-        plot_path       = true,
+        plot_path       = false,
         plot_controls   = true,
         plot_states     = true,
         plot_jacobian   = false,
         plot_hessian    = false,
-        animate         = true,
+        animate         = false,
         animation_speedup = 1.0,
         time_simulation = false,
         plot_initialization = false,

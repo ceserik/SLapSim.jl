@@ -12,7 +12,7 @@
 %	mainlanguage = english,
 %	titlelanguage = czech,
 	mainlanguage = english,
-	otherlanguages = {slovak,english},
+	otherlanguages = {english},
 	title-czech = {Metody numerického optimálního řízení pro minimalizaci času na kolo },
 	title-english = {Numerical Optimal Control for Minimum Lap Time },
 	subtitle-czech = {Cesta do tajů kdovíčeho},
@@ -343,8 +343,10 @@ Vehicle components are chassis, wheel assembly, tire, aerodynamics, suspension, 
 \subsection{Formula Electric twin track}
 
 
-\chapter{Transcription methods}
-This chapter deals with transcribing the continuos problem into discrete steps
+\chapter{Solving and transcription methods}
+Methods discussed in this section are doing eesentialy the same thing, solving controlled ODE along a time/path trajectory. But their apporach and results are different.
+ The most common method for solving controlled ODE is time marching. Where the state computation is always for the states at time t+1, after solvig at t+1, time is moved/marched forward and solution a t +2 is calculated and so on. This gives a solution to ODE. If the ODE can be controlled like the car, you also need a separate controller, which becomes part of the ODE. This approach gives a solution to the problem of how to control car, so that it completes a lap around a circuit. However, this solution is not optimal to time or any objective as the controls depend on the controller. Therefore, if the car parameters change and the controller doesnt, the resulting time can be exatly same, becasue controller cannot take  advantage of lighter car. Sensitivity analysis and lap time can ba obtained but it is skewed by the controller chosen. In Car maker the ocntroller is driver and they have Driver adaptation. Using time marhcing is not hbest for sensitivity analysis a nd lap time simulation.
+Controller can be tuned after each change of model but, that is time intensive. Another approach to solving controlled ODE is using shooting methods. Now the algorithm doesn't compute the states at only next time point, but it computes all states at all time points at the same time. Using this method it is possible to get rid of the controller, and instead of control rule a feed forward control vector along the trajectory is computed. This chapter deals with transcribing the continuos problem into discrete steps
 \section{Time marching}
 \section{Change of independent variable, time to path}
 \section{Forward backward pass}
@@ -360,7 +362,7 @@ General NLP problems can be written as:
 \label{eq:general_nlp}
 \end{equation}
 
-
+\chapter{Direct methods of solving optimal control problem}
 \subsection{KKT conditions}
 \subsection{RK methods}
 \subsection{collocation integral method}
@@ -467,8 +469,8 @@ I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global collocat
 \section{Diving problem into many lower degree polynomials}
 \section{Mesh refinement methods}
 
-
-\chapter{Direct methods of solving optimal control problem}
+\chapter{results}
+\section{comparison of methods}
 
 
 %\section{Conditions of optimality for constrainednoptimization}
@@ -517,22 +519,22 @@ I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global collocat
 %
 %Covered in section \ref{subsection:barrier_problem_formulation}.
 %
-\chapter{Transcription}
-this chapter deal with the problem of transcribing the continuous optimal control problem into direct optimization problem, that is with discrete states and controls. The task boils down to integrating a function by evaluating it at discrete steps, this is called quadrature. The most commonly used quadratures for optimal control are Gauss-Legendre, Gauss-Radau and Gauss-Lobatto. Methods which are using these quadratures are called pseudospectral collocation methods. These methods are representing the integral of the function using polynomial, they are called collocation methods, because they work by forcing the derivation of the approximating polynomial to be equal to right hand side of the differential equation it is solving. Key aspect of these methods is that they can represent the solution to differential equation without error up to the degree of approximating polynomial. pridat toto s konstantou ktora big O little o...
-
-The approximating polynomials are constructing with roots of legendre, sometinh something lagrange polynomials
-DX = F(X,U)
-
-barycentric weights
-
-
-
-collocation point = derivation is equal to the differential equation
-boundary point = the constraints to tie two segment together are used for the solution
-
-gauss legendre points odnt contain any of the endpoint, the endpoints have to be constrained by extra addConstraint
-gauss legendre collocation
-N is in number of collocation points, order of approximating polynomial is then  for LG = 2N-1, for LGR = 2N-2, for LGL = 2N-3
+%\chapter{Transcription}
+%this chapter deal with the problem of transcribing the continuous optimal control problem into direct optimization problem, that is with discrete states and controls. The task boils down to integrating a function by evaluating it at discrete steps, this is called quadrature. The most commonly used quadratures for optimal control are Gauss-Legendre, Gauss-Radau and Gauss-Lobatto. Methods which are using these quadratures are called pseudospectral collocation methods. These methods are representing the integral of the function using polynomial, they are called collocation methods, because they work by forcing the derivation of the approximating polynomial to be equal to right hand side of the differential equation it is solving. Key aspect of these methods is that they can represent the solution to differential equation without error up to the degree of approximating polynomial. pridat toto s konstantou ktora big O little o...
+%
+%The approximating polynomials are constructing with roots of legendre, sometinh something lagrange polynomials
+%DX = F(X,U)
+%
+%barycentric weights
+%
+%
+%
+%collocation point = derivation is equal to the differential equation
+%boundary point = the constraints to tie two segment together are used for the solution
+%
+%gauss legendre points odnt contain any of the endpoint, the endpoints have to be constrained by extra addConstraint
+%gauss legendre collocation
+%N is in number of collocation points, order of approximating polynomial is then  for LG = 2N-1, for LGR = 2N-2, for LGL = 2N-3
 
 \subsection{quadrature rules}
 
