@@ -84,7 +84,7 @@ exp = Experiment(
         animate         = true,
         animation_speedup = 1.0,
         time_simulation = false,
-        plot_initialization = false
+        plot_initialization = false,
         animation_path  = "sync/power.mp4",
     ),
 )
