@@ -79,12 +79,13 @@ exp = Experiment(
         plot_path       = true,
         plot_controls   = true,
         plot_states     = true,
-        plot_jacobian   = true,
-        plot_hessian    = true,
+        plot_jacobian   = false,
+        plot_hessian    = false,
         animate         = true,
         animation_speedup = 1.0,
         time_simulation = false,
         plot_initialization = false
+        animation_path  = "sync/power.mp4",
     ),
 )
 
@@ -102,7 +103,9 @@ plot_on_path(exp, sampling_density, "sampling density");
 snapshots = snapshot_car(car, exp.optiResult, track)
 
 plot_parameters(snapshots, car,
-    ["drivetrain.tires[1].forces" => 3, "drivetrain.tires[2].forces" => 3],
-    ["drivetrain.tires[3].forces" => 3, "drivetrain.tires[4].forces" => 3]
+    ["drivetrain.motors[1].power", "drivetrain.motors[2].power",
+     "drivetrain.motors[3].power", "drivetrain.motors[4].power"],
+    ["drivetrain.accumulators.power"]
 )
+
 nothing  # suppress REPL echo of the large CarSnapshot vector

@@ -19,11 +19,12 @@ function createAccumulator()
     resistance = carParameter{carVar}(0.01, "Internal Resistance", "ohm")
 
     function compute(motors, model = nothing)
-        power.value = sum(m.torque.value * m.angularFrequency.value for m in motors)
-
+        # motor.computeElectric must be called beforehand to populate powerElectrical
+        power.value = sum(m.powerElectrical.value for m in motors)
         if !isnothing(model)
-            @constraint(model, power.value <= power.limits[2])
-            @constraint(model, power.value >= power.limits[1])
+            sf = power.limits[2]
+            @constraint(model, power.value / sf <= power.limits[2] / sf)
+            @constraint(model, power.value / sf >= power.limits[1] / sf)
         end
     end
 

@@ -19,7 +19,7 @@ function createCTU25gearbox(ratio_p::Float64 = 11.46)
 
     torqueOut = carParameter{carVar}(0.0,"torque on wheel","-")
     angularFrequencyOut = carParameter{carVar}(0.0,"velocity on wheel","rad/s")
-    efficiency = carParameter{carVar}(1.0,"efficiency","-")
+    efficiency = carParameter{carVar}(0.9,"efficiency","-")
 
     function compute()
         torqueOut.value = torqueIn.value * ratio.value * efficiency.value

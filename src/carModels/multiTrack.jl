@@ -123,9 +123,10 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         # gearing of tire velocity to motor velocity
         for i in eachindex(drivetrain.motors)
             drivetrain.motors[i].setVelocity(drivetrain.tires[i].angularFrequency.value * drivetrain.gearboxes[i].ratio.value)
+            drivetrain.motors[i].computeElectric(optiModel)
         end
 
-        drivetrain.accumulators.compute(drivetrain.motors)
+        drivetrain.accumulators.compute(drivetrain.motors, optiModel)
         #compute aero
         aeroForces = aero.compute(velocity.value[1], isnothing(track) ? RHO_SEA_LEVEL : track.rho[1])
 
