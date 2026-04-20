@@ -97,15 +97,21 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     x_scale = 2.0 .* max.(vec(maximum(abs.(X_init), dims=1)), [1e-2, 1.0, 1.0, 1.0])
     u_scale = [2.0 * max(maximum(abs.(U_init)), 1e-3)]
 
-    lobotom = createLobattoIIIA_Adaptive(f, Lobattostage, model, nControls, nStates, track;
-        x_scale=x_scale, u_scale=u_scale)
+    sp = scaledProblem(f,
+        s -> -x_scale, s -> x_scale,
+        s -> -u_scale, s -> u_scale,
+        initialization, x_scale, u_scale)
+    lobotom = createLobattoIIIA_Adaptive(sp.f, Lobattostage, model, nControls, nStates, track)
 
     segment_edges = collect(s_traj)
-    xd = lobotom.createConstraints(segment_edges, initialization)
-    Xall = xd[2]
-    Uall = xd[3]
+    xd = lobotom.createConstraints(segment_edges, sp.init)
+    X_s = xd[2]
+    U_s = xd[3]
     s_all = xd[4]
     segment_edges = xd[5]
+    applyBounds!(sp, X_s, U_s, s_all)
+    Xall = X_s .* sp.x_scale'
+    Uall = U_s .* sp.u_scale'
 
     Z = Xall
     u = Uall[1:end-1, 1]

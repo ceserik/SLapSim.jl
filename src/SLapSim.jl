@@ -55,6 +55,7 @@ include("solvingMethods/initialization.jl")
 include("dataAnalysis/carSnapshot.jl")
 include("solvingMethods/myCollocation.jl")
 include("solvingMethods/collocation.jl")
+include("solvingMethods/scaledProblem.jl")
 include("solvingMethods/adaptiveRK.jl")
 
 # Export public functions

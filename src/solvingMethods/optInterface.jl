@@ -210,9 +210,9 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         u_lb_fun(s) = u_lb_static
         u_ub_fun(s) = u_ub_static
 
-        RKadaptive = createLobattoIIIA_Adaptive(f, pol_order, model, nControls, nStates, track;
-            x_scale=x_scale, u_scale=u_scale,
-            x_lb=x_lb_fun, x_ub=x_ub_fun, u_lb=u_lb_fun, u_ub=u_ub_fun)
+        sp = scaledProblem(f, x_lb_fun, x_ub_fun, u_lb_fun, u_ub_fun, initialization, x_scale, u_scale)
+        printBounds(sp)
+        RKadaptive = createLobattoIIIA_Adaptive(sp.f, pol_order, model, nControls, nStates, track)
         println("creating constraints")
 
         # Add parameters for sensitivity analysis, makes the problem little bigger, because parameters of car are now variables that ipopt sees
@@ -221,11 +221,15 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
             (params, tunables) = setParameters(car, model)
             exp.params = params
         end
-        xd = RKadaptive.createConstraints(segment_edges, initialization)
-        X = xd[2]
-        U = xd[3]
+        xd = RKadaptive.createConstraints(segment_edges, sp.init)
+        X_s = xd[2]
+        U_s = xd[3]
         s_all = xd[4]
         segment_edges = xd[5]
+        applyBounds!(sp, X_s, U_s, s_all)
+        #scale back
+        X = X_s .* sp.x_scale'
+        U = U_s .* sp.u_scale'
 
         # Boundary conditions are supplied by the discipline.
         apply_boundary_conditions!(exp.discipline, model, X, track)
@@ -262,7 +266,7 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
             resetParameters(tunables)
         end
 
-        # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refind and optimization ends
+        # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refined and optimization ends
         (segment_edges, clear, segment_errors) = refineMesh(exp, segment_edges, s_all, pol_order)
 
         if clear == 0

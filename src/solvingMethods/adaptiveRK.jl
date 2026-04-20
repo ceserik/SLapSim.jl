@@ -1,19 +1,7 @@
-function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
-                                    x_scale=ones(nStates), u_scale=ones(nControls),
-                                    x_lb=s -> -x_scale, x_ub=s -> x_scale,
-                                    u_lb=s -> -u_scale, u_ub=s -> u_scale)
+function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
     tableau = TableauLobattoIIIA(stages)
     τ_ref  = tableau.c
     w_bary = barycentric_weights(τ_ref)
-
-    # Evaluate a bound function at path position and verify that it returns the expected number of entries.
-    function _eval_bound(bound_fn, s, expected_length)
-        bound_values = bound_fn(s)
-        length(bound_values) == expected_length || error(
-            "bound function returned vector of length $(length(bound_values)), " *
-            "expected $(expected_length) at s=$(s)")
-        return bound_values
-    end
 
     function createDynamicConstraints(segment_edges, initialization)
         number_of_segments = length(segment_edges) - 1
@@ -36,42 +24,17 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         end
         s_all[end] = segment_edges[end]
 
-        X_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
-        U_raw = Matrix{VariableRef}(undef, totalPoints, nControls)
-
-        # Print bounds & scales summary using the value at s=0 (representative).
-        let s0 = s_all[1]
-            x_lb0 = _eval_bound(x_lb, s0, nStates)
-            x_ub0 = _eval_bound(x_ub, s0, nStates)
-            u_lb0 = _eval_bound(u_lb, s0, nControls)
-            u_ub0 = _eval_bound(u_ub, s0, nControls)
-            println("State bounds & scales (at s=$(round(s0,digits=3))):")
-            for j in eachindex(x_lb0)
-                println("  x[$j]: lb=$(round(x_lb0[j],digits=3))  ub=$(round(x_ub0[j],digits=3))  scale=$(round(x_scale[j],digits=3))")
-            end
-            println("Control bounds & scales (at s=$(round(s0,digits=3))):")
-            for j in eachindex(u_lb0)
-                println("  u[$j]: lb=$(round(u_lb0[j],digits=3))  ub=$(round(u_ub0[j],digits=3))  scale=$(round(u_scale[j],digits=3))")
-            end
-        end
+        X = Matrix{VariableRef}(undef, totalPoints, nStates)
+        U = Matrix{VariableRef}(undef, totalPoints, nControls)
 
         for i = 1:totalPoints
-            si = s_all[i]
-            x_lb_i = _eval_bound(x_lb, si, nStates) ./ x_scale
-            x_ub_i = _eval_bound(x_ub, si, nStates) ./ x_scale
-            u_lb_i = _eval_bound(u_lb, si, nControls) ./ u_scale
-            u_ub_i = _eval_bound(u_ub, si, nControls) ./ u_scale
             for j = 1:nStates
-                X_raw[i, j] = @variable(model, lower_bound=x_lb_i[j], upper_bound=x_ub_i[j])
+                X[i, j] = @variable(model, lower_bound=-1.0, upper_bound=1.0)
             end
             for j = 1:nControls
-                U_raw[i, j] = @variable(model, lower_bound=u_lb_i[j], upper_bound=u_ub_i[j])
+                U[i, j] = @variable(model, lower_bound=-1.0, upper_bound=1.0)
             end
         end
-
-        #scaling
-        X = X_raw .* x_scale'
-        U = U_raw .* u_scale'
 
         # === Intermediate-F variant (comment this block out to revert to inline f) ===
         F_raw = Matrix{VariableRef}(undef, totalPoints, nStates)
@@ -80,7 +43,7 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         end
         for i = 1:totalPoints
             dx_i = f(X[i, :], U[i, :], s_all[i], model)
-            @constraint(model, F_raw[i, :] .== dx_i ./ x_scale)
+            @constraint(model, F_raw[i, :] .== dx_i)
         end
         segment_start_idx = 1
         for segment = 1:number_of_segments
@@ -88,8 +51,7 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
                 fxSum = @variable(model, [1:nStates])
                 @constraint(model, fxSum .== sum(tableau.a[stage, col] .* F_raw[segment_start_idx+col-1, :] for col in 1:stages))
 
-                #fxSum = sum(tableau.a[stage, col] .* F_raw[segment_start_idx+col-1, :] for col in 1:stages)
-                @constraint(model, X_raw[segment_start_idx+stage-1, :] .== X_raw[segment_start_idx, :] .+ h_all[segment] .* fxSum)
+                @constraint(model, X[segment_start_idx+stage-1, :] .== X[segment_start_idx, :] .+ h_all[segment] .* fxSum)
             end
             segment_start_idx = segment_start_idx + stages - 1
         end
@@ -114,12 +76,12 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track;
         #    segment_start_idx = segment_start_idx + stages - 1
         #end
 
-        #initialize all states and controls (set on raw O(1) variables)
+        #initialize all states and controls 
         for idx = eachindex(s_all)
             init_vals = initialization.states(s_all[idx])
             init_u = initialization.controls(s_all[idx])
-            set_start_value.(X_raw[idx, :], init_vals ./ x_scale)
-            set_start_value.(U_raw[idx, :], init_u ./ u_scale)
+            set_start_value.(X[idx, :], init_vals)
+            set_start_value.(U[idx, :], init_u)
         end
 
         return [model, X, U, s_all, segment_edges]
