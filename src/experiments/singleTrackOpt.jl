@@ -23,9 +23,9 @@ GLMakie.closeall()
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path, false, true)
+#track = kml2track(path, false, true)
 #track = csv2track("src/Track/berlin_2018.csv")
-#track = doubleTurn(false, 0.1)
+track = doubleTurn(false, 0.1)
 #track = skidpad(false)
 #car = createSimplestSingleTrack(track)
 #car = formulaE2026(track)
@@ -73,6 +73,12 @@ exp = Experiment(
     #solver = MadNLPBackend(
     #    attributes = madnlp_attrs,
     #),
+    mesh_refinement = MeshRefinementConfig(
+        tol          = 1e-2,
+        method       = :h, #h,p,hp
+        error_method   = :ode, #ode,defect
+        max_iterations = 20,
+    ),
     # Example: cap total drive energy at 10 MJ. Leave vector empty for no global constraints.
     global_constraints = GlobalConstraint[],    # e.g. [EnergyBudget(1.0e7)]
     analysis = AnalysisConfig(
@@ -92,12 +98,12 @@ exp = Experiment(
 # ---------------------------------------------------------------------------
 # Solve
 # ---------------------------------------------------------------------------
-segments = Int64(round(track.sampleDistances[end] / 2))
-pol_order = 2
-run_experiment!(exp, segments, pol_order; variant="Lobatto")
+segments = Int64(round(track.sampleDistances[end] / 5))
+pol_order = 3
+run_experiment!(exp, segments, pol_order; variant="Radau")
 
 
-sampling_density = get_sampling_density(exp.optiResult.path); # this may silently change emanigwhen higher than 2 pol order is used may cause bugs
+sampling_density = get_sampling_density(exp.optiResult.segment_edges); # use mesh edges so density matches the sampling method
 plot_on_path(exp, sampling_density, "sampling density");
 
 snapshots = snapshot_car(car, exp.optiResult, track)

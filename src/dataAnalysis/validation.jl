@@ -215,7 +215,7 @@ function getError(s, problem)
     return norm(final_states_time_sim .- final_states_optimized)
 end
 
-function getError_defect(s_segment, problem; x_scale=[10.0, 5.0, 1.0, 1.0, 5.0, 10.0])
+function getError_defect(s_segment, problem)
     s_mid = (s_segment[1] + s_segment[2]) / 2
     x_mid = problem.optiResult.states(s_mid)
     u_mid = problem.optiResult.controls(s_mid)
@@ -227,7 +227,10 @@ function getError_defect(s_segment, problem; x_scale=[10.0, 5.0, 1.0, 1.0, 5.0, 
     h = 1e-5 * (s_segment[2] - s_segment[1])
     dxds_mid = (problem.optiResult.states(s_mid + h) .- problem.optiResult.states(s_mid - h)) ./ (2h)
 
-    # Defect: how well does the polynomial satisfy the ODE
+    # Defect: how well does the polynomial satisfy the ODE.
+    # Scale by per-state magnitude so each state contributes comparably
+    # (states have very different units: vx ~10, ψ ~1, t ~10–100, …).
+    x_scale = get_scales(problem.car.carParameters.state_descriptor)
     defect = dxds_mid .- f_mid
     return norm(defect ./ x_scale)
 end

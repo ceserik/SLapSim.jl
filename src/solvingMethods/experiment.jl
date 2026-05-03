@@ -106,6 +106,29 @@ end
 
 
 # ---------------------------------------------------------------------------
+# Mesh refinement configuration.
+# ---------------------------------------------------------------------------
+"""
+    MeshRefinementConfig(; tol, method, error_method, max_steps)
+
+Controls the adaptive mesh refinement loop.
+
+- `tol`:          segments with integrated error above this are split (default 1e-1)
+- `method`:       `:h`  — insert midpoint into bad segments (refine mesh spacing)
+                  `:p`  — increase polynomial order of bad segments (not yet impl.)
+                  `:hp` — try p-refinement first, fall back to h-refinement
+- `error_method`: passed to `getErrors`; `:ode` uses ODE residual, `:defect` uses collocation defect
+- `max_iterations`: maximum number of refinement iterations (default 10)
+"""
+Base.@kwdef struct MeshRefinementConfig
+    tol::Float64          = 1e-1
+    method::Symbol        = :h        # :h | :p | :hp
+    error_method::Symbol  = :ode      # :ode | :defect
+    max_iterations::Int   = 10
+end
+
+
+# ---------------------------------------------------------------------------
 # Analysis / post-processing toggles.
 # ---------------------------------------------------------------------------
 Base.@kwdef mutable struct AnalysisConfig
@@ -134,6 +157,7 @@ Base.@kwdef mutable struct Experiment
     solver::SolverBackend = IpoptBackend()
     analysis::AnalysisConfig = AnalysisConfig()
     global_constraints::Vector{GlobalConstraint} = GlobalConstraint[]
+    mesh_refinement::MeshRefinementConfig = MeshRefinementConfig()
     # runtime state (populated by run_experiment!)
     model = nothing
     optiResult = nothing        # Result_interpolation, populated after solve

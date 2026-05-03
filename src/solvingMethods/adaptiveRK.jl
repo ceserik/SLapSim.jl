@@ -84,9 +84,9 @@ function createLobattoIIIA_Adaptive(f, stages, model, nControls, nStates, track)
             set_start_value.(U[idx, :], init_u)
         end
 
-        return [model, X, U, s_all, segment_edges]
+        return [model, X, U, s_all, segment_edges, s_all]
     end
- 
+
     function create_interpolation(X_vals, U_vals, s_all, segment_edges)
         number_of_segments = length(segment_edges) - 1
         stride = stages - 1  # points per segment (adjacent segments share boundary)

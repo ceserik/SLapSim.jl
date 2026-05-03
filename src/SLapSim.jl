@@ -60,7 +60,7 @@ include("solvingMethods/adaptiveRK.jl")
 
 # Export public functions
 export Car, Track, Track_interpolated, interpolate_track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, csv2track, berlinTrack, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack, createBasicWheelAssembly,figureEight, carParameter, CarParameters
-export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,get_diff_matix, skidpad, create_gauss_legendre
+export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,get_diff_matix, skidpad, create_gauss_legendre, create_radau
 export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
 export createCTU25gearbox, createFischerMotor, createR20lin, createAccumulator, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
 export createBus, createBusSuspension, createBusWheelAssembly, RHO_SEA_LEVEL
@@ -71,7 +71,7 @@ export Result_interpolation, find_optimal_trajectory_adaptive, plotTrackStates
 # New experiment API
 export Experiment, Discipline, Open, Closed
 export SolverBackend, IpoptBackend, MadNLPBackend
-export AnalysisConfig, GlobalConstraint, EnergyBudget
+export AnalysisConfig, GlobalConstraint, EnergyBudget, MeshRefinementConfig
 export build_model, run_experiment!, run_analysis!
 export apply_boundary_conditions!, apply_global!
 export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors,get_sampling_density,plot_on_path, plot_states_controls
