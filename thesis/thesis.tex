@@ -124,6 +124,7 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 \section{Motivation}
 Topic of this thesis is motivated, by my work in Formula Student team eForce Prague Formula, where I worked on real-time vehicle dynamics control software. There I got intricately exposed to problems faced by racing teams, such as should we increase the aerodynamic downforce at the cost of higher drag? Should we put accumulator in the middle of vehicle, to decrease moment of inertia? Should the aerodynamics be designed for straight line drive, or for steady state turning? How to use limited energy from accumulator more effectively, how faster can we go if we made better power limiting algorithm? How large the accumulator should be? Which torque allocation algorithm should be used? How to design the suspension kinematics to maximize the tire utilization? Is rear wheel steering worth it?  All of these problems can be analyzed by using purpose built tool, good engineering practices or using pen and paper with heavily simplified model. Formula student season is 10 months for development and construction of the vehicle, 2 months for competition. That puts enormous pressure on deciding on vehicle concept fast. In my opinion what formula student teams need is a tool to quickly evaluate different car concepts.
 
+\subsection{quadrature rules}
 \section{Goals}
 Goal of this thesis is to lay the groundwork for a tool which would be able to quickly and reliably evaluate different vehicle concepts. For each of the problems above, a different complexity of the vehicle model is sufficient, e.g.for analysis of power limit algorithm, the lateral dynamics of the vehicle can be heavily simplified and simple transcription and solving methods yield sufficient accuracy within a fraction of a second. Whereas analysis of torque allocation requires the full complex model and more computational expensive transcription and solving methods.
 
@@ -388,9 +389,11 @@ The concept of collocation is old and universal in numerical analysis \ldots For
 \end{quote}
 Job of collocation method is to find a polynomial that approximates the solution of BVP along independent variable(most commonly time). Collocation methods are a subset of implicit runge kutta methods.
 The main distinction between runge kutta merthods and collocation. Is that the result of collocation is always polynomial, that does not hold for general Runge Kutta method.
-Collocation methods are the core of this thesis, I have implemented  Gauss radau, gauss, gauss lobatto. Collocation methods differ in points at which the derivative of polynomial coincides ("co-locates) with the vector field of differential equation..
+Collocation methods are the core of this thesis, I have implemented  Gauss radau, gauss, gauss lobatto. Collocation methods differ in points at which the derivative of polynomial coincides ("co-locates) with the vector field of differential equation. Commonly used methods in optimal control are radau, lobatto, legendre. They can be written in integral and differential form. \cite{garg_overview_nodate}
 \subsection{collocation integral form}
+integral form is straight forward,  same as other unge kutta Methods
 \subsection{collocation differential form}
+differeanital form requires to create differentiation matrix of the aproximating polnomial, which contains the difference of the approximating polynomial.
 \subsection{hp adaptive methods}
 %\section{Nonlinear programming}
 
@@ -487,6 +490,8 @@ Common pitfall of nonlinear programming is poor scaling, this happens when the s
 
 Another thing which led to issues is constraints qualification. Linear indpendence constiant qualification requires gradients of the active constraints to be linearly independent, then the jacobian of the constraints is rank deficient and linear solve may fails
 
+\section{sparsity}
+Sparsity is good, sparsity means matrix hessians and jacobians with many zeros also sparsisty in constraints, that means not having super very long expression with many terms in constraint. I guess it is beacause deriavtive is difficult then and can lead solver in wrong direction or take small steps. Therefore using more decison variables to define same problem can actually lead to faster computation \cite{julia_discourse_ipopt_hessian}
 
 
 \chapter{My implementation, julia + JuMP}
@@ -619,11 +624,9 @@ I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global collocat
 %gauss legendre collocation
 %N is in number of collocation points, order of approximating polynomial is then  for LG = 2N-1, for LGR = 2N-2, for LGL = 2N-3
 
-\subsection{quadrature rules}
 
 
-\section{sparsity}
-Sparsity is good, sparsity means matrix hessians and jacobians with many zeros also sparsisty in constraints, that means not having super very long expression with many terms in constraint. I guess it is beacause deriavtive is difficult then and can lead solver in wrong direction or take small steps. Therefore using more decison variables to define same problem can actually lead to faster computation \cite{julia_discourse_ipopt_hessian}
+
 
 
 %\part{My Party}

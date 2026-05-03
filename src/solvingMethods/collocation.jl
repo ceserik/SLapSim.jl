@@ -175,7 +175,7 @@ function create_gauss_legendre(f, pol_order, variant, model, nControls, nStates,
         u_stride = pol_order
         function find_segment(s)
             for i in 1:segments
-                s <= segment_edges[i+1] && return i
+                s < segment_edges[i+1] && return i
             end
             return segments
         end
