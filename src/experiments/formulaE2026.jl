@@ -45,6 +45,11 @@ exp = Experiment(
         attributes = ipopt_attrs,
     ),
     global_constraints = GlobalConstraint[],            # e.g. [EnergyBudget(1.0e7)]
+    mesh_refinement = MeshRefinementConfig(
+        segments  = Int64(round(track.sampleDistances[end] / 6)),
+        pol_order = 3,
+        variant   = "Lobatto",
+    ),
     analysis = AnalysisConfig(
         plot_path       = true,
         plot_states     = true,
@@ -56,9 +61,7 @@ exp = Experiment(
     ),
 )
 
-segments = Int64(round(track.sampleDistances[end] / 6))
-pol_order = 3
-run_experiment!(exp, segments, pol_order; variant="Lobatto")
+run_experiment!(exp)
 
 # ---------------------------------------------------------------------------
 # Custom per-parameter plots (not yet generic enough for run_analysis!).

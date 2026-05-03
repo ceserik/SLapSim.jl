@@ -1,35 +1,30 @@
 
-function refineMesh(problem, segment_edges, s_all, stride; iteration::Int=0)
+function refineMesh(problem, segment_edges, pol_order; iteration::Int=0)
     cfg = problem.mesh_refinement
-    error_itp = getErrors(problem; method=cfg.error_method)
-    segment_errors = zeros(length(segment_edges) - 1)
-    idx = 1
+    segment_errors = getSegmentErrors(problem)
     clear = 1
-    for i = eachindex(segment_errors)
-        error_segment = 0
-        for node = 1:stride
-            error_segment += error_itp(s_all[idx])
-            idx += 1
-        end
-        Δs = segment_edges[i+1] - segment_edges[i]
-        segment_errors[i] = error_segment / (stride * Δs)
-    end
+    any_bad = false
 
     segment_edges = collect(segment_edges)
     for i = length(segment_errors):-1:1
         if segment_errors[i] > cfg.tol
+            any_bad = true
             if cfg.method === :h || cfg.method === :hp
                 s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
                 insert!(segment_edges, i + 1, s_mid)
             end
-            # :p and :hp p-branch: polynomial order increase not yet implemented
             clear = 0
         end
     end
-    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors — iteration $iteration"))
+    if any_bad && (cfg.method === :p || cfg.method === :hp)
+        pol_order += 1
+        println("p-refinement: pol_order → $pol_order")
+    end
+    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors — iter $iteration (p=$pol_order)"))
     lines!(fig.axis, [1, length(segment_errors)], [cfg.tol, cfg.tol], color=:red, linewidth=2)
     display(GLMakie.Screen(), fig)
-    return segment_edges, clear, segment_errors
+    
+    return segment_edges, clear, segment_errors, pol_order
 end
 
 struct Result
@@ -105,48 +100,6 @@ function time2path(car::Car, track::Track, k::Union{Int64,Float64}, model::Union
     return dzds
 end
 
-function findOptimalTrajectory(track::Track, car::Car, model::JuMP.Model, sampleDistances, initialization=nothing)
-    N = length(sampleDistances)
-    s = sampleDistances
-    #determine sizes of inputs and states
-    
-    nStates = Int(car.carParameters.nStates.value)
-    nControls = Int(round(car.carParameters.nControls.value))
-
-    function f(x, u, s, model)
-        dxds = carODE_path(car, track, s, u, x, model)
-        return dxds
-    end
-
-    stages = 2
-    lobotom = createLobattoIIIA(stages, f)
-    xd = lobotom.createConstraints(f, 6, 3, track.fcurve, s, model, initialization.states, initialization.controls)
-    X = xd[2]
-    U = xd[3][1:end-1, :]
-    s_all = xd[6]
-    control_reg = 1e-6 * sum(U[i, j]^2 for i in axes(U, 1), j in axes(U, 2))
-    @objective(model, Min, X[end, 6] + control_reg)
-
-
-    @constraint(model, X[1:end, 1] .>= 0) #vx
-    #@constraint(model,X[1,1] .== 5) # intial vx
-    @constraint(model, X[1, 2] .== 0) # intial vy
-    @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
-    #@constraint(model,X[end,3].== track.theta[end])
-    #@constraint(model,X[end,5].== 0)
-    @constraint(model, X[1, 6] .>= 0) # final time
-    @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
-
-
-
-    optimize!(model)
-
-    x = value.(X)
-    u = value.(U)
-    out = Result(x, u, s_all)
-    out_interp = make_result_interpolation(x, u, s_all)
-    return out, out_interp
-end
 
 function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_order::Int64, variant)
     track = exp.track
@@ -282,9 +235,7 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         end
 
         # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refined and optimization ends
-        # stride = nodes per segment (Radau: pol_order, LG: pol_order+1, adaptive: stages-1)
-        stride = variant == "Radau" ? pol_order : (variant == "Legendre" ? pol_order + 1 : pol_order)
-        (segment_edges, clear, segment_errors) = refineMesh(exp, segment_edges, s_all, stride; iteration=iterations)
+        (segment_edges, clear, segment_errors, pol_order) = refineMesh(exp, segment_edges, pol_order; iteration=iterations)
 
         if clear == 0
             #create clear model for next iteration

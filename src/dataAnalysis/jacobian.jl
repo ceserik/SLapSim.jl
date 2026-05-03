@@ -41,13 +41,16 @@ end
 Compute the Jacobian on `model` and render a UnicodePlots spy to stdout plus a
 GLMakie spy window. Returns the sparse Jacobian.
 """
-function plot_jacobian_spy(model::Model)
+function plot_jacobian_spy(model::Model; savepath::Union{Nothing,String}=nothing)
     jacobian = compute_optimal_jacobian(model)
     println("jacobian")
     println(UnicodePlots.spy(jacobian))
     fig_jac = Figure()
     ax_jac = Axis(fig_jac[1, 1], title="Jacobian")
     spy!(ax_jac, SparseArrays.sparse(rotr90(jacobian)))
+    if savepath !== nothing
+        CairoMakie.save(savepath, fig_jac)
+    end
     display(GLMakie.Screen(), fig_jac)
     return jacobian
 end

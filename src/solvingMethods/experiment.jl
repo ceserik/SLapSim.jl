@@ -109,22 +109,28 @@ end
 # Mesh refinement configuration.
 # ---------------------------------------------------------------------------
 """
-    MeshRefinementConfig(; tol, method, error_method, max_steps)
+    MeshRefinementConfig(; tol, method, error_method, max_iterations, segments, pol_order, variant)
 
-Controls the adaptive mesh refinement loop.
+Controls the initial mesh and the adaptive refinement loop.
 
 - `tol`:          segments with integrated error above this are split (default 1e-1)
 - `method`:       `:h`  — insert midpoint into bad segments (refine mesh spacing)
                   `:p`  — increase polynomial order of bad segments (not yet impl.)
                   `:hp` — try p-refinement first, fall back to h-refinement
-- `error_method`: passed to `getErrors`; `:ode` uses ODE residual, `:defect` uses collocation defect
+- `error_method`: `:ode` uses ODE-integration residual to right endpoint
 - `max_iterations`: maximum number of refinement iterations (default 10)
+- `segments`:     initial number of mesh segments
+- `pol_order`:    polynomial order per segment
+- `variant`:      `"Radau"` | `"Legendre"` | `"Lobatto"` | `"LobattoIIIA_integral"`
 """
 Base.@kwdef struct MeshRefinementConfig
     tol::Float64          = 1e-1
     method::Symbol        = :h        # :h | :p | :hp
     error_method::Symbol  = :ode      # :ode | :defect
     max_iterations::Int   = 10
+    segments::Int         = 50
+    pol_order::Int        = 3
+    variant::String       = "Radau"
 end
 
 
@@ -273,15 +279,17 @@ end
 # Top-level driver.
 # ---------------------------------------------------------------------------
 """
-    run_experiment!(exp, segments, pol_order; variant="Lobatto")
+    run_experiment!(exp)
 
 Build the JuMP model, solve the trajectory optimization, and run whatever
-post-processing is enabled in `exp.analysis`. Results land in `exp.result`.
+post-processing is enabled in `exp.analysis`. Initial mesh size, polynomial
+order, and collocation variant come from `exp.mesh_refinement`.
 """
-function run_experiment!(exp::Experiment, segments::Int64, pol_order::Int64; variant::String="Lobatto")
+function run_experiment!(exp::Experiment)
+    cfg = exp.mesh_refinement
     exp.model = build_model(exp.solver)
     t_solve = @elapsed begin
-        _, interp = find_optimal_trajectory_adaptive(exp, segments, pol_order, variant)
+        _, interp = find_optimal_trajectory_adaptive(exp, cfg.segments, cfg.pol_order, cfg.variant)
     end
     println("Solve time: $(round(t_solve, digits=2)) s")
     exp.optiResult = interp
@@ -299,6 +307,12 @@ function run_analysis!(exp::Experiment)
     car   = exp.car
     track = exp.track
     res   = exp.optiResult
+    save_dir = dirname(an.animation_path)
+    save_stem = splitext(basename(an.animation_path))[1]
+
+    mkpath(save_dir)
+
+    save_plot(fig, suffix) = CairoMakie.save(joinpath(save_dir, "$(save_stem)_$(suffix).png"), fig)
 
     if an.plot_path
         fig = Figure()
@@ -311,14 +325,18 @@ function run_analysis!(exp::Experiment)
             lines!(ax, getindex.(sol.u, 5), getindex.(sol.u, 6), label="Simulated in time")
             axislegend(ax, position=:rt)
         end
+        save_plot(fig, "path")
     end
 
     if an.plot_controls
-        plot_controls_on_path(exp, res)
+        fig_controls = plot_controls_on_path(exp, res)
+        save_plot(fig_controls, "controls")
     end
 
     if an.plot_states
-        plot_states_controls(car, res, track; sample_step=0.1)
+        fig_states, fig_controls = plot_states_controls(car, res, track; sample_step=0.1)
+        save_plot(fig_states, "states")
+        save_plot(fig_controls, "states_controls")
     end
 
     if wants_sensitivity(exp.solver)
@@ -334,10 +352,10 @@ function run_analysis!(exp::Experiment)
     end
 
     if an.plot_jacobian
-        plot_jacobian_spy(exp.model)
+        plot_jacobian_spy(exp.model; savepath=joinpath(save_dir, "$(save_stem)_jacobian.png"))
     end
     if an.plot_hessian
-        plot_hessian_spy(exp.model)
+        plot_hessian_spy(exp.model; savepath=joinpath(save_dir, "$(save_stem)_hessian.png"))
     end
     return nothing
 end
