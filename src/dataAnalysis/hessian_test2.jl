@@ -63,13 +63,16 @@ end
 Compute the Hessian of the Lagrangian on `model` and render a UnicodePlots spy
 to stdout plus a GLMakie spy window. Returns the dense Hessian.
 """
-function plot_hessian_spy(model::Model)
+function plot_hessian_spy(model::Model; savepath::Union{Nothing,String}=nothing)
     H_star = compute_optimal_hessian(model)
     println("hessian")
     println(UnicodePlots.spy(H_star))
     fig_hess = Figure()
     ax_hess = Axis(fig_hess[1, 1], title="Hessian", yreversed=true)
     spy!(ax_hess, SparseArrays.sparse(H_star))
+    if savepath !== nothing
+        CairoMakie.save(savepath, fig_hess)
+    end
     display(GLMakie.Screen(), fig_hess)
     return H_star
 end

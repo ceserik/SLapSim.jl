@@ -1,6 +1,7 @@
 using Revise
 using SLapSim
 using GLMakie
+using Interpolations
 using HSL_jll                      # exposes HSL_jll.libhsl_path for Ipopt's hsllib attribute
 using CUDA
 using MadNLP
@@ -8,31 +9,15 @@ using MadNLPGPU
 
 
 #dark theme detector for linux KDE with kde-cli-tools installed
+
 setup_plot_theme!()
-
 GLMakie.closeall()
-
 # ---------------------------------------------------------------------------
 # Scenario setup
 # ---------------------------------------------------------------------------
-#car_fn = createSimplestSingleTrack
-#car_fn = createBus
 
-#track = figureEight(true, 0.1)
-#track = singleTurn(50.0,5.0,true)
-#track = doubleTurn(true,0.1)
-
-path = "tracks/FSCZ.kml"
-#track = kml2track(path, false, true)
-#track = csv2track("src/Track/berlin_2018.csv")
 track = doubleTurn(false, 0.1)
-#track = skidpad(false)
-#car = createSimplestSingleTrack(track)
-#car = formulaE2026(track)
 car = createTwintrack(true, track)
-#car = formulaE2026()
-#car = createBus()
-
 plotTrackStates(track)
 
 # ---------------------------------------------------------------------------
@@ -41,7 +26,6 @@ plotTrackStates(track)
 # See https://coin-or.github.io/Ipopt/OPTIONS.html for the full list.
 ipopt_attrs = Dict{String,Any}(
     "linear_solver"          => "mumps",
-
     # "hsllib"                 => HSL_jll.libhsl_path,  # needed when linear_solver is ma27/57/97
     #"max_iter"               => 3000,
     #"tol"                    => 1e-2,
@@ -57,11 +41,6 @@ ipopt_attrs = Dict{String,Any}(
     "alpha_for_y" => "safer-min-dual-infeas"
 )
 
-madnlp_attrs = Dict{String,Any}(
-    "array_type"    => CUDA.CuArray,
-    "linear_solver" => MadNLPGPU.CUDSSSolver,
-)
-
 exp = Experiment(
     car = car,
     track = track,
@@ -70,9 +49,7 @@ exp = Experiment(
         performSensitivity = false,
         attributes = ipopt_attrs,
     ),
-    #solver = MadNLPBackend(
-    #    attributes = madnlp_attrs,
-    #),
+
     mesh_refinement = MeshRefinementConfig(
         tol            = 1e-2,
         method         = :p,    # :h | :p | :hp
@@ -94,7 +71,7 @@ exp = Experiment(
         animation_speedup = 1.0,
         time_simulation = false,
         plot_initialization = false,
-        animation_path  = "sync/power.mp4",
+        animation_path  = "sync/p_methodplots/power.mp4",
     ),
 )
 
@@ -104,9 +81,12 @@ exp = Experiment(
 run_experiment!(exp)
 
 
-sampling_density = get_sampling_density(exp.optiResult.segment_edges); # use mesh edges so density matches the sampling method
-fig_sampling_density, _, _ = plot_on_path(exp, sampling_density, "sampling density")
-save(joinpath(dirname(exp.analysis.animation_path), "$(splitext(basename(exp.analysis.animation_path))[1])_sampling_density.png"), fig_sampling_density)
+#sampling_density = get_sampling_density(exp.optiResult.segment_edges); # use mesh edges so density matches the sampling method
+errs, s_mid = getNodeErrors(exp; iteration=1, savepath=joinpath(dirname(exp.analysis.animation_path), "$(splitext(basename(exp.analysis.animation_path))[1])_node_errors_scatter.png"))
+node_error_itp = extrapolate(interpolate((s_mid,), errs, Gridded(Linear())), Flat())
+fig_node_error, _, _ = plot_on_path(exp, node_error_itp, "Node error")
+save(joinpath(dirname(exp.analysis.animation_path), "$(splitext(basename(exp.analysis.animation_path))[1])_node_error.png"), fig_node_error)
+#plot_on_path(exp, sampling_density, "sampling density");
 
 snapshots = snapshot_car(car, exp.optiResult, track)
 

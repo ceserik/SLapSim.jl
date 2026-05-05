@@ -1,32 +1,30 @@
 
-function refineMesh(problem, segment_edges, s_all, pol_order; error_method::Symbol=:ode)
-    error_itp = getErrors(problem; method=error_method)
-    segment_errors = zeros(length(segment_edges) - 1)
-    idx = 1
+function refineMesh(problem, segment_edges, pol_order; iteration::Int=0)
+    cfg = problem.mesh_refinement
+    segment_errors = getSegmentErrors(problem)
     clear = 1
-    for i = eachindex(segment_errors)
-        error_segment = 0
-        for node = 2:pol_order
-            error_segment += error_itp(s_all[idx])
-            idx += 1
-        end
-        segment_errors[i] = error_segment
-    end
-    error_threshold = 100e-1
+    any_bad = false
 
-    # Find and insert nodes for segments with error > 1e-3
-    segment_edges = collect(segment_edges) 
-    for i = length(segment_errors):-1:1  
-        if segment_errors[i] > error_threshold
-            s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
-            insert!(segment_edges, i + 1, s_mid)
+    segment_edges = collect(segment_edges)
+    for i = length(segment_errors):-1:1
+        if segment_errors[i] > cfg.tol
+            any_bad = true
+            if cfg.method === :h || cfg.method === :hp
+                s_mid = (segment_edges[i] + segment_edges[i+1]) / 2
+                insert!(segment_edges, i + 1, s_mid)
+            end
             clear = 0
         end
     end
-    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors"))
-    lines!(fig.axis, [1, length(segment_errors)], [error_threshold, error_threshold], color=:red, linewidth=2)
+    if any_bad && (cfg.method === :p || cfg.method === :hp)
+        pol_order += 1
+        println("p-refinement: pol_order → $pol_order")
+    end
+    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors — iter $iteration (p=$pol_order)"))
+    lines!(fig.axis, [1, length(segment_errors)], [cfg.tol, cfg.tol], color=:red, linewidth=2)
     display(GLMakie.Screen(), fig)
-    return segment_edges, clear, segment_errors
+    
+    return segment_edges, clear, segment_errors, pol_order
 end
 
 struct Result
@@ -41,7 +39,10 @@ struct Result_interpolation
     controls
     path
     segment_edges
+    state_deriv      # s -> dx/ds via analytic differentiation of the collocation polynomial; nothing if unavailable
 end
+Result_interpolation(states, controls, path, segment_edges) =
+    Result_interpolation(states, controls, path, segment_edges, nothing)
 
 function make_result_interpolation(x::AbstractMatrix{Float64}, u::AbstractMatrix{Float64}, s_states::Vector{Float64}, s_controls::Vector{Float64})
     state_interps = [linear_interpolation(s_states, x[:, i]) for i in 1:size(x, 2)]
@@ -99,48 +100,6 @@ function time2path(car::Car, track::Track, k::Union{Int64,Float64}, model::Union
     return dzds
 end
 
-function findOptimalTrajectory(track::Track, car::Car, model::JuMP.Model, sampleDistances, initialization=nothing)
-    N = length(sampleDistances)
-    s = sampleDistances
-    #determine sizes of inputs and states
-    
-    nStates = Int(car.carParameters.nStates.value)
-    nControls = Int(round(car.carParameters.nControls.value))
-
-    function f(x, u, s, model)
-        dxds = carODE_path(car, track, s, u, x, model)
-        return dxds
-    end
-
-    stages = 2
-    lobotom = createLobattoIIIA(stages, f)
-    xd = lobotom.createConstraints(f, 6, 3, track.fcurve, s, model, initialization.states, initialization.controls)
-    X = xd[2]
-    U = xd[3][1:end-1, :]
-    s_all = xd[6]
-    control_reg = 1e-6 * sum(U[i, j]^2 for i in axes(U, 1), j in axes(U, 2))
-    @objective(model, Min, X[end, 6] + control_reg)
-
-
-    @constraint(model, X[1:end, 1] .>= 0) #vx
-    #@constraint(model,X[1,1] .== 5) # intial vx
-    @constraint(model, X[1, 2] .== 0) # intial vy
-    @constraint(model, X[1, 3] .== track.theta[1]) # intial heading
-    #@constraint(model,X[end,3].== track.theta[end])
-    #@constraint(model,X[end,5].== 0)
-    @constraint(model, X[1, 6] .>= 0) # final time
-    @constraint(model, diff(X[:, 6]) .>= 0) #time goes forward
-
-
-
-    optimize!(model)
-
-    x = value.(X)
-    u = value.(U)
-    out = Result(x, u, s_all)
-    out_interp = make_result_interpolation(x, u, s_all)
-    return out, out_interp
-end
 
 function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_order::Int64, variant)
     track = exp.track
@@ -174,7 +133,7 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
 
     clear = 0
     iterations = 0
-    while clear == 0 && iterations <= 50
+    while clear == 0 && iterations <= exp.mesh_refinement.max_iterations
         clear = 1
         iterations += 1
         #@infiltrate
@@ -212,7 +171,15 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
 
         sp = scaledProblem(f, x_lb_fun, x_ub_fun, u_lb_fun, u_ub_fun, initialization, x_scale, u_scale)
         printBounds(sp)
-        RKadaptive = createLobattoIIIA_Adaptive(sp.f, pol_order, model, nControls, nStates, track)
+        RKadaptive = if variant == "Legendre"
+            create_gauss_legendre(sp.f, pol_order, variant, model, nControls, nStates, track)
+        elseif variant == "Radau"
+            create_radau(sp.f, pol_order, model, nControls, nStates, track)
+        elseif variant == "LobattoIIIA_integral"
+            createLobattoIIIA_Adaptive(sp.f, pol_order, model, nControls, nStates, track)
+        else
+            error("Unknown variant: $variant. Use \"Legendre\", \"Radau\", or \"LobattoIIIA_integral\".")
+        end
         println("creating constraints")
 
         # Add parameters for sensitivity analysis, makes the problem little bigger, because parameters of car are now variables that ipopt sees
@@ -226,7 +193,8 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         U_s = xd[3]
         s_all = xd[4]
         segment_edges = xd[5]
-        applyBounds!(sp, X_s, U_s, s_all)
+        s_controls = xd[6]
+        applyBounds!(sp, X_s, U_s, s_all, s_controls)
         #scale back
         X = X_s .* sp.x_scale'
         U = U_s .* sp.u_scale'
@@ -267,7 +235,7 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         end
 
         # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refined and optimization ends
-        (segment_edges, clear, segment_errors) = refineMesh(exp, segment_edges, s_all, pol_order)
+        (segment_edges, clear, segment_errors, pol_order) = refineMesh(exp, segment_edges, pol_order; iteration=iterations)
 
         if clear == 0
             #create clear model for next iteration

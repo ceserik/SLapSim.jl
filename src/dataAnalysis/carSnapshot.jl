@@ -27,6 +27,11 @@ function _walk!(result, obj, prefix)
         key = isempty(prefix) ? string(fname) : prefix * "." * string(fname)
         if val isa carParameter
             result[key] = val
+        elseif val isa AbstractVector{VarEntry}
+            for entry in val
+                p = first(entry.targets).first
+                p isa carParameter && (result[entry.name] = p)
+            end
         elseif val isa AbstractVector
             for (i, el) in enumerate(val)
                 _walk!(result, el, key * "[$i]")

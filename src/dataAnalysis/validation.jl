@@ -178,44 +178,67 @@ end
 #This function applies states and control from optimisation result and using Tsit5 predicts next states, the difference 
 #between states from optimisation and states from Tsit5 simulation is compared and used as output.
 
-function getErrors(problem; pol_order::Int=1, method::Symbol=:ode)
-    s = problem.optiResult.path
-    n = length(s)
-    error_vector = zeros(Float64, n)
-    for i = 1:pol_order:n-pol_order
-        segment_span = [s[i], s[i+pol_order]]
-        if method == :defect
-            error = getError_defect(segment_span, problem)
-        else
-            error = getError(segment_span, problem)
-        end
-        for j = 0:pol_order-1
-            error_vector[i+j] = error
-        end
-        print("\rError evaluation ($method): $i/$(n-1)")
+"""
+    getSegmentErrors(problem) -> Vector{Float64}
+
+One scaled error per mesh segment. Integrates the ODE across each segment using
+the optimized polynomial controls, then compares the simulated state at the
+right endpoint to the optimizer's state there. States are normalized by
+`get_scales(state_descriptor)` so each contributes comparably.
+"""
+function getSegmentErrors(problem)
+    edges = problem.optiResult.segment_edges
+    nseg  = length(edges) - 1
+    errs  = zeros(Float64, nseg)
+    x_scale = get_scales(problem.car.carParameters.state_descriptor)
+    for i = 1:nseg
+        print("\rSegment error: $i/$nseg")
+        errs[i] = getError([edges[i], edges[i+1]], problem; x_scale=x_scale)
+
     end
     println()
-    error_vector[end] = error_vector[end-1]
-    itp = linear_interpolation(s, error_vector)
-    return itp
+    return errs
+end
+
+
+"""ODE-integration error between every pair of stored nodes; plot vs s."""
+function getNodeErrors(problem; iteration::Int=0, savepath::Union{Nothing,String}=nothing)
+    p = problem.optiResult.path
+    xs = get_scales(problem.car.carParameters.state_descriptor)
+    errs = [p[i] == p[i+1] ? 0.0 : getError([p[i], p[i+1]], problem; x_scale=xs) for i in 1:length(p)-1]
+    s_mid = [(p[i] + p[i+1]) / 2 for i in 1:length(p)-1]
+    fig = scatter(s_mid, errs; axis=(; yscale=log10, title="Node-interval errors — iter $iteration", xlabel="s", ylabel="Node Error"))
+    if savepath !== nothing
+        save(savepath, fig)
+    end
+    display(GLMakie.Screen(), fig)
+    return errs, s_mid
 end
 
 
 
-function getError(s, problem)
+function getError(s, problem; x_scale=nothing)
     x0 = problem.optiResult.states(s[1])
     ode(du, x, p, s) = du .= carODE_path(p[1], p[2], s, p[3](s), x, nothing)
     prob = ODEProblem(ode, x0, (s[1], s[2]), (problem.car, problem.track, problem.optiResult.controls))
 
-    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff = AutoFiniteDiff()), reltol=1e-5, abstol=1e-5)
-    final_states_time_sim = sol.u[end]
-    final_states_optimized= problem.optiResult.states(s[2])
-    #@infiltrate
-    # return scalar L2 norm (single number)
-    return norm(final_states_time_sim .- final_states_optimized)
+    # Loose tolerance + step cap: refinement only needs a coarse error estimate, and a
+    # pathological polynomial (high order, long segment) can otherwise stall Rodas4.
+    sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff());
+                               reltol=1e-3, abstol=1e-3, maxiters=10_000, verbose=false)
+    if sol.retcode != ReturnCode.Success
+        return Inf  # treat as "needs refinement"
+    end
+    final_states_time_sim  = sol.u[end]
+    final_states_optimized = problem.optiResult.states(s[2])
+    diff = final_states_time_sim .- final_states_optimized
+    if x_scale !== nothing
+        diff = diff ./ x_scale
+    end
+    return norm(diff)
 end
 
-function getError_defect(s_segment, problem; x_scale=[10.0, 5.0, 1.0, 1.0, 5.0, 10.0])
+function getError_defect(s_segment, problem)
     s_mid = (s_segment[1] + s_segment[2]) / 2
     x_mid = problem.optiResult.states(s_mid)
     u_mid = problem.optiResult.controls(s_mid)
@@ -227,7 +250,10 @@ function getError_defect(s_segment, problem; x_scale=[10.0, 5.0, 1.0, 1.0, 5.0, 
     h = 1e-5 * (s_segment[2] - s_segment[1])
     dxds_mid = (problem.optiResult.states(s_mid + h) .- problem.optiResult.states(s_mid - h)) ./ (2h)
 
-    # Defect: how well does the polynomial satisfy the ODE
+    # Defect: how well does the polynomial satisfy the ODE.
+    # Scale by per-state magnitude so each state contributes comparably
+    # (states have very different units: vx ~10, ψ ~1, t ~10–100, …).
+    x_scale = get_scales(problem.car.carParameters.state_descriptor)
     defect = dxds_mid .- f_mid
     return norm(defect ./ x_scale)
 end
@@ -312,7 +338,7 @@ function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo)
     end
 
     plotTrack(track, b_plotStartEnd=false, ax = axis)   # draw base track
-    plt = lines!(axis, carX, carY; color = vis_vars, colormap = colormap, linewidth = 20)
+    plt = lines!(axis, carX, carY; color = vis_vars, colormap = colormap, linewidth = 10)
     if created
         Colorbar(fig[1,2], plt; label = legend, width = 25)
         display(GLMakie.Screen(), fig)

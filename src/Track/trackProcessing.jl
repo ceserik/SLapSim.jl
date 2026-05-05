@@ -174,7 +174,7 @@ function smooth_by_OCP(track::Track, r::Float64, ds::Float64,closedTrack::Bool)
     track.rho         = stretch(track.rho)
     track.μ           = stretch(track.μ)
     track.inclination = stretch(track.inclination)
-
+    println("Track Smoothing done")
     return (x_traj, y_traj, C_traj, th_traj)
 
 end
@@ -332,7 +332,7 @@ function csv2track(path::String;
     s_raw = [0.0; cumsum(ds_raw)]
 
     smooth_by_OCP(track, smooth_factor, ds, closedTrack)
-
+    
     track.s = track.sampleDistances
     
     if vis

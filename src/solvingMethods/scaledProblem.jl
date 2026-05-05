@@ -51,14 +51,17 @@ function printBounds(sp::ScaledProblem, s::Real=0.0)
 end
 
 # Tighten the [-1,1] variable box on RK vars with path-dependent physical bounds.
-function applyBounds!(sp::ScaledProblem, X_s, U_s, s_all)
-    for i = eachindex(s_all)
-        xlb = sp.x_lb(s_all[i]); xub = sp.x_ub(s_all[i])
-        ulb = sp.u_lb(s_all[i]); uub = sp.u_ub(s_all[i])
+# s_controls defaults to s_states (when X and U live on the same nodes, e.g. RK).
+function applyBounds!(sp::ScaledProblem, X_s, U_s, s_states, s_controls=s_states)
+    for i = eachindex(s_states)
+        xlb = sp.x_lb(s_states[i]); xub = sp.x_ub(s_states[i])
         for j = axes(X_s, 2)
             set_lower_bound(X_s[i, j], xlb[j])
             set_upper_bound(X_s[i, j], xub[j])
         end
+    end
+    for i = eachindex(s_controls)
+        ulb = sp.u_lb(s_controls[i]); uub = sp.u_ub(s_controls[i])
         for j = axes(U_s, 2)
             set_lower_bound(U_s[i, j], ulb[j])
             set_upper_bound(U_s[i, j], uub[j])
