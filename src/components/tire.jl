@@ -69,8 +69,8 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
     maxSlipAngle = carParameter{carVar}(5/180*pi, "max slip angle", "rad")
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
-    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
-    rollingResistance = carParameter{carVar}(0.010, "Rolling resistance coeff", "-", :tunable)
+    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :sensitivity)
+    rollingResistance = carParameter{carVar}(0.010, "Rolling resistance coeff", "-", :sensitivity)
     brakingForce = carParameter{carVar}(0.0, "braking force", "N")
 
     function setVelocity(velocityIn::Vector{carVar})
@@ -90,8 +90,8 @@ function createR20lin(motor::Motor,gearbox::Gearbox)
             sf = scalingForce.value
             fy_expr = (slipAngle.value/maxSlipAngle.value * forces.value[3] * frictionCoefficient.value) / sf
             fx_expr = (inTorque/radius.value + brakingForce.value) / sf
-            fy_raw = @variable(optiModel)
-            fx_raw = @variable(optiModel)
+            fy_raw = @variable(optiModel, lower_bound=-2.0, upper_bound=2.0, start=0.0)
+            fx_raw = @variable(optiModel, lower_bound=-2.0, upper_bound=2.0, start=0.0)
             @constraint(optiModel, fy_raw == fy_expr)
             @constraint(optiModel, fx_raw == fx_expr)
             forces.value[2] = fy_raw * sf
@@ -172,8 +172,8 @@ function createR20_pacejka(motor::Motor,gearbox::Gearbox)
     maxSlipAngle = carParameter{carVar}(5/180*pi, "max slip angle", "rad")
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
-    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
-    rollingResistance = carParameter{carVar}(-0.010, "Rolling resistance coeff", "-", :tunable)
+    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :sensitivity)
+    rollingResistance = carParameter{carVar}(-0.010, "Rolling resistance coeff", "-", :sensitivity)
     brakingForce = carParameter{carVar}(0.0, "braking force", "N")
     # Pacejka Magic Formula coefficients
     B = 9.62   # stiffness factor
@@ -275,8 +275,8 @@ function create_FormulaE_pacejka(motor::Motor,gearbox::Gearbox)
     maxSlipAngle = carParameter{carVar}(5/180*pi, "max slip angle", "rad")
     scalingForce = carParameter{carVar}(0.0, "max longitudinal force", "N")
     scalingForce.value = motor.torqueSpeedFunction(0.0) * gearbox.ratio.value / radius.value
-    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :tunable)
-    rollingResistance = carParameter{carVar}(-0.010, "Rolling resistance coeff", "-", :tunable)
+    frictionCoefficient = carParameter{carVar}(1.0, "Friction Coefficient", "-", :sensitivity)
+    rollingResistance = carParameter{carVar}(-0.010, "Rolling resistance coeff", "-", :sensitivity)
     brakingForce = carParameter{carVar}(0.0, "braking force", "N")
     # Pacejka Magic Formula coefficients
     B = 9.62   # stiffness factor

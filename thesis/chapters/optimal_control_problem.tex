@@ -93,6 +93,6 @@ p adaptive methods work by increasing the order of polynomial, until the error i
 \subsection{h adaptive methods}
 h methods are used when solution of optimal control problem is approximated by many intervals with low degree polynomial. These methods can decide to split segment into two smaller segments, they use different techniques to do this. Method described in \cite{betts} calculates error using ????? DOPLNIT. Another method described in \cite{jisongzhaoshuangliAdaptiveMeshRefinement} uses techniques from essentially nonoscillatory (ENO) interpolation \cite{Harten1997} to decide where to split and remove nodes.
 \subsection{hp adaptive methods}
-
+ hp adaptive methods are state of the art in mesh refinment. They are combination of increasing/decreasing mesh segments and incresing/decreasing order of aproximating polynomial insede segments. One of the first hp-method and commonly cited is  decribed in article~\cite{darbyHpAdaptivePseudospectral2011} from University of Florida. They have produces numerous papers on hp- adaptive mesh refinemnt~\cite{agamawiCGPOPSSoftwareSolving2020} \cite{liuAdaptiveMeshRefinement2018}. Recent work on mesh refinemnt for functions with kinks~\cite{wilkaAdaptiveHpPolynomialBased2025}.
 
 

@@ -168,6 +168,7 @@ Base.@kwdef mutable struct Experiment
     model = nothing
     optiResult = nothing        # Result_interpolation, populated after solve
     params = nothing            # sensitivity parameter dict
+    designRefs = nothing        # design variable JuMP ref dict (name => VariableRef)
 end
 
 

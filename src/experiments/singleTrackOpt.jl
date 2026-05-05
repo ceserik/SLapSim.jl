@@ -54,7 +54,8 @@ ipopt_attrs = Dict{String,Any}(
     #"acceptable_iter"        => 10,
     "print_timing_statistics"=> "yes",
     #"hessian_approximation" => "limited-memory",
-    "alpha_for_y" => "safer-min-dual-infeas"
+    "alpha_for_y" => "safer-min-dual-infeas",
+    #"print_level" => 8
 )
 
 madnlp_attrs = Dict{String,Any}(
@@ -74,9 +75,9 @@ exp = Experiment(
     #    attributes = madnlp_attrs,
     #),
     mesh_refinement = MeshRefinementConfig(
-        tol            = 1e-2,
+        tol            = 1e-1,
         method         = :h,    # :h | :p | :hp
-        error_method   = :defect,  # :ode
+        error_method   = :ode,  # :ode
         max_iterations = 10,
         segments       = Int64(round(track.sampleDistances[end] / 10)),
         pol_order      = 2,

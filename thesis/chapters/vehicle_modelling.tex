@@ -1,4 +1,5 @@
 \chapter{Vehicle and Track modelling framework}
+There is not one model of vehicle that would fit all requirements of race engineers. For each problems, a different complexity of the vehicle model is sufficient, e.g.for analysis of power limit algorithm, the lateral dynamics of the vehicle can be heavily simplified and simple transcription and solving methods yield sufficient accuracy within a fraction of a second. Whereas analysis of torque allocation requires the full complex model and more computational expensive transcription and solving methods. Therefore, a vehicle modeling framework is needed to satisfy he needs of different types of analyses.
 \section{Model like in MSD}
 The structure of the vehicle model has to allow extending/changing components, so that different vehicle concepts can be simulated, with minimal coding. Book in\cite{brown_engineering_2006} describes modelling framework that allows to create car components as modules with flow and effort inteface. This common interface then heavily simplifies proces of creating a car model, as modules can be reused and chained together easily.
 ADD DESCRIPRION OF THE BROWN GRAPH THEORY HERE. veloity goes one direction and forces go the other direction, must give better description.
@@ -78,7 +79,7 @@ Wheel pivot point is modelled as transformer. It defines the transformation of C
 Aerodynamic model is modelled as nonlinear resistance element, mapping velocity into forces
 \section{Suspension model}
 Job of suspension in car is to maintain tire contact, distribute the load from lateral load transfer to better utilize tires and use kinematics to make use of camber thrust. Commonly suspension of car consists of spring, damper and the mounitng with tie rods.
-In this thesis Suspension model had to be significantly simplified. Modelling each wheel with a damper, spring and its own kinematics is beyond the scope of this thesis. However, the structure of allows it, i just didnt have enough time to implement it.
+In this thesis Suspension model had to be significantly simplified. Modelling each wheel with a damper, spring and its own kinematics is beyond the scope of this thesis. However, the structure of allows it, i just didnt have enough time to implement it. this quarter car model would be very beneficial toward the goal of scalability, now without it the model scalability is limited as divigin force between more than two wheel on axis is staticky nedoruceny problem.
 \section{Gearbox model}
 gearbox is the textbook example of transformer and resistive element.
 \section{Accumulator model}

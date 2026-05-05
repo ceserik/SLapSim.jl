@@ -183,11 +183,15 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         println("creating constraints")
 
         # Add parameters for sensitivity analysis, makes the problem little bigger, because parameters of car are now variables that ipopt sees
-        tunables = carParameter[]
+        sensitivityParams = carParameter[]
         if performSensitivity
-            (params, tunables) = setParameters(car, model)
+            (params, sensitivityParams) = setParameters(car, model)
             exp.params = params
         end
+
+        # Promote :design carParameters to free scalar JuMP variables (one per param, constant across horizon)
+        (designRefs, designParams) = setDesignVariables(car, model)
+        exp.designRefs = designRefs
         xd = RKadaptive.createConstraints(segment_edges, sp.init)
         X_s = xd[2]
         U_s = xd[3]
@@ -231,7 +235,15 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         if performSensitivity
             println("resetting parameters for sensitivity analysis")
             exp.params = params
-            resetParameters(tunables)
+            resetParameters(sensitivityParams)
+        end
+
+        # Write optimized design var values back into carParameter.value (replace JuMP refs with floats)
+        if !isempty(designParams)
+            resolveDesignVariables(designParams)
+            for p in designParams
+                println("design var $(p.name) = $(p.value) [$(p.unit)]")
+            end
         end
 
         # Call to Mesh refinment algorigth, if clear == 1 the solution does not need to be refined and optimization ends

@@ -3,7 +3,7 @@ mutable struct carParameter{T}
     name::String
     unit::String
     size::Tuple{Int,Int}  # To store dimensions of the value (1,1) for scalar, (n,1) for vector, (n,m) for matrix
-    role::Symbol  # :control, :state, :static parameter, :tunable parameter
+    role::Symbol  # :control, :state, :static parameter, :sensitivity parameter, :design (free scalar decision var)
     limits::Vector{Float64}
 end
 

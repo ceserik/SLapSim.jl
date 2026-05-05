@@ -263,3 +263,67 @@ url =       {libgen.li/file.php?md5=6f53bbfd303895ca385bde0ef8458f39},
   pages   = {3--47},
   doi     = {10.1006/jcph.1996.5632}
 }
+
+@article{darbyHpAdaptivePseudospectral2011,
+  title = {An {\emph{Hp}} -adaptive Pseudospectral Method for Solving Optimal Control Problems},
+  author = {Darby, Christopher L. and Hager, William W. and Rao, Anil V.},
+  year = 2011,
+  month = jul,
+  journal = {Optimal Control Applications and Methods},
+  volume = {32},
+  number = {4},
+  pages = {476--502},
+  issn = {0143-2087, 1099-1514},
+  doi = {10.1002/oca.957},
+  urldate = {2026-02-19},
+  abstract = {An hp-adaptive pseudospectral method is presented for numerically solving optimal control problems. The method presented in this paper iteratively determines the number of segments, the width of each segment, and the polynomial degree required in each segment in order to obtain a solution to a userspecified accuracy. Starting with a global pseudospectral approximation for the state, on each iteration the method determines locations for the segment breaks and the polynomial degree in each segment for use on the next iteration. The number of segments and the degree of the polynomial on each segment continue to be updated until a user-specified tolerance is met. The terminology `hp' is used because the segment widths (denoted h) and the polynomial degree (denoted p) in each segment are determined simultaneously. It is found that the method developed in this paper leads to higher accuracy solutions with less computational effort and memory than is required in a global pseudospectral method. Consequently, the method makes it possible to solve complex optimal control problems using pseudospectral methods in cases where a global pseudospectral method would be computationally intractable. Finally, the utility of the method is demonstrated on a variety of problems of varying complexity. Copyright 2010 John Wiley \& Sons, Ltd.},
+  copyright = {http://onlinelibrary.wiley.com/termsAndConditions\#vor},
+  langid = {english},
+  file = {/home/riso/Zotero/storage/DEV2A2RS/Darby et al. - 2011 - An hp ‐adaptive pseudospectral method for solving optimal control problems.pdf}
+}
+
+@article{agamawiCGPOPSSoftwareSolving2020,
+  title = {{{CGPOPS}}: {{A C}}++ {{Software}} for {{Solving Multiple-Phase Optimal Control Problems Using Adaptive Gaussian Quadrature Collocation}} and {{Sparse Nonlinear Programming}}},
+  shorttitle = {{{CGPOPS}}},
+  author = {Agamawi, Yunus and Rao, Anil},
+  year = 2020,
+  month = may,
+  journal = {ACM Transactions on Mathematical Software},
+  volume = {46},
+  doi = {10.1145/3390463},
+  abstract = {A general-purpose C++ software program called CGPOPS is described for solving multiple-phase optimal control problems using adaptive direct orthogonal collocation methods. The software employs a Legendre-Gauss-Radau direct orthogonal collocation method to transcribe the continuous optimal control problem into a large sparse nonlinear programming problem (NLP). A class of hp mesh refinement methods are implemented that determine the number of mesh intervals and the degree of the approximating polynomial within each mesh interval to achieve a specified accuracy tolerance. The software is interfaced with the open source Newton NLP solver IPOPT. All derivatives required by the NLP solver are computed via central finite differencing, bicomplex-step derivative approximations, hyper-dual derivative approximations, or automatic differentiation. The key components of the software are described in detail, and the utility of the software is demonstrated on five optimal control problems of varying complexity. The software described in this article provides researchers a transitional platform to solve a wide variety of complex constrained optimal control problems.},
+  file = {/home/riso/Zotero/storage/ZXKIHZMY/Agamawi and Rao - 2020 - CGPOPS A C++ Software for Solving Multiple-Phase Optimal Control Problems Using Adaptive Gaussian Q.pdf}
+}
+
+@misc{wilkaAdaptiveHpPolynomialBased2025,
+  title = {Adaptive Hp-{{Polynomial Based Sparse Grid Collocation Algorithms}} for {{Piecewise Smooth Functions}} with {{Kinks}}},
+  author = {Wilka, Hendrik and Lang, Jens},
+  year = 2025,
+  month = may,
+  number = {arXiv:2404.02556},
+  eprint = {2404.02556},
+  primaryclass = {math},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2404.02556},
+  urldate = {2025-10-29},
+  abstract = {High-dimensional interpolation problems appear in various applications of uncertainty quantification, stochastic optimization and machine learning. Such problems are computationally expensive and request the use of adaptive grid generation strategies like anisotropic sparse grids to mitigate the curse of dimensionality. However, it is well known that the standard dimension-adaptive sparse grid method converges very slowly or even fails in the case of non-smooth functions. For piecewise smooth functions with kinks, we construct two novel hp-adaptive sparse grid collocation algorithms that combine low-order basis functions with local support in parts of the domain with less regularity and variable-order basis functions elsewhere. Spatial refinement is realized by means of a hierarchical multivariate knot tree which allows the construction of localised hierarchical basis functions with varying order. Hierarchical surplus is used as an error indicator to automatically detect the non-smooth region and adaptively refine the collocation points there. The local polynomial degrees are optionally selected by a greedy approach or a kink detection procedure. Four numerical benchmark examples with different dimensions are discussed and comparison with locally linear, quadratic and highest degree basis functions are given to show the efficiency and accuracy of the proposed methods.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Numerical Analysis,Mathematics - Numerical Analysis},
+  file = {/home/riso/Zotero/storage/S576KAE3/Wilka and Lang - 2025 - Adaptive hp-Polynomial Based Sparse Grid Collocation Algorithms for Piecewise Smooth Functions with.pdf;/home/riso/Zotero/storage/DSSK5D5G/2404.html}
+}
+
+@article{liuAdaptiveMeshRefinement2018,
+  title = {Adaptive {{Mesh Refinement Method}} for {{Optimal Control Using Decay Rates}} of {{Legendre Polynomial Coefficients}}},
+  author = {Liu, Fengjin and Hager, William W. and Rao, Anil V.},
+  year = 2018,
+  month = jul,
+  journal = {IEEE Transactions on Control Systems Technology},
+  volume = {26},
+  number = {4},
+  pages = {1475--1483},
+  issn = {1063-6536, 1558-0865},
+  doi = {10.1109/TCST.2017.2702122},
+  urldate = {2026-05-05},
+  copyright = {https://ieeexplore.ieee.org/Xplorehelp/downloads/license-information/OAPA.html},
+  file = {/home/riso/Zotero/storage/BIHLUADM/Liu et al. - 2018 - Adaptive Mesh Refinement Method for Optimal Control Using Decay Rates of Legendre Polynomial Coeffic.pdf}
+}

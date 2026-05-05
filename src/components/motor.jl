@@ -21,7 +21,7 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
     mass = carParameter{carVar}(3.0,"mass??","kg")
     power = carParameter{carVar}(0.0,"Power draw","W")
     powerElectrical = carParameter{carVar}(0.0,"Electrical power","W",:static,[-34_000.0,34_000.0])
-    efficiency = carParameter{carVar}(0.9,"motor+inverter efficiency","-",:tunable)
+    efficiency = carParameter{carVar}(0.9,"motor+inverter efficiency","-",:sensitivity)
 
     function constraints(u,model=nothing)
         maxTorque = torqueSpeedFunction(0.0)
@@ -43,7 +43,7 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
         else
             # aux var pinned to max(p_mech/η, p_mech*η) by downstream battery limits
             sf = powerElectrical.limits[2]
-            P = @variable(model, lower_bound = -1.0, upper_bound = 1.0)
+            P = @variable(model, lower_bound = -1.0, upper_bound = 1.0, start = 0.0)
             @constraint(model, P >= (p_mech / η) / sf)
             @constraint(model, P >= (p_mech * η) / sf)
             powerElectrical.value = P * sf
