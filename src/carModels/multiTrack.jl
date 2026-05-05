@@ -7,7 +7,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
     motorForce       = carParameter{carVar}(1000.0, "motorForce", "N")
     lateralForce     = carParameter{carVar}(0.0, "lateral Force", "N")
     lateralTransfer  = carParameter{carVar}(0.0, "lateral load transfer", "N")
-    brakeBias        = carParameter{carVar}(0.6, "brake bias front", "-", :static,[0.3,0.99])
+    brakeBias        = carParameter{carVar}(0.6, "brake bias front", "-", :design,[0.3,0.99])
     CL               = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit       = carParameter{carVar}(80000.0, "PowerLimit", "W")
@@ -211,7 +211,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
     mass             = carParameter{carVar}(1200.0, "Mass", "kg", :sensitivity)
     motorForce       = carParameter{carVar}(7100.0, "motorForce", "N")
     lateralForce     = carParameter{carVar}(0.0, "lateral Force", "N")
-    brakeBias        = carParameter{carVar}(0.7, "brake bias front", "-", :sensitivity)
+    brakeBias        = carParameter{carVar}(0.7, "brake bias front", "-", :design,[0.5,0.9])
     CL               = carParameter{carVar}(5.0, "Lift Coefficient", "-")
     CD               = carParameter{carVar}(2.0, "Drag Coefficient", "-")
     powerLimit       = carParameter{carVar}(270000.0, "PowerLimit", "W")
@@ -273,12 +273,13 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
         VarEntry("t",     [s => 0],                 :state),
     ]
 
-    control_descriptor = VarEntry[
-        VarEntry("torque",           [drivetrain.motors[1].torque => 0],                                              :control),
-        VarEntry("steering",         [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0], :control),
-        VarEntry("lateral transfer", [suspension.lateralTransfer => 0],                                              :control),
-        VarEntry("brake",            [brakeCommand => 0],                                                            :control),
-    ]
+control_descriptor = VarEntry[
+    VarEntry("Motor torque [Nm]",           [drivetrain.motors[1].torque => 0],                                              :control),
+    VarEntry("Steering angle [rad]",        [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0], :control),
+    VarEntry("Lateral transfer [N]",        [suspension.lateralTransfer => 0],                                              :control),
+    VarEntry("Brake command [N]",           [brakeCommand => 0],                                                            :control),
+]
+
 
     nControls.value = Float64(length(control_descriptor))
     nStates.value   = Float64(length(state_descriptor))

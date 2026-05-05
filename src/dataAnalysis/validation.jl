@@ -403,7 +403,7 @@ end
 
 function plot_controls_on_path(problem, optiResult_interp; error_itp=nothing)
     n_controls = Int(problem.car.carParameters.nControls.value)
-    desc = problem.car.control_desc
+    desc = problem.car.carParameters.control_descriptor
     plots = [(s -> optiResult_interp.controls(s)[i],
               desc !== nothing ? desc[i].name : "control_$i") for i in 1:n_controls]
     if !isnothing(error_itp)
