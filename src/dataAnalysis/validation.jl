@@ -186,15 +186,17 @@ the optimized polynomial controls, then compares the simulated state at the
 right endpoint to the optimizer's state there. States are normalized by
 `get_scales(state_descriptor)` so each contributes comparably.
 """
-function getSegmentErrors(problem)
+function getSegmentErrors(problem; method::Symbol = :ode)
     edges = problem.optiResult.segment_edges
     nseg  = length(edges) - 1
     errs  = zeros(Float64, nseg)
     x_scale = get_scales(problem.car.carParameters.state_descriptor)
     for i = 1:nseg
-        print("\rSegment error: $i/$nseg")
-        errs[i] = getError([edges[i], edges[i+1]], problem; x_scale=x_scale)
-
+        print("\rSegment error ($method): $i/$nseg")
+        seg = [edges[i], edges[i+1]]
+        errs[i] = method === :defect ?
+            getError_defect(seg, problem) :
+            getError(seg, problem; x_scale=x_scale)
     end
     println()
     return errs
@@ -225,7 +227,7 @@ function getError(s, problem; x_scale=nothing)
     # Loose tolerance + step cap: refinement only needs a coarse error estimate, and a
     # pathological polynomial (high order, long segment) can otherwise stall Rodas4.
     sol = OrdinaryDiffEq.solve(prob, Rodas4(autodiff=AutoFiniteDiff());
-                               reltol=1e-3, abstol=1e-3, maxiters=10_000, verbose=false)
+                               reltol=1e-3, abstol=1e-3, maxiters=1_000, verbose=false)
     if sol.retcode != ReturnCode.Success
         return Inf  # treat as "needs refinement"
     end
@@ -238,24 +240,74 @@ function getError(s, problem; x_scale=nothing)
     return norm(diff)
 end
 
-function getError_defect(s_segment, problem)
-    s_mid = (s_segment[1] + s_segment[2]) / 2
-    x_mid = problem.optiResult.states(s_mid)
-    u_mid = problem.optiResult.controls(s_mid)
+# Vector-valued Romberg quadrature on [a,b]: trapezoidal rule with successive
+# halving + Richardson extrapolation. Returns ∫_a^b f(s) ds componentwise.
+# Keeps only the previous and current row of the Romberg tableau.
+function romberg_vec(f, a::Float64, b::Float64; tol::Float64 = 1e-3, maxiter::Int = 6)
+    h    = b - a
+    fa   = f(a)
+    fb   = f(b)
+    dim  = length(fa)
+    Rprev = [0.5 * h .* (fa .+ fb)]
+    Rcur  = Vector{Vector{Float64}}(undef, 0)
+    for k in 2:maxiter
+        h /= 2
+        n = 1 << (k - 2)              # 2^(k-2)
+        s_acc = zeros(dim)
+        @inbounds for ii in 1:n
+            s_acc .+= f(a + (2ii - 1) * h)
+        end
+        Rcur = Vector{Vector{Float64}}(undef, k)
+        Rcur[1] = 0.5 .* Rprev[1] .+ h .* s_acc
+        @inbounds for j in 2:k
+            pow = 1 << (2 * (j - 1))  # 4^(j-1)
+            Rcur[j] = (pow .* Rcur[j-1] .- Rprev[j-1]) ./ (pow - 1)
+        end
+        if maximum(abs.(Rcur[k] .- Rprev[k-1])) < tol * maximum(abs.(Rcur[k]) .+ 1.0)
+            return Rcur[k]
+        end
+        Rprev = Rcur
+    end
+    return Rcur[end]
+end
 
-    # RHS of the ODE at the midpoint
-    f_mid = carODE_path(problem.car, problem.track, s_mid, u_mid, x_mid, nothing)
+# Per Betts §4.7, eq. (4.154)–(4.156): integrate |ε_i(s)| = |ỹ̇_i − f_i| over
+# the segment via Romberg quadrature, return the max relative error
+# max_i η_i / (w_i + 1) using per-state scale weights.
+#
+# Defaults tuned for mesh-refinement classification (not machine precision).
+# Tighten tol/maxiter if you want a true Betts-grade integral.
+function getError_defect(s_segment, problem; tol::Float64 = 1e-3, maxiter::Int = 6)
+    a, b = Float64(s_segment[1]), Float64(s_segment[2])
+    x_scale     = get_scales(problem.car.carParameters.state_descriptor)
+    states      = problem.optiResult.states
+    controls    = problem.optiResult.controls
+    car         = problem.car
+    track       = problem.track
+    state_deriv = problem.optiResult.state_deriv
 
-    # Numerical derivative of the collocation polynomial
-    h = 1e-5 * (s_segment[2] - s_segment[1])
-    dxds_mid = (problem.optiResult.states(s_mid + h) .- problem.optiResult.states(s_mid - h)) ./ (2h)
+    h_fd = 1e-5 * (b - a)
+    inv_2h = 1 / (2h_fd)
 
-    # Defect: how well does the polynomial satisfy the ODE.
-    # Scale by per-state magnitude so each state contributes comparably
-    # (states have very different units: vx ~10, ψ ~1, t ~10–100, …).
-    x_scale = get_scales(problem.car.carParameters.state_descriptor)
-    defect = dxds_mid .- f_mid
-    return norm(defect ./ x_scale)
+    if state_deriv === nothing
+        eps_abs = function (s)
+            x    = states(s)
+            u    = controls(s)
+            f    = carODE_path(car, track, s, u, x, nothing)
+            dxds = (states(s + h_fd) .- states(s - h_fd)) .* inv_2h
+            return abs.(dxds .- f)
+        end
+    else
+        eps_abs = function (s)
+            x    = states(s)
+            u    = controls(s)
+            f    = carODE_path(car, track, s, u, x, nothing)
+            return abs.(state_deriv(s) .- f)
+        end
+    end
+
+    eta = romberg_vec(eps_abs, a, b; tol = tol, maxiter = maxiter)
+    return maximum(eta ./ (x_scale .+ 1))
 end
 
 

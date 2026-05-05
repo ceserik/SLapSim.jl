@@ -75,11 +75,11 @@ exp = Experiment(
     #),
     mesh_refinement = MeshRefinementConfig(
         tol            = 1e-2,
-        method         = :p,    # :h | :p | :hp
-        error_method   = :ode,  # :ode
-        max_iterations = 1,
-        segments       = 1,#Int64(round(track.sampleDistances[end] / 10)),
-        pol_order      = 20,
+        method         = :h,    # :h | :p | :hp
+        error_method   = :defect,  # :ode
+        max_iterations = 10,
+        segments       = Int64(round(track.sampleDistances[end] / 10)),
+        pol_order      = 2,
         variant        = "Radau",
     ),
     # Example: cap total drive energy at 10 MJ. Leave vector empty for no global constraints.

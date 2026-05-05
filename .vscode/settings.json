@@ -52,4 +52,7 @@
 ],
 "latex-workshop.latex.recipe.default": "lualatex",
 "latex-workshop.synctex.afterBuild.enabled": "true",
+"cSpell.words": [
+    "benefecial"
+],
 }

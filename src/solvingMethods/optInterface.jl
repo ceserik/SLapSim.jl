@@ -1,7 +1,7 @@
 
 function refineMesh(problem, segment_edges, pol_order; iteration::Int=0)
     cfg = problem.mesh_refinement
-    segment_errors = getSegmentErrors(problem)
+    segment_errors = getSegmentErrors(problem; method=cfg.error_method)
     clear = 1
     any_bad = false
 

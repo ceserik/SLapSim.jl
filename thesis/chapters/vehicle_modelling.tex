@@ -1,4 +1,4 @@
-\chapter{Vehicle modelling framework}
+\chapter{Vehicle and Track modelling framework}
 \section{Model like in MSD}
 The structure of the vehicle model has to allow extending/changing components, so that different vehicle concepts can be simulated, with minimal coding. Book in\cite{brown_engineering_2006} describes modelling framework that allows to create car components as modules with flow and effort inteface. This common interface then heavily simplifies proces of creating a car model, as modules can be reused and chained together easily.
 ADD DESCRIPRION OF THE BROWN GRAPH THEORY HERE. veloity goes one direction and forces go the other direction, must give better description.
@@ -210,5 +210,47 @@ Accumulator is modelled as capacitor from brown, with additional constraints on 
 
 \subsection{Formula Student twin track}
 \subsection{Formula Electric twin track}
+
+\section{Track modeling}
+Track is sampled at discrete arc length nodes $s_i$ and stored as a set of fields evaluated at each node:
+\begin{itemize}
+    \item centerline coordinates $x(s)$, $y(s)$,
+    \item heading $\theta(s)$,
+    \item curvature $\kappa(s)$,
+    \item left and right track widths $w_L(s)$, $w_R(s)$,
+    \item air density $\rho(s)$,
+    \item friction coefficient $\mu(s)$,
+    \item inclination $\phi(s)$.
+\end{itemize}
+Each field is interpolated by a cubic spline in the arc length $s$, yielding $C^2$-continuous fields along the entire trajectory. Obtaining suitable track for optimization from GPS is non-trivial, simple methods lead to noisy data, which then corrupts the optimization result. Therefore smoothing method described in \cite{perantoniOptimalControlFormula2014} has been used.
+
+\section{Change of independent variable, time to path}
+When differential equations for vehicle movement are stated. For use in lap time simulation it is benefecial to describe the car states not in time but in distance traveled. This introduces connection with location on track and reduces number of state variables by one. This tranformation is described in\cite{perantoniOptimalControlFormula2014}.
+
+\begin{equation}
+    \varepsilon = \psi - \theta(s)
+\end{equation}
+\begin{equation}
+    S_f = \frac{\mathrm{d}t}{\mathrm{d}s} = \frac{1 - n\, C(s)}{v_x \cos\varepsilon - v_y \sin\varepsilon}
+\end{equation}
+\begin{equation}
+    \frac{\mathrm{d}n}{\mathrm{d}t} = v_x \sin\varepsilon + v_y \cos\varepsilon
+\end{equation}
+\begin{equation}
+    \frac{\mathrm{d}}{\mathrm{d}s}
+    \begin{pmatrix} v_x \\ v_y \\ \psi \\ \omega \\ n \\ t \end{pmatrix}
+    =
+    S_f
+    \begin{pmatrix}
+        \dot{v}_x \\
+        \dot{v}_y \\
+        \dot{\psi} \\
+        \dot{\omega} \\
+        \dot{n} \\
+        1
+    \end{pmatrix}
+\end{equation}
+
+
 
 

@@ -427,19 +427,6 @@ function plotTrack(track::Track; b_plotStartEnd::Bool = false, ax::Union{Axis,No
     end
 end
 
-function make_fcurve(s_traj::Vector{Float64}, x_traj::Vector{Float64}, y_traj::Vector{Float64}, th_traj::Vector{Float64}, C_traj::Vector{Float64})
-    return s -> (
-        #interp1(s_traj, x_traj, s,"PCHIP"), # x position of a point
-        #interp1(s_traj, y_traj, s,"PCHIP"), # y position of a point
-        #interp1(s_traj, th_traj, s,"PCHIP"),# track heading at point
-        #interp1(s_traj, C_traj,  s,"PCHIP") # curvate of track at a point
-#
-        interp1(s_traj, x_traj, s,), # x position of a point
-        interp1(s_traj, y_traj, s,), # y position of a point
-        interp1(s_traj, th_traj, s,),# track heading at point
-        interp1(s_traj, C_traj,  s,) # curvate of track at a point
-    )
-end
 
 # Build a Track_interpolated from an existing Track.
 function interpolate_track(track::Track)
@@ -447,25 +434,25 @@ function interpolate_track(track::Track)
     N = length(s_nodes)
     N >= 2 || error("interpolate_track: need at least two sample distances, got $(N)")
     #@infiltrate
-    x_itp       = interpolate((s_nodes,), collect(Float64.(track.x)),           Gridded(Linear()))
-    y_itp       = interpolate((s_nodes,), collect(Float64.(track.y)),           Gridded(Linear()))
-    heading_itp = interpolate((s_nodes,), collect(Float64.(track.theta)),       Gridded(Linear()))
-    curv_itp    = interpolate((s_nodes,), collect(Float64.(track.curvature)),   Gridded(Linear()))
-    widthL_itp  = interpolate((s_nodes,), collect(Float64.(track.widthL)),      Gridded(Linear()))
-    widthR_itp  = interpolate((s_nodes,), collect(Float64.(track.widthR)),      Gridded(Linear()))
-    rho_itp     = interpolate((s_nodes,), collect(Float64.(track.rho)),         Gridded(Linear()))
-    mu_itp      = interpolate((s_nodes,), collect(Float64.(track.μ)),           Gridded(Linear()))
-    incl_itp    = interpolate((s_nodes,), collect(Float64.(track.inclination)), Gridded(Linear()))
+    #x_itp       = interpolate((s_nodes,), collect(Float64.(track.x)),           Gridded(Linear()))
+    #y_itp       = interpolate((s_nodes,), collect(Float64.(track.y)),           Gridded(Linear()))
+    #heading_itp = interpolate((s_nodes,), collect(Float64.(track.theta)),       Gridded(Linear()))
+    #curv_itp    = interpolate((s_nodes,), collect(Float64.(track.curvature)),   Gridded(Linear()))
+    #widthL_itp  = interpolate((s_nodes,), collect(Float64.(track.widthL)),      Gridded(Linear()))
+    #widthR_itp  = interpolate((s_nodes,), collect(Float64.(track.widthR)),      Gridded(Linear()))
+    #rho_itp     = interpolate((s_nodes,), collect(Float64.(track.rho)),         Gridded(Linear()))
+    #mu_itp      = interpolate((s_nodes,), collect(Float64.(track.μ)),           Gridded(Linear()))
+    #incl_itp    = interpolate((s_nodes,), collect(Float64.(track.inclination)), Gridded(Linear()))
 
-    #x_itp       = Spline1D(s_nodes, collect(Float64.(track.x));           k=3, bc="nearest")
-    #y_itp       = Spline1D(s_nodes, collect(Float64.(track.y));           k=3, bc="nearest")
-    #heading_itp = Spline1D(s_nodes, collect(Float64.(track.theta));       k=3, bc="nearest")
-    #curv_itp    = Spline1D(s_nodes, collect(Float64.(track.curvature));   k=3, bc="nearest")
-    #widthL_itp  = Spline1D(s_nodes, collect(Float64.(track.widthL));      k=3, bc="nearest")
-    #widthR_itp  = Spline1D(s_nodes, collect(Float64.(track.widthR));      k=3, bc="nearest")
-    #rho_itp     = Spline1D(s_nodes, collect(Float64.(track.rho));         k=3, bc="nearest")
-    #mu_itp      = Spline1D(s_nodes, collect(Float64.(track.μ));           k=3, bc="nearest")
-    #incl_itp    = Spline1D(s_nodes, collect(Float64.(track.inclination)); k=3, bc="nearest")
+    x_itp       = Spline1D(s_nodes, collect(Float64.(track.x));           k=3, bc="nearest")
+    y_itp       = Spline1D(s_nodes, collect(Float64.(track.y));           k=3, bc="nearest")
+    heading_itp = Spline1D(s_nodes, collect(Float64.(track.theta));       k=3, bc="nearest")
+    curv_itp    = Spline1D(s_nodes, collect(Float64.(track.curvature));   k=3, bc="nearest")
+    widthL_itp  = Spline1D(s_nodes, collect(Float64.(track.widthL));      k=3, bc="nearest")
+    widthR_itp  = Spline1D(s_nodes, collect(Float64.(track.widthR));      k=3, bc="nearest")
+    rho_itp     = Spline1D(s_nodes, collect(Float64.(track.rho));         k=3, bc="nearest")
+    mu_itp      = Spline1D(s_nodes, collect(Float64.(track.μ));           k=3, bc="nearest")
+    incl_itp    = Spline1D(s_nodes, collect(Float64.(track.inclination)); k=3, bc="nearest")
     # Compatibility fcurve(s) -> (curvature, theta, x, y) matching make_fcurve order.
     fcurve_compat = track.fcurve
 
