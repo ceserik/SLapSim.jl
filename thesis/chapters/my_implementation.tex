@@ -1,0 +1,62 @@
+\chapter{My implementation, julia + JuMP}
+I have decided to use julia +JuMP, because I wanted to use free and open source software.
+
+I have already done a lot in Python and julia seemed like new interesting thing to learn. Julia is supposed to be fast and high level language, bridging the gap between C++ and python. Julia packages offer a lot of ready to use mathematical tools developed by community.
+
+JuMP~\cite{Lubin2023} (Julia for Mathematical Programming) is a modelling language and collection of optimization packages in Julia. JuMP makes it possible to create decision variables and constraints symbolically and uses automatic differentiation, to supply first and second derivative to solvers. Solver used in this thesis is IPOPT~\cite{wachter_implementation_2006} and MadNLP\cite{shin2021graph}\cite{shin2024accelerating}.
+
+
+
+
+\section{My optimization stack}
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=2.5cm, minimum height=0.9cm, align=center, font=\small},
+		leafbox/.style={rectangle, draw, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\scriptsize},
+		arr/.style={->, thick},
+	]
+
+	% Stack
+	\node[box] (julia)  at (0, 0)   {Julia};
+	\node[box] (jump)   at (0, -1.8) {JuMP};
+	\node[box] (rad)    at (0, -3.6) {Reverse AD};
+	\node[box] (ipopt)  at (-2.5, -5.4) {IPOPT};
+	\node[box] (madnlp) at (2.5, -5.4)  {MadNLP};
+
+	% IPOPT linear solvers
+	\node[leafbox] (mumps)   at (-5.5, -7.2) {MUMPS};
+	\node[leafbox] (hsl)     at (-3.0, -7.2) {MA97 MA57 MA86};
+	\node[leafbox] (pardiso) at (-0.5, -7.2) {PARDISO};
+
+	% MadNLP backends
+	\node[leafbox] (cuda)     at (2.0, -7.2) {CUDA};
+	\node[leafbox] (madmumps) at (4.5, -7.2) {MUMPS};
+
+	% Main chain
+	\draw[arr] (julia)  -- (jump);
+	\draw[arr] (jump)   -- (rad);
+	\draw[arr] (rad)    -- (ipopt);
+	\draw[arr] (rad)    -- (madnlp);
+
+	% IPOPT branches
+	\draw[arr] (ipopt)  -- (mumps);
+	\draw[arr] (ipopt)  -- (hsl);
+	\draw[arr] (ipopt)  -- (pardiso);
+
+	% MadNLP branches
+	\draw[arr] (madnlp) -- (cuda);
+	\draw[arr] (madnlp) -- (madmumps);
+
+	\end{tikzpicture}
+	\caption{Optimization software stack}
+	\label{fig:opt_stack}
+\end{figure}
+
+\section{Gauss methods as pseudospectral collocation}
+I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global collocation methods, that is one polynomial approximating the entire trajectory. I have implemented them according to~\cite{garg_overview_nodate}
+\section{Gauss methods as h-method}
+\section{Diving problem into many lower degree polynomials}
+\section{Mesh refinement methods}
+

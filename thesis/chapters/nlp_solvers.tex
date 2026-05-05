@@ -1,0 +1,36 @@
+\chapter{NLP solvers,GPU exploitation???}
+Once the objective function and constraints are created, the problem is passed to NLP solver. Very popular methods are sequential quadratic solvers and interior point solvers.
+\section{Interior point methods: IPOPT, MadNLP}
+\label{sec:interior_point}
+
+Interior point solvers or barrier solvers work by simplifying the NLP into a barrier problem and solving a sequence of barrier problems, with decreasing barrier parameter. Solver used in this thesis is IPOPT \cite{wachter_implementation_2006}. Article in \cite{vanaret_implementing_2025} describes framework that unifies algorithmic components of different solvers, allowing for custom new solvers.
+
+\subsection{Barrier problem formulation}
+\label{subsec:barrier_problem_formulation}
+
+Article~\cite{wachter_implementation_2006} Describes how to transform generic NLP into form~\ref{eq:barrier_problem} $h(\mathbf{x}) \geq 0$, interior point methods solve a barrier problem.
+
+\begin{equation}
+\begin{aligned}
+\min_{\mathbf{x} \in \mathbb{R}^n} \quad & \phi_\mu(\mathbf{x}) := f(\mathbf{x}) - \mu \sum_{i=1}^{n} \ln(x_i^{(i)}) \\
+\text{s.t.} \quad & c(\mathbf{x}) = 0
+\end{aligned}
+\label{eq:barrier_problem}
+\end{equation}
+
+
+\section{Sequential quadratic programming}
+
+\section{Hessian calculation trough Algorithmic differentiation}
+Mayor complication of many NLP solvers is that hey require Hessian of the objective function in order to compute the step. computation of it can be time intensive. Most universal method is finite difference, that means evaluating the function around current point and estimating the hessian. other method is using symbolic differentiation, often the full symbolic expression is too large to be evaluated effectively due to chain and product rule. Algorithmic differentiation aims to solve problems of previous methods, by appling the chain rule to the elementary operations of a function. Comprehensive review of automatic differentiation is in article \cite{cortildBriefReviewAutomatic2023}
+
+
+\section{Scaling and matrix conditioning}
+Common pitfall of nonlinear programming is poor scaling, this happens when the solver encounters variables, that are orders of magnitude apart, for example motor force in thousands of newton and heading angle in radians. This happens, because at the core of nonlinear programming solver is a linear solver (MUMPS,MA97,PARDISO,...), that has to do matrix factorization every iteration, to solve KKT linear system. If this linear system is ill conditioned due to improper scaling, the factorization may be imprecise and search direction corrupted.
+
+Another thing which led to issues is constraints qualification. Linear indpendence constiant qualification requires gradients of the active constraints to be linearly independent, then the jacobian of the constraints is rank deficient and linear solve may fails
+
+\section{sparsity}
+Sparsity is good, sparsity means matrix hessians and jacobians with many zeros also sparsisty in constraints, that means not having super very long expression with many terms in constraint. I guess it is beacause deriavtive is difficult then and can lead solver in wrong direction or take small steps. Therefore using more decison variables to define same problem can actually lead to faster computation \cite{julia_discourse_ipopt_hessian}
+
+

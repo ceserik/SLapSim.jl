@@ -1,0 +1,45 @@
+\chapter{Frameworks for Optimal Control Problem Formulation}
+Process of solving optimal control problem has 3 parts. Problem defintion, solving of nonlinear program, optional mesh refinment
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=1.4cm,
+  block/.style={rectangle, draw, thick, font=\small, minimum width=4cm, minimum height=0.9cm, align=center, fill=white},
+  exit/.style={ellipse, draw, thick, font=\small, minimum width=3cm, minimum height=0.8cm, align=center, fill=white}
+]
+\node[block] (def) {1. Problem definition};
+\node[block, below=of def] (nlp) {2. NLP solve};
+\node[block, below=of nlp] (mesh) {3. Mesh refinement (optional)};
+\node[exit, below=of mesh] (sol) {Solution};
+\draw[->, thick] (def) -- (nlp);
+\draw[->, thick] (nlp) -- (mesh);
+\draw[->, thick] (mesh) -- node[right, font=\small]{converged} (sol);
+\draw[->, thick] let \p1=(mesh.east), \p2=(nlp.east) in
+  (mesh.east) -- (\x1+1.5cm,\y1) -- node[right, font=\small, align=left]{needs\\ refinement} (\x1+1.5cm,\y2) -- (nlp.east);
+\end{tikzpicture}
+\caption{Optimal control problem solving pipeline.}
+\label{fig:ocp-pipeline}
+\end{figure}
+
+
+The concensus in optimal control community about tools for prolbem formulation is that:
+\begin{quote}
+	There is no shortage of optimal control software based on pseudospectral approaches. There are a number of other optimal control libraries that tackle similar kinds of problems, such as OTIS4, GPOPS-II,and CASADI.
+\end{quote}
+\cite{Falck2021}\cite{DymosDocs}
+This chapter is aobut tool that define the OCP, and supply derivatives of the problem, they cannot solve the problem by themselves.
+\section{GPOPS-II}
+	GPOPS-II \cite{Patterson2014} is perhaps the most advaced tool for otimal control, it was developed ad University of Florida by Michael patterson and Anil V. Rao. other tools allows defininng the problem, but GPOPS-II is a level higher. It also includes advanced mesh refinement strategies, multiple phase OCP and automatic scaling. It interaces with MATLAB and C++, uses ADigator \cite{weinstein2017algorithm} for automatic differetnation. This tool is commercial and closed source. Implementaion in this thesis is heavily based on work of community from University of Florida.
+\section{CasADi}
+CasADi is an open-source tool for nonlinear optimization and algorithmic differentiation.\cite{CasADi}\cite{anderssonCasADiSoftwareFramework2019}. interfaces with C++,Python,MATLAB. 
+
+\section{dymos + OpenMDAO}
+Python 
+\section{Acados}
+
+\cite{Verschueren2021}
+
+\section{Julia + JuMP}
+ExaModels, JuMP
+

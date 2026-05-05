@@ -1,0 +1,214 @@
+\chapter{Vehicle modelling framework}
+\section{Model like in MSD}
+The structure of the vehicle model has to allow extending/changing components, so that different vehicle concepts can be simulated, with minimal coding. Book in\cite{brown_engineering_2006} describes modelling framework that allows to create car components as modules with flow and effort inteface. This common interface then heavily simplifies proces of creating a car model, as modules can be reused and chained together easily.
+ADD DESCRIPRION OF THE BROWN GRAPH THEORY HERE. veloity goes one direction and forces go the other direction, must give better description.
+
+Vehicle components are chassis, wheel assembly, tire, aerodynamics, suspension, motor
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=3cm, minimum height=2.5cm, align=center},
+		arr/.style={->, thick}
+	]
+
+	\node[box] (wa) {Wheel\\Assembly};
+
+	% Top-left input: omega, v
+	\draw[arr] (-3.5, 0.5) -- node[above] {$\vec{\omega},\, \vec{v}$} ($(wa.west)+(0,0.5)$);
+
+	% Top-right output: v_tire
+	\draw[arr] ($(wa.east)+(0,0.5)$) -- node[above] {$\vec{v}_{tire}$} (3.5, 0.5);
+
+	% Bottom-left output: F_CoG, M_CoG
+	\draw[arr] ($(wa.west)+(0,-0.5)$) -- node[below] {$\vec{F}_{CoG},\, \vec{M}_{CoG}$} (-4.5, -0.5);
+
+	% Bottom-right input: F_tire
+	\draw[arr] (3.5, -0.5) -- node[below] {$\vec{F}_{tire}$} ($(wa.east)+(0,-0.5)$);
+
+	\end{tikzpicture}
+	\caption{Wheel Assembly component: velocity inputs (top-left) transform to tire frame (top-right), tire forces (bottom-right) transform to forces and moments on CoG (bottom-left).}
+	\label{fig:wheel_assembly}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=3cm, minimum height=2.5cm, align=center},
+		arr/.style={->, thick}
+	]
+
+	\node[box] (tire) {Tire};
+
+	% Left input: v_tire (top)
+	\draw[arr] (-4, 0.4) -- node[above] {$\vec{v}_{tire}$} ($(tire.west)+(0,0.4)$);
+
+	% Left input: T_in (bottom)
+	\draw[arr] (-4, -0.4) -- node[above] {$T_{in}$} ($(tire.west)+(0,-0.4)$);
+
+	% F_x exits right-bottom, inner bend
+	\draw[arr] ($(tire.east)+(0,-0.4)$) -- (2.8, -0.4) -- (2.8, -2) -- node[below] {$F_x$} (-4, -2);
+
+	% F_y exits right-top, outer bend
+	\draw[arr] ($(tire.east)+(0,0.4)$) -- (3.4, 0.4) -- (3.4, -2.6) -- node[below] {$F_y$} (-4, -2.6);
+
+	% Top input: F_z (normal force from suspension)
+	\draw[arr] (0, 2) -- node[right] {$F_z$} (tire.north);
+
+	\end{tikzpicture}
+	\caption{Tire component: velocity and torque inputs (left) produce lateral and longitudinal forces (right), normal force input from suspension (top).}
+	\label{fig:tire}
+\end{figure}
+
+\section{Tire - road interface modelling}
+Job of the tire model in this thesis is to calculate forces acting on tire from the relative velocity and angle between tire and road. Input of general tire model is 3 speeds and 3 angles, output is 3 forces. 
+
+Most forces that govern vehicle movement are transferred by the tires. The tire is considered to be the most important system of a vehicle and it is notoriously difficult to model \cite{Yuki-2019}. Thus tires need to be modeled with great caution in mind. Not only are there many parameters, such as tire wear, tire temperature, road roughness, road wetness, tire pressure, etc., that affect the resultant forces, they are also constantly changing during the lap. Therefore they are difficult to measure and model precisely \cite{ciglanskyAnalysisVehicleComponents}.
+\subsection{Linear tire}
+Simplest tire model. Tire is defined by friction ellipse and an angle at which the slip angle is highest
+\subsection{Pacejka}
+Pacejka tire uses 
+\subsection{Extended Pacejka}
+\section{Chassis model}
+point mass with definition of wheel pivot points
+\section{Wheel Assembly model}
+Wheel pivot point is modelled as transformer. It defines the transformation of CoG velocities into tire frame and then transforms tire forces and torque into CoG frame.
+
+\section{Aerodynamics model}
+Aerodynamic model is modelled as nonlinear resistance element, mapping velocity into forces
+\section{Suspension model}
+Job of suspension in car is to maintain tire contact, distribute the load from lateral load transfer to better utilize tires and use kinematics to make use of camber thrust. Commonly suspension of car consists of spring, damper and the mounitng with tie rods.
+In this thesis Suspension model had to be significantly simplified. Modelling each wheel with a damper, spring and its own kinematics is beyond the scope of this thesis. However, the structure of allows it, i just didnt have enough time to implement it.
+\section{Gearbox model}
+gearbox is the textbook example of transformer and resistive element.
+\section{Accumulator model}
+Accumulator is modelled as capacitor from brown, with additional constraints on maximum and minimum power
+\section{Car models}
+\subsection{Generic car model}
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=4cm, minimum height=3cm, align=center},
+		param/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=gray!15},
+		ctrl/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=blue!25},
+		state/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=green!20},
+		arr/.style={->, thick},
+	]
+
+	% Car function box
+	\node[box, minimum height=5cm] (car) at (0,0) {\large Car Function};
+
+	% Parameters on the left — mix of roles
+	\node[state] (vx)    at (-4.5,  2.0) {$v_x$ \quad state};
+	\node[state] (vy)    at (-4.5,  1.3) {$v_y$ \quad state};
+	\node[state] (psi)   at (-4.5,  0.6) {$\psi$ \quad state};
+	\node[state] (omega) at (-4.5, -0.1) {$\omega$ \quad state};
+	\node[ctrl]  (torq)  at (-4.5, -0.8) {$T_{motor}$ \quad control};
+	\node[ctrl]  (steer) at (-4.5, -1.5) {$\delta$ \quad control};
+	\node[param] (mass)  at (-4.5, -2.2) {$m$ \quad parameter};
+
+	% Arrows to car
+	\foreach \n in {vx,vy,psi,omega,torq,steer,mass} {
+		\draw[arr] (\n.east) -- ($(car.west)+(0,0)$);
+	}
+
+	% Output
+	\node[anchor=west] (dx) at (2.5, 0) {$\dot{\mathbf{x}} = [\dot{v}_x, \dot{v}_y, \dot{\psi}, \dot{\omega}]$};
+	\draw[arr] (car.east) -- (dx.west);
+
+	% Annotation showing flexibility
+	\draw[dashed, thick, blue!60] (-6.2, -1.7) rectangle (-2.8, -0.6);
+	\node[font=\scriptsize, blue!60, anchor=north] at (-4.5, -1.85) {can be any parameter};
+
+	% Legend
+	\node[state, minimum width=1.5cm] at (3.5, 2.0) {state};
+	\node[ctrl,  minimum width=1.5cm] at (3.5, 1.3) {control};
+	\node[param, minimum width=1.5cm] at (3.5, 0.6) {parameter};
+
+	\end{tikzpicture}
+	\caption{Generic car model: any \texttt{carParameter} can be assigned as state, control, or static parameter. The optimizer controls blue parameters, green parameters are integrated states, grey are fixed.}
+	\label{fig:generic_car}
+\end{figure}
+
+\subsection{Mass Point}
+\subsection{Single track}
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, thick, minimum width=2cm, minimum height=1.2cm, align=center, font=\small},
+		smallbox/.style={rectangle, draw, minimum width=1.5cm, minimum height=0.8cm, align=center, font=\scriptsize},
+		arr/.style={->, thick},
+		darr/.style={<->, thick},
+	]
+
+	% CoG
+	\node[box, minimum width=2.5cm, minimum height=1.5cm] (cog) at (0,0) {CoG\\$m, I_z$};
+
+	% Front wheel assembly
+	\node[box] (waf) at (0, 4) {WA\\Front};
+
+	% Rear wheel assembly
+	\node[box] (war) at (0, -4) {WA\\Rear};
+
+	% Front tire
+	\node[box] (tf) at (4, 4) {Tire\\Front};
+
+	% Rear tire
+	\node[box] (tr) at (4, -4) {Tire\\Rear};
+
+	% Front motor + gearbox
+	\node[smallbox] (mf) at (7, 4.4) {Motor};
+	\node[smallbox] (gf) at (7, 3.4) {Gearbox};
+
+	% Rear motor + gearbox
+	\node[smallbox] (mr) at (7, -3.6) {Motor};
+	\node[smallbox] (gr) at (7, -4.6) {Gearbox};
+
+	% Aero
+	\node[box] (aero) at (-4, 0) {Aero};
+
+	% CoG <-> Front WA (velocity down, force up)
+	\draw[arr] ($(cog.north)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\vec{v},\vec{\omega}$} ($(waf.south)+(-0.3,0)$);
+	\draw[arr] ($(waf.south)+(0.3,0)$) -- node[right, font=\scriptsize] {$\vec{F},\vec{M}$} ($(cog.north)+(0.3,0)$);
+
+	% CoG <-> Rear WA
+	\draw[arr] ($(cog.south)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\vec{v},\vec{\omega}$} ($(war.north)+(-0.3,0)$);
+	\draw[arr] ($(war.north)+(0.3,0)$) -- node[right, font=\scriptsize] {$\vec{F},\vec{M}$} ($(cog.south)+(0.3,0)$);
+
+	% Front WA <-> Front Tire (velocity right, force left)
+	\draw[arr] ($(waf.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\vec{v}_{tire}$} ($(tf.west)+(0,0.2)$);
+	\draw[arr] ($(tf.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\vec{F}_{tire}$} ($(waf.east)+(0,-0.2)$);
+
+	% Rear WA <-> Rear Tire
+	\draw[arr] ($(war.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\vec{v}_{tire}$} ($(tr.west)+(0,0.2)$);
+	\draw[arr] ($(tr.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\vec{F}_{tire}$} ($(war.east)+(0,-0.2)$);
+
+	% Motor -> Gearbox -> Tire (front)
+	\draw[arr] (mf.south) -- (gf.north);
+	\draw[arr] (gf.west) -- node[above, font=\scriptsize] {$T_{out}$} (tf.east);
+
+	% Motor -> Gearbox -> Tire (rear)
+	\draw[arr] (mr.south) -- (gr.north);
+	\draw[arr] (gr.west) -- node[above, font=\scriptsize] {$T_{out}$} (tr.east);
+
+	% Aero -> CoG
+	\draw[arr] (aero.east) -- node[above, font=\scriptsize] {$F_{drag}$} (cog.west);
+
+	% Aero -> Tires (Fz via downforce)
+	\draw[arr] (aero.north) -- (-4, 5.5) -- node[above, font=\scriptsize] {$F_z$} (4, 5.5) -- (tf.north);
+	\draw[arr] (aero.south) -- (-4, -5.5) -- node[below, font=\scriptsize] {$F_z$} (4, -5.5) -- (tr.south);
+
+	% Steering input
+	\draw[arr] (-3, 4) -- node[above, font=\scriptsize] {$\delta$} (waf.west);
+
+	\end{tikzpicture}
+	\caption{Single-track (bicycle) model computational graph. Velocity flows from CoG through wheel assemblies to tires, forces flow back. Motors provide torque through gearboxes, aerodynamics provides drag and normal forces.}
+	\label{fig:singletrack}
+\end{figure}
+
+\subsection{Formula Student twin track}
+\subsection{Formula Electric twin track}
+
+

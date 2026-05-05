@@ -1,0 +1,26 @@
+\chapter{Introduction}
+\section{Motivation}
+Topic of this thesis is motivated, by my work in Formula Student team eForce Prague Formula, where I worked on real-time vehicle dynamics control software. There I got intricately exposed to problems faced by racing teams, such as should we increase the aerodynamic downforce at the cost of higher drag? Should we put accumulator in the middle of vehicle, to decrease moment of inertia? Should the aerodynamics be designed for straight line drive, or for steady state turning? How to use limited energy from accumulator more effectively, how faster can we go if we made better power limiting algorithm? How large the accumulator should be? Which torque allocation algorithm should be used? How to design the suspension kinematics to maximize the tire utilization? Is rear wheel steering worth it?  All of these problems can be analyzed by using purpose built tool, good engineering practices or using pen and paper with heavily simplified model. Formula student season is 10 months for development and construction of the vehicle, 2 months for competition. That puts enormous pressure on deciding on vehicle concept fast. In my opinion what formula student teams need is a tool to quickly evaluate different car concepts.
+
+\subsection{quadrature rules}
+\section{Goals}
+Goal of this thesis is to lay the groundwork for a tool which would be able to quickly and reliably evaluate different vehicle concepts. For each of the problems above, a different complexity of the vehicle model is sufficient, e.g.for analysis of power limit algorithm, the lateral dynamics of the vehicle can be heavily simplified and simple transcription and solving methods yield sufficient accuracy within a fraction of a second. Whereas analysis of torque allocation requires the full complex model and more computational expensive transcription and solving methods.
+
+For fast and sufficiently accurate vehicle simulation it is crucial to explore and compare various methods of transcribing the optimal control problem, such as collocation, pseudospectral collocation and Runge Kutta methods.
+
+
+\section{Structure of thesis}
+\begin{enumerate}
+	\item ODE models of cars
+	\item Solving methods: time marching forward, backward pass, NLP,
+	\item Collocation (p, h, hp refinement), integral + differential form (Gauss-Radau, Legendre, Lobatto)
+	\item Implementation overview, Algorithmic differentiation, JUMP/Examples/InfiniteOpt + Julia, Python/MATLAB, CasADi, interior point solvers
+	\item Actual implementation and results
+	\item Conclusion
+\end{enumerate}
+
+\section{Literature overview/ survey of laptime simulators}
+   Early attempts at lap-time computation started in 1950's. 
+ In 1970s computers became commonly used to solve MLTS using Quasi Steady State methods (QSS). Where car is modeled as point mass moving along predefined trajectory with lateral and longitudinal acclerations limited by steady state performance envelope\cite{Roland1971}, transient dynamics such as yaw acceleration are neglected.Formulations of MLTS as OCP appeard in late 1980s \cite{Hatwal1986SomeIS}. Article which summarizes history and state of the art methods of computing MLTS is \cite{massaroMinimumlaptimeOptimisationSimulation2021}. 
+  Article commonly cited in articles dealing with minimum lap-time problem is \cite{perantoniOptimalControlFormula2014}.The article defines the track model, change of independent variable from time to distance traveled, and a twin-track Formula 1 model, with some parameters as decision variables. It is a very good description of most modern MLTS solving methods using NLP. Methods of computing minimum lap time is still active topic in race engineering, as for determining better setup of a race car for a given track, on a given day yieds significant advantage. With more precise model the accuracy of setup improves, but also the computational time increases. In \cite{ComputationallyEfficientFramework} authors deal with computationally efficiency of computing minimum lap-time, by using sequential convex programming. SEM SKOPIROVAT VECI Z BAKALRKY ZO STATE OF THE ART OVERVIEW
+
