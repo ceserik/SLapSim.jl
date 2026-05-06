@@ -27,6 +27,13 @@ function refineMesh(problem, segment_edges, pol_order; iteration::Int=0)
     return segment_edges, clear, segment_errors, pol_order
 end
 
+function solve_success(model::JuMP.Model)
+    status = termination_status(model)
+    return status == JuMP.MOI.OPTIMAL ||
+        status == JuMP.MOI.LOCALLY_SOLVED ||
+        status == JuMP.MOI.ALMOST_LOCALLY_SOLVED
+end
+
 struct Result
     states::Matrix{Float64}
     controls::Matrix{Float64}
