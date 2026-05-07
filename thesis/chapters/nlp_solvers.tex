@@ -33,4 +33,6 @@ Another thing which led to issues is constraints qualification. Linear indpenden
 \section{sparsity}
 Sparsity is good, sparsity means matrix hessians and jacobians with many zeros also sparsisty in constraints, that means not having super very long expression with many terms in constraint. I guess it is beacause deriavtive is difficult then and can lead solver in wrong direction or take small steps. Therefore using more decison variables to define same problem can actually lead to faster computation \cite{julia_discourse_ipopt_hessian}
 
+\section{initaliation}
+PD controller, must be ineitialzied otherwise very baaaadt
 

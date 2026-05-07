@@ -109,6 +109,7 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS, tol=1e-
             cars = [
                 ("singletrack", t -> createSimplestSingleTrack(t)),
                 ("twintrack", t -> createTwintrack(true, t)),
+                ("bus", t -> createBus(t)),
             ],
         ),
         (
@@ -126,6 +127,7 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS, tol=1e-
             cars = [
                 ("singletrack", t -> createSimplestSingleTrack(t)),
                 ("twintrack", t -> createTwintrack(true, t)),
+                ("bus", t -> createBus(t)),
             ],
         ),
         (
@@ -134,6 +136,16 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS, tol=1e-
             cars = [
                 ("singletrack", t -> createSimplestSingleTrack(t)),
                 ("twintrack", t -> createTwintrack(true, t)),
+                ("bus", t -> createBus(t)),
+            ],
+        ),
+        (
+            track = "FigureEight",
+            track_fn = () -> figureEight(false, 0.1),
+            cars = [
+                ("singletrack", t -> createSimplestSingleTrack(t)),
+                ("twintrack", t -> createTwintrack(true, t)),
+                ("bus", t -> createBus(t)),
             ],
         ),
     ]
