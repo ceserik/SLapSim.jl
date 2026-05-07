@@ -109,7 +109,10 @@ The main distinction between runge kutta merthods and collocation. Is that the r
 Collocation methods are the core of this thesis, I have implemented  Gauss radau, gauss, gauss lobatto. Collocation methods differ in points at which the derivative of polynomial coincides ("co-locates) with the vector field of differential equation. Commonly used methods in optimal control are radau, lobatto, legendre. They can be written in integral and differential form\cite{garg_overview_nodate}. Collocatiom methods in this thesis are based on Framework described in\cite{gargUnifiedFrameworkNumerical2010}
 
 Polynomial that aproximates the solution of ODE is based on Legendre
-polynomials. Important note that in actual implementation this calulation of polynomial basis is inpractical, therefore barycentric form from \cite{berrutBarycentricLagrangeInterpolation2004} has been used as implementation of these methods.
+polynomials. Important note that in actual implementation this calulation of
+polynomial basis is inpractical, therefore barycentric form from
+\cite{berrutBarycentricLagrangeInterpolation2004} has been used as
+implementation of these methods.
 
 \begin{equation}
     L_i(\tau) = \prod_{\substack{j=0 \\ j \neq i}}^{N} \frac{\tau - \tau_j}{\tau_i - \tau_j}, \qquad i = 0, \ldots, N
@@ -119,21 +122,24 @@ polynomials. Important note that in actual implementation this calulation of pol
     x^N_j(\tau) = \sum_{i=0}^{N} x_{ij}\, L_i(\tau)
 \end{equation}
 
-the differentiation matrix is made also using barycentric form from~\cite[p.513]{berrutBarycentricLagrangeInterpolation2004} Many articles omit, that this barycentric form is crucical for fast code.
+the differentiation matrix is made also using barycentric form
+from~\cite[p.513]{berrutBarycentricLagrangeInterpolation2004} Many articles
+omit, that this barycentric form is crucical for fast code.
 
 \begin{equation}
     \dot{x}^N_j(\tau_k) = \sum_{i=0}^{N} x_{ij}\, \dot{L}_i(\tau_k) = \sum_{i=0}^{N} D_{ki}\, x_{ij}, \qquad D_{ki} = \dot{L}_i(\tau_k)
 \end{equation}
 
-then the output?? of differential equation can be aproximated using the differentiation matrix. 
+then the output?? of differential equation can be aproximated using the
+differentiation matrix.
 \begin{equation}
     \dot{x}^N_j(\tau_i) = (D\mathbf{X})_{ij}
 \end{equation}
 This is then used as constraints and voila nonlinear optimal control problem is born. \emoji{baby}
 \begin{equation}
     \begin{aligned}
-        \min \quad        & \Phi(\mathbf{X}_{N+1})                                                                           \\
-        \text{s.t.} \quad & D\mathbf{X} = F(\mathbf{X}_\text{LG},\, \mathbf{U}_\text{LG})                                   \\
+        \min \quad        & \Phi(\mathbf{X}_{N+1})                                                                         \\
+        \text{s.t.} \quad & D\mathbf{X} = F(\mathbf{X}_\text{LG},\, \mathbf{U}_\text{LG})                                  \\
                           & \mathbf{X}_{N+1} = \mathbf{X}_0 + \mathbf{w}^T F(\mathbf{X}_\text{LG},\, \mathbf{U}_\text{LG}) \\
                           & \mathbf{X}_0 = \mathbf{x}_0
     \end{aligned}
@@ -149,10 +155,22 @@ polynomial.
 
 \subsection{p adaptive methods}
 p adaptive methods work by increasing the order of polynomial, until the error
-is below user defined threshold. Figure shows tht error along track is not
-distributed equaly. Error is localised around areas with large jump in
-controls. These areas need finer sampling. P methodsa cannot focus these
-specific points directly, they focus entire trajectory.
+is below user defined threshold. Figure \ref{fig:power_node_errors} shows that
+error along track is not distributed equaly. Error is localised around areas
+with large jump in controls. These areas need finer sampling. P methods cannot
+focus these specific points directly, they focus entire trajectory.
+
+The errors are concentrated around the discontinuity of controls, where the
+behaviour of the vehicle is more complex/ requiring high order or finer
+approximation. Figure shows this??
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/p_methodplots/power_summary2x2.png}}
+    \caption{Node-interval ODE error for power-test case.}
+    \label{fig:power_node_controls}
+\end{figure}
+
 \subsection{h adaptive methods}
 h methods are used when solution of optimal control problem is approximated by
 many intervals with low degree polynomial. These methods can decide to split

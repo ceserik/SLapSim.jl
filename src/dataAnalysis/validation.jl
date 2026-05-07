@@ -365,13 +365,18 @@ function plotErrorsOnTrack2D(problem; axis=nothing, colormap=:turbo, itp=nothing
 end
 
 
-function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo)
+function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo, colorscale=identity)
     track = problem.track
 
     #itp = getErrors(problem)              # interpolation from getErrors
     s_path = problem.optiResult.path
     s = collect(LinRange(s_path[1], s_path[end], max(length(s_path) * 8, 2000)))
     vis_vars = itp.(s)
+    if colorscale === log10
+        positives = filter(>(0), vis_vars)
+        vmin = isempty(positives) ? 1e-12 : max(minimum(positives), 1e-12)
+        vis_vars = max.(vis_vars, vmin)
+    end
 
     # compute car trajectory (offset from centerline) like plotCarPath_interpolated
     n(s) = problem.optiResult.states(s)[5]
@@ -391,7 +396,7 @@ function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo)
     end
 
     plotTrack(track, b_plotStartEnd=false, ax = axis)   # draw base track
-    plt = lines!(axis, carX, carY; color = vis_vars, colormap = colormap, linewidth = 10, joinstyle = :bevel, linecap = :round)
+    plt = lines!(axis, carX, carY; color = vis_vars, colormap = colormap, colorscale = colorscale, linewidth = 10, joinstyle = :bevel, linecap = :round)
     if created
         Colorbar(fig[1,2], plt; label = legend, width = 25)
         display(GLMakie.Screen(), fig)
