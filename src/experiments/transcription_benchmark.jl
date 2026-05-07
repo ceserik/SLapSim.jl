@@ -1,5 +1,8 @@
 using SLapSim
 import SLapSim: solve_success
+using JuMP: termination_status, objective_value
+using PrettyTables
+using Printf
 using Statistics
 
 const TRANSCRIPTION_VARIANTS = ["Radau", "Legendre", "LobattoIIIA_integral"]
@@ -174,4 +177,72 @@ function compare_transcription_methods(results)
     end
 
     return summaries
+end
+
+function _fmt_float(v, _i, _j)
+    if v isa AbstractFloat
+        isnan(v) && return "NaN"
+        return @sprintf("%.4f", v)
+    end
+    return v
+end
+
+_short_variant(variant::AbstractString) = variant == "LobattoIIIA_integral" ? "Lobatto IIIA" : variant
+
+function _short_status(status)
+    status_str = String(status)
+    startswith(status_str, "error:") && return "error"
+    status_str == "LOCALLY_SOLVED" && return "solved"
+    return replace(lowercase(status_str), '_' => ' ')
+end
+
+function _results_table(results)
+    return (
+        track = [r.track for r in results],
+        car = [r.car for r in results],
+        var = [_short_variant(r.variant) for r in results],
+        ok = [r.success ? "yes" : "no" for r in results],
+        status = [_short_status(r.status) for r in results],
+        time_s = [r.solve_time for r in results],
+        obj = [r.objective for r in results],
+    )
+end
+
+function _summary_table(summary)
+    return (
+        var = [_short_variant(r.variant) for r in summary],
+        runs = [r.runs for r in summary],
+        ok = [r.successes for r in summary],
+        fail = [r.failures for r in summary],
+        rate = [100 * r.success_rate for r in summary],
+        mean_s = [r.mean_time for r in summary],
+        med_s = [r.median_time for r in summary],
+        min_s = [r.min_time for r in summary],
+        max_s = [r.max_time for r in summary],
+    )
+end
+
+function export_results(results, summary; output_dir::String="results/benchmark",
+    show_terminal::Bool=true)
+
+    mkpath(output_dir)
+    results_table = _results_table(results)
+    summary_table = _summary_table(summary)
+
+    if show_terminal
+        println("\n=== per-case results ===")
+        pretty_table(results_table; formatters=[_fmt_float])
+        println("\n=== variant summary ===")
+        pretty_table(summary_table; formatters=[_fmt_float])
+    end
+
+    open(joinpath(output_dir, "results.tex"), "w") do io
+        pretty_table(io, results_table; backend=:latex, formatters=[_fmt_float])
+    end
+
+    open(joinpath(output_dir, "summary.tex"), "w") do io
+        pretty_table(io, summary_table; backend=:latex, formatters=[_fmt_float])
+    end
+
+    return joinpath(output_dir, "results.tex"), joinpath(output_dir, "summary.tex")
 end
