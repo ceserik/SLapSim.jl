@@ -1,1 +1,27 @@
 \chapter{comparison of methods}
+Performace of NLP solvers and frameworks is often tested on benchmark problems. like CUTEst \cite{gouldCUTEstConstrainedUnconstrained2014} dataset?
+
+
+\begin{tabular}{|r|}
+  \hline
+  \textbf{Col. 1} \\
+  \hline
+  (variant = "Legendre", runs = 2, successes = 2, failures = 0, success\_rate = 1.0, mean\_time = 4.05566, median\_time = 4.05566, min\_time = 3.5009, max\_time = 4.61042) \\
+  (variant = "LobattoIIIA\_integral", runs = 2, successes = 2, failures = 0, success\_rate = 1.0, mean\_time = 6.33914, median\_time = 6.33914, min\_time = 2.01276, max\_time = 10.6655) \\
+  (variant = "Radau", runs = 2, successes = 2, failures = 0, success\_rate = 1.0, mean\_time = 5.76777, median\_time = 5.76777, min\_time = 1.99709, max\_time = 9.53845) \\
+  \hline
+\end{tabular}
+
+
+\begin{tabular}{|r|}
+  \hline
+  \textbf{Col. 1} \\
+  \hline
+  (track = "DoubleTurn", car = "singletrack", variant = "Radau", success = true, status = "LOCALLY\_SOLVED", solve\_time = 1.99709, objective = 5.70872) \\
+  (track = "DoubleTurn", car = "singletrack", variant = "Legendre", success = true, status = "LOCALLY\_SOLVED", solve\_time = 3.5009, objective = 5.67937) \\
+  (track = "DoubleTurn", car = "singletrack", variant = "LobattoIIIA\_integral", success = true, status = "LOCALLY\_SOLVED", solve\_time = 2.01276, objective = 6.02471) \\
+  (track = "DoubleTurn", car = "twintrack", variant = "Radau", success = true, status = "LOCALLY\_SOLVED", solve\_time = 9.53845, objective = 6.52831) \\
+  (track = "DoubleTurn", car = "twintrack", variant = "Legendre", success = true, status = "LOCALLY\_SOLVED", solve\_time = 4.61042, objective = 6.58345) \\
+  (track = "DoubleTurn", car = "twintrack", variant = "LobattoIIIA\_integral", success = true, status = "LOCALLY\_SOLVED", solve\_time = 10.6655, objective = 7.02049) \\
+  \hline
+\end{tabular}

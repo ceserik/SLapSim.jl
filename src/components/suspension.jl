@@ -190,7 +190,7 @@ function createQuasi_steady_Suspension()
         wheelAssemblies = wheelAssemblies_in
     end
 
-    function calculate(ax,downforce,CoP,optiModel)
+    function calculate(ax::carVar, downforce::carVar, CoP::carVar, optiModel::Union{JuMP.Model,Nothing})
         
         frontRatio = chassis.CoG_X_pos.value
         rearRatio = 1 - chassis.CoG_X_pos.value

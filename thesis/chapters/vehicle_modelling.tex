@@ -86,49 +86,40 @@ gearbox is the textbook example of transformer and resistive element.
 Accumulator is modelled as capacitor from brown, with additional constraints on maximum and minimum power
 \section{Car models}
 \subsection{Generic car model}
-
+one of the goals is calability, therefore any car Parameter can be assigned as state, control, static parameter, decision variable or sensitivty analysis variable. This allows for simple RELAXATION? rozvolnenie? of DOF allowing to decide on one line of code which parameters should be controlled. This also allows for finding the optimal parameters of vehicle, such as brake bias, aerodynamics balance, gear ratio. When parameter is chosen to be sensitivity analysis variable, impact of changing this variable is cheaply computed after the optimisation is finished, see Section~\ref{sec:adjoint}.
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
-		box/.style={rectangle, draw, thick, minimum width=4cm, minimum height=3cm, align=center},
-		param/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=gray!15},
-		ctrl/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=blue!25},
-		state/.style={rectangle, draw, minimum width=2.8cm, minimum height=0.5cm, align=left, font=\scriptsize, fill=green!20},
+		outerbox/.style={rectangle, draw, thick, minimum width=10cm, minimum height=4.5cm, align=center},
+		innerbox/.style={rectangle, draw, thick, minimum width=6cm, minimum height=1.2cm, align=center},
 		arr/.style={->, thick},
 	]
 
-	% Car function box
-	\node[box, minimum height=5cm] (car) at (0,0) {\large Car Function};
+	% Outer Car ODE box
+	\node[outerbox] (outer) at (0,0) {};
+	\node[anchor=north] at (outer.north) {\textbf{Car ODE}};
 
-	% Parameters on the left — mix of roles
-	\node[state] (vx)    at (-4.5,  2.0) {$v_x$ \quad state};
-	\node[state] (vy)    at (-4.5,  1.3) {$v_y$ \quad state};
-	\node[state] (psi)   at (-4.5,  0.6) {$\psi$ \quad state};
-	\node[state] (omega) at (-4.5, -0.1) {$\omega$ \quad state};
-	\node[ctrl]  (torq)  at (-4.5, -0.8) {$T_{motor}$ \quad control};
-	\node[ctrl]  (steer) at (-4.5, -1.5) {$\delta$ \quad control};
-	\node[param] (mass)  at (-4.5, -2.2) {$m$ \quad parameter};
+	% Inner MAPPING box
+	\node[innerbox] (mapping) at (0, 0.8) {MAPPING\\Control \& States $\to$ parameter};
 
-	% Arrows to car
-	\foreach \n in {vx,vy,psi,omega,torq,steer,mass} {
-		\draw[arr] (\n.east) -- ($(car.west)+(0,0)$);
-	}
+	% Inner Parametrizable Car ODE box
+	\node[innerbox] (carode) at (0, -0.9) {Parametrizable Car ODE};
 
-	% Output
-	\node[anchor=west] (dx) at (2.5, 0) {$\dot{\mathbf{x}} = [\dot{v}_x, \dot{v}_y, \dot{\psi}, \dot{\omega}]$};
-	\draw[arr] (car.east) -- (dx.west);
+	% Arrow from MAPPING to Parametrizable Car ODE
+	\draw[arr] (mapping.south) -- (carode.north) node[midway, right] {Parameters};
 
-	% Annotation showing flexibility
-	\draw[dashed, thick, blue!60] (-6.2, -1.7) rectangle (-2.8, -0.6);
-	\node[font=\scriptsize, blue!60, anchor=north] at (-4.5, -1.85) {can be any parameter};
+	% Inputs on the left
+	\node[anchor=east] (ctrl) at (-6.5,  0.8) {Control Vector};
+	\node[anchor=east] (state) at (-6.5, 0.2) {State Vector};
+	\draw[arr] (ctrl.east)  -- (mapping.west |- ctrl.east);
+	\draw[arr] (state.east) -- (mapping.west |- state.east);
 
-	% Legend
-	\node[state, minimum width=1.5cm] at (3.5, 2.0) {state};
-	\node[ctrl,  minimum width=1.5cm] at (3.5, 1.3) {control};
-	\node[param, minimum width=1.5cm] at (3.5, 0.6) {parameter};
+	% Output on the right
+	\node[anchor=west] (out) at (5.2, -0.9) {$\mathrm{d}x/\mathrm{d}t$};
+	\draw[arr] (carode.east) -- (out.west);
 
 	\end{tikzpicture}
-	\caption{Generic car model: any \texttt{carParameter} can be assigned as state, control, or static parameter. The optimizer controls blue parameters, green parameters are integrated states, grey are fixed.}
+	\caption{Generic car model structure. Control and state vectors are mapped to car parameters, which are then used by the parametrizable car ODE to compute derivatives.}
 	\label{fig:generic_car}
 \end{figure}
 

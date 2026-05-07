@@ -6,7 +6,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     Kp, Kd = 1.0   , 2.0
     nControls = Int64(car.carParameters.nControls.value)
 
-    function ctrl(s, x)
+    function ctrl(s::Float64, x::AbstractVector)
         # PD controller + feedfw on steering, D is derived from lateral speed of car, cars heading and tracks heading
         # P controller on speed
         th = track.fcurve(s)[2]

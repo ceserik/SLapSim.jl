@@ -35,7 +35,7 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
         power.value = omega * torque.value
     end
 
-    function computeElectric(model = nothing)
+    function computeElectric(model::Union{JuMP.Model,Nothing}=nothing)
         η = efficiency.value
         p_mech = torque.value * angularFrequency.value
         if isnothing(model)

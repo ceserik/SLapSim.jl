@@ -18,7 +18,7 @@ function createAccumulator()
     mass       = carParameter{carVar}(38.49, "mass", "kg")
     resistance = carParameter{carVar}(0.01, "Internal Resistance", "ohm")
 
-    function compute(motors, model = nothing)
+    function compute(motors::Vector, model::Union{JuMP.Model,Nothing}=nothing)
         # motor.computeElectric must be called beforehand to populate powerElectrical
         power.value = sum(m.powerElectrical.value for m in motors)
         if !isnothing(model)
