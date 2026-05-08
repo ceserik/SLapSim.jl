@@ -78,7 +78,7 @@ function run_case(max_iter::Int, suffix::String)
 end
 
 exp_iter0  = run_case(0,  "iter0")
-exp_iter10 = run_case(1, "iter10")
+exp_iter10 = run_case(10, "iter10")
 
 println("Saved mesh refinement plots to $results_dir")
 

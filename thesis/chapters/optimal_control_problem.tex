@@ -45,8 +45,6 @@ alpha and omega of nolinear programming, lord praise the KKT conditions.
     \end{pmatrix}
 \end{equation}
 
-
-
 \section{Solving controlled ODE, initial vlaue problems and boundary value problems}
 USE BOUNDARY AND INTIAL VLAUE PROBLEM INSTEAD OF TIME MARCHINGThe most common
 method for solving controlled ODE is time marching. Where the state computation
@@ -188,16 +186,12 @@ techniques from essentially nonoscillatory (ENO) interpolation
     \label{fig:power_node_controls}
 \end{figure}
 
-
 \begin{figure}[H]
     \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_density_iter10.pdf}}
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_density_iter10.png}}
     \caption{Node-interval ODE error for power-test case.}
     \label{fig:power_node_controls}
 \end{figure}
-
-
-
 
 \cite{Harten1997} to decide where to split and remove nodes.
 \subsection{hp adaptive methods}
@@ -209,7 +203,9 @@ article~\cite{darbyHpAdaptivePseudospectral2011} from University of Florida.
 They have produces numerous papers on hp- adaptive mesh
 refinemnt~\cite{agamawiCGPOPSSoftwareSolving2020}
 \cite{liuAdaptiveMeshRefinement2018}. Recent work on mesh refinemnt for
-functions with kinks~\cite{wilkaAdaptiveHpPolynomialBased2025}.
+functions with kinks~\cite{wilkaAdaptiveHpPolynomialBased2025}. They are the
+most complex for implementation and unfortunately I did not have the time to
+implement them.
 
 \section{Adjoint methods}
 \label{sec:adjoint}
@@ -219,4 +215,5 @@ In this case it is function of time on states, controls and car parameters
 along the trajectory. This is very useful as it greatly simplifies sensitivity
 analysis. Traditional way of sensitivity analysis is to compute sever runs with
 different vehicle parameters, but this allows to compute sensitivity of all
-parameters in one shot.
+parameters in one shot. I am using DiffOpt.jl \cite{besancon2023diffopt}, it is
+not exactly adjoint i dont really understand very well how it works

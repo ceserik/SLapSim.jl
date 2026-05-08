@@ -358,3 +358,133 @@ url =       {libgen.li/file.php?md5=6f53bbfd303895ca385bde0ef8458f39},
   abstract = {We describe the most recent evolution of our constrained and un-constrained testing environment and its accompanying SIF decoder. Code-named SIFDecode and CUTEst, these updated versions feature dynamic mem-ory allocation, a modern thread-safe Fortran modular design, a new Matlab interface and a revised installation procedure integrated with GALAHAD.},
   file = {/home/riso/Zotero/storage/2VBTUPKS/Gould et al. - 2014 - CUTEst a Constrained and Unconstrained Testing Environment with safe threads for Mathematical Optim.pdf}
 }
+
+
+@article{MUMPS:1,
+   title   = {A Fully Asynchronous Multifrontal Solver Using Distributed Dynamic Scheduling},
+   author  = {P.R. Amestoy and I. S. Duff and J. Koster and J.-Y. L'Excellent},
+   journal = {SIAM Journal on Matrix Analysis and Applications},
+   volume  = {23},
+   number  = {1},
+   year    = {2001},
+   pages   = {15-41}
+ }
+ 
+
+@article{MUMPS:2,
+  title = {{Performance and Scalability of the Block Low-Rank Multifrontal
+  Factorization on Multicore Architectures}},
+  author = {P.R. Amestoy and A. Buttari and J.-Y. L'Excellent and T. Mary},
+  journal = {ACM Transactions on Mathematical Software},
+  volume = 45,
+  issue = 1,
+  pages = {2:1--2:26},
+  year={2019},
+}
+
+
+@misc{hsl2011collection,
+  author = {{HSL}},
+  title  = {A collection of {F}ortran codes for large scale scientific computation},
+  year   = {2011},
+  howpublished = {\url{http://www.hsl.rl.ac.uk/}}
+}
+
+@article{pardiso,
+author = {Schenk, Olaf and Gärtner, Klaus and Fichtner, Wolfgang and Stricker, A.D.},
+year = {2000},
+month = {03},
+pages = {69-78},
+title = {PARDISO: A high-performance serial and parallel sparse linear solver in semiconductor device simulation},
+volume = {18},
+journal = {Future Generation Computer Systems},
+doi = {10.1016/S0167-739X(00)00076-5}
+}
+
+@misc{vanroyeFATROPFastConstrained2023,
+  title = {{{FATROP}} : {{A Fast Constrained Optimal Control Problem Solver}} for {{Robot Trajectory Optimization}} and {{Control}}},
+  shorttitle = {{{FATROP}}},
+  author = {Vanroye, Lander and Sathya, Ajay and Schutter, Joris De and Decr{\'e}, Wilm},
+  year = 2023,
+  month = jul,
+  number = {arXiv:2303.16746},
+  eprint = {2303.16746},
+  primaryclass = {math},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2303.16746},
+  urldate = {2026-05-08},
+  abstract = {Trajectory optimization is a powerful tool for robot motion planning and control. State-of-the-art general-purpose nonlinear programming solvers are versatile, handle constraints effectively and provide a high numerical robustness, but they are slow because they do not fully exploit the optimal control problem structure at hand. Existing structure-exploiting solvers are fast, but they often lack techniques to deal with nonlinearity or rely on penalty methods to enforce (equality or inequality) path constraints. This work presents Fatrop: a trajectory optimization solver that is fast and benefits from the salient features of general-purpose nonlinear optimization solvers. The speed-up is mainly achieved through the integration of a specialized linear solver, based on a Riccati recursion that is generalized to also support stagewise equality constraints. To demonstrate the algorithm's potential, it is benchmarked on a set of robot problems that are challenging from a numerical perspective, including problems with a minimum-time objective and no-collision constraints. The solver is shown to solve problems for trajectory generation of a quadrotor, a robot manipulator and a truck-trailer problem in a few tens of milliseconds. The algorithm's C++-code implementation accompanies this work as open source software, released under the GNU Lesser General Public License (LGPL). This software framework may encourage and enable the robotics community to use trajectory optimization in more challenging applications.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Robotics,Mathematics - Optimization and Control},
+  file = {/home/riso/Zotero/storage/7FXKIGF7/Vanroye et al. - 2023 - FATROP  A Fast Constrained Optimal Control Problem Solver for Robot Trajectory Optimization and Con.pdf;/home/riso/Zotero/storage/ISFZDE54/2303.html}
+}
+
+@misc{jorisgillisIPOPTSteroidsFatrop2024,
+  title = {{{IPOPT}} on Steroids: Fatrop Solver in {{CasADi}}},
+  shorttitle = {{{IPOPT}} on Steroids},
+  author = {{Joris Gillis}},
+  year = 2024,
+  month = jun,
+  urldate = {2026-05-08},
+  abstract = {Demo repo: https://github.com/jgillis/fatrop\_demo Fatrop is a fresh solver developen by Lander Vanroye and Wilm Decre at KU Leuven.}
+}
+
+
+@article{besancon2023diffopt,
+    title={Flexible Differentiable Optimization via Model Transformations},
+    author={Besançon, Mathieu and Dias Garcia, Joaquim and Legat, Beno{\^\i}t and Sharma, Akshay},
+    journal={INFORMS Journal on Computing},
+    year={2023},
+    volume={36},
+    number={2},
+    pages={456--478},
+    doi={10.1287/ijoc.2022.0283},
+    publisher={INFORMS}
+}
+
+@misc{shin2023accelerating,
+      title={Accelerating Optimal Power Flow with {GPU}s: {SIMD} Abstraction of Nonlinear Programs and Condensed-Space Interior-Point Methods}, 
+      author={Sungho Shin and Fran{\c{c}}ois Pacaud and Mihai Anitescu},
+      year={2023},
+      eprint={2307.16830},
+      archivePrefix={arXiv},
+      primaryClass={math.OC}
+}
+
+@misc{OptimumLapOptimumG,
+  title = {{{OptimumLap}} \textbar{} {{OptimumG}}},
+  urldate = {2026-05-08},
+  langid = {american}
+}
+
+
+@misc{manzaneroJuanmanzaneroFastestlap2026,
+  title = {Juanmanzanero/Fastest-Lap},
+  author = {Manzanero, Juan},
+  year = 2026,
+  month = apr,
+  urldate = {2026-05-08},
+  abstract = {Fastest-lap is a vehicle dynamics simulator. It can be used to understand vehicle dynamics, to learn about driving techniques, to design car prototypes, or just for fun!},
+  copyright = {MIT},
+  keywords = {circuit,cpp,dynamics,formula1,ipopt,modeling,motogp,optimal-control,python,racecar,racing,simulator,vehicle}
+}
+
+
+@misc{CoinorCppAD2026,
+  title = {Coin-or/{{CppAD}}},
+  year = 2026,
+  month = may,
+  urldate = {2026-05-08},
+  abstract = {A C++ Algorithmic Differentiation Package: Home Page},
+  howpublished = {COIN-OR Foundation}
+}
+
+@misc{mc12027Mc12027OpenLAPLapTimeSimulator2026,
+  title = {Mc12027/{{OpenLAP-Lap-Time-Simulator}}},
+  author = {{mc12027}},
+  year = 2026,
+  month = apr,
+  urldate = {2026-05-08},
+  abstract = {Open source lap time simulator coded in MATLAB.},
+  copyright = {GPL-3.0}
+}
