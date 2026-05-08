@@ -55,4 +55,7 @@
 "cSpell.words": [
     "benefecial"
 ],
+"pdfmore.default.spreadMode": "none",
+"pdfmore.default.scrollMode": "vertical"
+
 }

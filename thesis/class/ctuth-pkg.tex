@@ -970,7 +970,8 @@ BoldFont={Technika Bold}%
 
 \ctuifswitch { pkg-hyperref } {
 	\usepackage[
-		pdfpagelayout=TwoPageRight, % Correct twopage layout with recto on the right
+		pdfpagelayout=SinglePage, % Single-page layout (override)
+%		pdfpagelayout=TwoPageRight, % Correct twopage layout with recto on the right
 	]{hyperref}
 	% Links with orange borders, in ToC only the page is linked
 	\hypersetup{

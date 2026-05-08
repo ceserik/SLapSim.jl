@@ -180,6 +180,25 @@ segment into two smaller segments, they use different techniques to do this.
 Method described in \cite{betts} calculates error using ????? DOPLNIT. Another
 method described in \cite{jisongzhaoshuangliAdaptiveMeshRefinement} uses
 techniques from essentially nonoscillatory (ENO) interpolation
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_error_iter0.pdf}}
+    \caption{Node-interval ODE error for power-test case.}
+    \label{fig:power_node_controls}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_density_iter10.pdf}}
+    \caption{Node-interval ODE error for power-test case.}
+    \label{fig:power_node_controls}
+\end{figure}
+
+
+
+
 \cite{Harten1997} to decide where to split and remove nodes.
 \subsection{hp adaptive methods}
 hp adaptive methods are state of the art in mesh refinment. They are
