@@ -6,7 +6,7 @@ using Printf
 using Statistics
 
 const TRANSCRIPTION_VARIANTS = ["Radau", "Legendre", "LobattoIIIA_integral"]
-const LINEAR_SOLVERS = ["mumps", "ma57", "ma87", "ma97"]
+const LINEAR_SOLVERS = ["mumps", "ma57", "ma27", "ma97"]
 
 function _default_ipopt_attrs()
     return Dict{String,Any}(
@@ -102,7 +102,7 @@ end
 function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
     linear_solvers=nothing, tol=1e-1, method::Symbol=:h, max_iterations::Int=10,
     pol_order::Int=2, ipopt_attrs=_default_ipopt_attrs(),
-    output_dir::String="results/benchmark")
+    output_dir::String="results/benchmark", tracks=nothing, cars=nothing)
 
     cases = [
         (
@@ -153,11 +153,13 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
         ),
     ]
 
+    tracks !== nothing && (cases = filter(c -> c.track in tracks, cases))
     solver_mode = linear_solvers !== nothing
     axis = solver_mode ? linear_solvers : variants
     results = []
     for case in cases
-        for (car_name, car_fn) in case.cars
+        case_cars = cars === nothing ? case.cars : filter(c -> c[1] in cars, case.cars)
+        for (car_name, car_fn) in case_cars
             for label in axis
                 attrs = copy(ipopt_attrs)
                 variant = solver_mode ? "Radau" : label
@@ -243,6 +245,20 @@ function _summary_table(summary)
     )
 end
 
+function _write_resized_tex(path::String, table)
+    buf = IOBuffer()
+    pretty_table(buf, table; backend=:latex, formatters=[_fmt_float])
+    body = String(take!(buf))
+    body = replace(body,
+        "\\begin{tabular}" => "\\begin{longtable}",
+        "\\end{tabular}" => "\\end{longtable}")
+    open(path, "w") do io
+        write(io, "{\\footnotesize\n")
+        write(io, body)
+        write(io, "}\n")
+    end
+end
+
 function export_results(results, summary; output_dir::String="results/benchmark",
     show_terminal::Bool=true)
 
@@ -257,13 +273,8 @@ function export_results(results, summary; output_dir::String="results/benchmark"
         pretty_table(summary_table; formatters=[_fmt_float])
     end
 
-    open(joinpath(output_dir, "results.tex"), "w") do io
-        pretty_table(io, results_table; backend=:latex, formatters=[_fmt_float])
-    end
-
-    open(joinpath(output_dir, "summary.tex"), "w") do io
-        pretty_table(io, summary_table; backend=:latex, formatters=[_fmt_float])
-    end
+    _write_resized_tex(joinpath(output_dir, "results.tex"), results_table)
+    _write_resized_tex(joinpath(output_dir, "summary.tex"), summary_table)
 
     return joinpath(output_dir, "results.tex"), joinpath(output_dir, "summary.tex")
 end
