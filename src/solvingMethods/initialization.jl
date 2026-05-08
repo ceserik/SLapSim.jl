@@ -26,13 +26,17 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
 
     # Live debug plot, because sometimes the initilization gets stuck(if the controller onstant are not good for vehicle)
     labels = ["vx", "vy", "ψ", "ψ̇", "n", "t", "torque", "steering"]
-    fig = Figure(size=(1200, 800))
-    debug_axes = [Axis(fig[div(i-1, 3)+1, mod(i-1, 3)+1], title=labels[i]) for i in eachindex(labels)]
-    debug_obs = [Observable(Point2f[]) for _ in eachindex(labels)]
-    for i in eachindex(labels)
-        lines!(debug_axes[i], debug_obs[i]; linewidth=2)
+    debug_axes = nothing
+    debug_obs = nothing
+    if plot_initialization
+        fig = Figure(size=(1200, 800))
+        debug_axes = [Axis(fig[div(i-1, 3)+1, mod(i-1, 3)+1], title=labels[i]) for i in eachindex(labels)]
+        debug_obs = [Observable(Point2f[]) for _ in eachindex(labels)]
+        for i in eachindex(labels)
+            lines!(debug_axes[i], debug_obs[i]; linewidth=2)
+        end
+        display(GLMakie.Screen(), fig)
     end
-    display(GLMakie.Screen(), fig)
 
     cb = FunctionCallingCallback(; funcat=range(s_span..., length=segments)) do x, s, _
         pct = round(100 * (s - s_span[1]) / (s_span[2] - s_span[1]), digits=0)
@@ -71,10 +75,12 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     initialization = make_result_interpolation(x, u, s)
 
     #Plot initialization
-    fig_path = Figure()
-    ax_path = Axis(fig_path[1, 1], aspect=DataAspect(), title="Initialization")
-    plotCarPath_interpolated(track, initialization, ax_path)
-    display(GLMakie.Screen(), fig_path)
+    if plot_initialization
+        fig_path = Figure()
+        ax_path = Axis(fig_path[1, 1], aspect=DataAspect(), title="Initialization")
+        plotCarPath_interpolated(track, initialization, ax_path)
+        display(GLMakie.Screen(), fig_path)
+    end
 
     return initialization
 end;

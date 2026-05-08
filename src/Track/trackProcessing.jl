@@ -344,7 +344,7 @@ function csv2track(path::String;
 end
 
 
-function kml2track(path::String,closeTrack::Bool,flip    )
+function kml2track(path::String,closeTrack::Bool,flip; vis::Bool=false)
     A = kml2cart(path)
 
     if flip == true
@@ -371,14 +371,12 @@ function kml2track(path::String,closeTrack::Bool,flip    )
         (s) -> 0.0,
         [0.0]
         )
-        
-        smooth_by_OCP(track,1.0,0.4,closeTrack)
-        trackfig = Figure()
-        ax = Axis(trackfig[1,1],aspect=DataAspect())
+
+    smooth_by_OCP(track,1.0,0.4,closeTrack)
+    if vis
         plotTrack(track)
+    end
     return track
-
-
 end
 
 

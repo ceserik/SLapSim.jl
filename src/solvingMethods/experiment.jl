@@ -148,6 +148,9 @@ Base.@kwdef mutable struct AnalysisConfig
     animation_speedup::Float64 = 1.0
     time_simulation::Bool = false                    # feedforward ODE verification
     plot_initialization::Bool = false
+    plot_segment_errors::Bool = false
+    plot_track::Bool = false
+    plot_track_states::Bool = false
     save_results::Bool = false
     results_path::String = "results/"
 end
@@ -288,6 +291,8 @@ order, and collocation variant come from `exp.mesh_refinement`.
 """
 function run_experiment!(exp::Experiment)
     cfg = exp.mesh_refinement
+    exp.analysis.plot_track       && plotTrack(exp.track)
+    exp.analysis.plot_track_states && plotTrackStates(exp.track)
     exp.model = build_model(exp.solver)
     t_solve = @elapsed begin
         _, interp = find_optimal_trajectory_adaptive(exp, cfg.segments, cfg.pol_order, cfg.variant)

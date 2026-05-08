@@ -20,10 +20,12 @@ function refineMesh(problem, segment_edges, pol_order; iteration::Int=0)
         pol_order += 1
         println("p-refinement: pol_order → $pol_order")
     end
-    fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors — iter $iteration (p=$pol_order)"))
-    lines!(fig.axis, [1, length(segment_errors)], [cfg.tol, cfg.tol], color=:red, linewidth=2)
-    display(GLMakie.Screen(), fig)
-    
+    if problem.analysis.plot_segment_errors
+        fig = plot(segment_errors, axis=(; yscale=log10, title="Segment errors — iter $iteration (p=$pol_order)"))
+        lines!(fig.axis, [1, length(segment_errors)], [cfg.tol, cfg.tol], color=:red, linewidth=2)
+        display(GLMakie.Screen(), fig)
+    end
+
     return segment_edges, clear, segment_errors, pol_order
 end
 
