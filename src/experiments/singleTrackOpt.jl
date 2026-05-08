@@ -61,19 +61,21 @@ ipopt_attrs = Dict{String,Any}(
 madnlp_attrs = Dict{String,Any}(
     "array_type"    => CUDA.CuArray,
     "linear_solver" => MadNLPGPU.CUDSSSolver,
+    "tol"           => 1e-8,
+    "acceptable_tol"=> 1e-6,
 )
 
 exp = Experiment(
     car = car,
     track = track,
     discipline = Open(v_start=5.0),             # or Closed() for periodic BCs
-    solver = IpoptBackend(
-        performSensitivity = false,
-        attributes = ipopt_attrs,
-    ),
-    #solver = MadNLPBackend(
-    #    attributes = madnlp_attrs,
+    #solver = IpoptBackend(
+    #    performSensitivity = false,
+    #    attributes = ipopt_attrs,
     #),
+    solver = MadNLPBackend(
+        attributes = madnlp_attrs,
+    ),
     mesh_refinement = MeshRefinementConfig(
         tol            = 1e-1,
         method         = :h,    # :h | :p | :hp

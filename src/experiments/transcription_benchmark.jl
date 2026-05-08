@@ -21,7 +21,7 @@ function _default_segments(track)
 end
 
 function _build_experiment(track, car; variant::String, tol::Real, method::Symbol,
-    max_iterations::Int, pol_order::Int, segments::Int, ipopt_attrs::Dict{String,Any},
+    max_iterations::Int, pol_order::Int, segments::Int, solver::SolverBackend,
     output_dir::String)
 
     animation_path = joinpath(output_dir, "bench_$(variant).mp4")
@@ -42,10 +42,7 @@ function _build_experiment(track, car; variant::String, tol::Real, method::Symbo
         car = car,
         track = track,
         discipline = Open(v_start=5.0),
-        solver = IpoptBackend(
-            performSensitivity = false,
-            attributes = ipopt_attrs,
-        ),
+        solver = solver,
         mesh_refinement = MeshRefinementConfig(
             tol = tol,
             method = method,
@@ -61,7 +58,7 @@ function _build_experiment(track, car; variant::String, tol::Real, method::Symbo
 end
 
 function _run_case(track_name::String, track_fn, car_name::String, car_fn, variant::String;
-    tol::Real, method::Symbol, max_iterations::Int, pol_order::Int, ipopt_attrs::Dict{String,Any},
+    tol::Real, method::Symbol, max_iterations::Int, pol_order::Int, solver::SolverBackend,
     output_dir::String, result_label::String=variant)
 
     try
@@ -70,7 +67,7 @@ function _run_case(track_name::String, track_fn, car_name::String, car_fn, varia
         segments = _default_segments(track)
         exp = _build_experiment(track, car; variant=variant, tol=tol, method=method,
             max_iterations=max_iterations, pol_order=pol_order, segments=segments,
-            ipopt_attrs=ipopt_attrs, output_dir=output_dir)
+            solver=solver, output_dir=output_dir)
 
         solve_time = @elapsed run_experiment!(exp)
         status = termination_status(exp.model)
@@ -100,8 +97,8 @@ function _run_case(track_name::String, track_fn, car_name::String, car_fn, varia
 end
 
 function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
-    linear_solvers=nothing, tol=1e-1, method::Symbol=:h, max_iterations::Int=10,
-    pol_order::Int=2, ipopt_attrs=_default_ipopt_attrs(),
+    linear_solvers=nothing, backends=nothing, tol=1e-1, method::Symbol=:h,
+    max_iterations::Int=10, pol_order::Int=2, ipopt_attrs=_default_ipopt_attrs(),
     output_dir::String="results/benchmark", tracks=nothing, cars=nothing)
 
     cases = [
@@ -154,19 +151,28 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
     ]
 
     tracks !== nothing && (cases = filter(c -> c.track in tracks, cases))
+    backend_mode = backends !== nothing
     solver_mode = linear_solvers !== nothing
-    axis = solver_mode ? linear_solvers : variants
+    axis = backend_mode ? backends : (solver_mode ? linear_solvers : variants)
     results = []
     for case in cases
         case_cars = cars === nothing ? case.cars : filter(c -> c[1] in cars, case.cars)
         for (car_name, car_fn) in case_cars
-            for label in axis
-                attrs = copy(ipopt_attrs)
-                variant = solver_mode ? "Radau" : label
-                solver_mode && (attrs["linear_solver"] = label)
+            for entry in axis
+                if backend_mode
+                    label, factory = entry
+                    solver = factory()
+                    variant = "Radau"
+                else
+                    label = entry
+                    variant = solver_mode ? "Radau" : label
+                    attrs = copy(ipopt_attrs)
+                    solver_mode && (attrs["linear_solver"] = label)
+                    solver = IpoptBackend(performSensitivity=false, attributes=attrs)
+                end
                 push!(results, _run_case(case.track, case.track_fn, car_name, car_fn, variant;
                     tol=tol, method=method, max_iterations=max_iterations,
-                    pol_order=pol_order, ipopt_attrs=attrs, output_dir=output_dir,
+                    pol_order=pol_order, solver=solver, output_dir=output_dir,
                     result_label=label))
             end
         end
