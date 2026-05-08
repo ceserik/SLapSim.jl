@@ -6,6 +6,7 @@ using Printf
 using Statistics
 
 const TRANSCRIPTION_VARIANTS = ["Radau", "Legendre", "LobattoIIIA_integral"]
+const LINEAR_SOLVERS = ["mumps", "ma27", "ma57", "ma97"]
 
 function _default_ipopt_attrs()
     return Dict{String,Any}(
@@ -61,7 +62,7 @@ end
 
 function _run_case(track_name::String, track_fn, car_name::String, car_fn, variant::String;
     tol::Real, method::Symbol, max_iterations::Int, pol_order::Int, ipopt_attrs::Dict{String,Any},
-    output_dir::String)
+    output_dir::String, result_label::String=variant)
 
     try
         track = track_fn()
@@ -79,7 +80,7 @@ function _run_case(track_name::String, track_fn, car_name::String, car_fn, varia
         return (
             track = track_name,
             car = car_name,
-            variant = variant,
+            variant = result_label,
             success = success,
             status = string(status),
             solve_time = solve_time,
@@ -89,7 +90,7 @@ function _run_case(track_name::String, track_fn, car_name::String, car_fn, varia
         return (
             track = track_name,
             car = car_name,
-            variant = variant,
+            variant = result_label,
             success = false,
             status = "error: $(err)",
             solve_time = NaN,
@@ -98,9 +99,10 @@ function _run_case(track_name::String, track_fn, car_name::String, car_fn, varia
     end
 end
 
-function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS, tol=1e-1,
-    method::Symbol=:h, max_iterations::Int=10, pol_order::Int=2,
-    ipopt_attrs=_default_ipopt_attrs(), output_dir::String="results/benchmark")
+function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
+    linear_solvers=nothing, tol=1e-1, method::Symbol=:h, max_iterations::Int=10,
+    pol_order::Int=2, ipopt_attrs=_default_ipopt_attrs(),
+    output_dir::String="results/benchmark")
 
     cases = [
         (
@@ -151,13 +153,19 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS, tol=1e-
         ),
     ]
 
+    solver_mode = linear_solvers !== nothing
+    axis = solver_mode ? linear_solvers : variants
     results = []
     for case in cases
         for (car_name, car_fn) in case.cars
-            for variant in variants
+            for label in axis
+                attrs = copy(ipopt_attrs)
+                variant = solver_mode ? "Radau" : label
+                solver_mode && (attrs["linear_solver"] = label)
                 push!(results, _run_case(case.track, case.track_fn, car_name, car_fn, variant;
                     tol=tol, method=method, max_iterations=max_iterations,
-                    pol_order=pol_order, ipopt_attrs=ipopt_attrs, output_dir=output_dir))
+                    pol_order=pol_order, ipopt_attrs=attrs, output_dir=output_dir,
+                    result_label=label))
             end
         end
     end
