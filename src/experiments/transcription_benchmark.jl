@@ -6,7 +6,7 @@ using Printf
 using Statistics
 
 const TRANSCRIPTION_VARIANTS = ["Radau", "Legendre", "LobattoIIIA_integral"]
-const LINEAR_SOLVERS = ["mumps", "ma27", "ma57", "ma97"]
+const LINEAR_SOLVERS = ["mumps", "ma57", "ma87", "ma97"]
 
 function _default_ipopt_attrs()
     return Dict{String,Any}(
@@ -116,7 +116,7 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
         ),
         (
             track = "Berlin",
-            track_fn = () -> csv2track("src/Track/berlin_2018.csv"),
+            track_fn = () -> csv2track("src/Track/berlin_2018.csv"; vis=false),
             cars = [
                 ("singletrack", t -> createSimplestSingleTrack(t)),
                 ("twintrack", t -> createTwintrack(true, t)),
