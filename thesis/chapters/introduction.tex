@@ -15,23 +15,24 @@ built tool, good engineering practices or using pen and paper with heavily
 simplified model. Formula student season is 10 months for development and
 construction of the vehicle, 2 months for competition. That puts enormous
 pressure on deciding on vehicle concept fast. In my opinion what formula
-student teams need is a tool to quickly evaluate different car concepts.
+student teams need is a tool to quickly evaluate different car concepts. As my
+bachelor thesis I created a prototype of such tool, goals of this thesis come
+from computational and user experience form my previous tool.
 
-\subsection{quadrature rules}
 \section{Goals}
 Goal of this thesis is to lay the groundwork for a tool which would be able to
 quickly and reliably evaluate different vehicle concepts. Thesis should present
-a framework for simulating multiple complexities of vehicle model. Goal is not precise plant modeling and validaion,
-like in bachelor thesis where i preformed a nd vladiated analysis on vehicle
-components, goal is to create a framework to perfom similar analyses easily.
-Goal is to perform sensitivity analysis of parameters. Goal is to find optimal
-parameters for given track and given car. Each parameter can be static, desgin
-varaible, or control variable For fast and sufficiently accurate vehicle
-simulation it is crucial to explore and compare various methods of transcribing
-the optimal control problem, such as global collocation using a single
-polynomial over the whole horizon, multi-segment collocation that splits the
-horizon into smaller intervals each with its own polynomial, and Runge Kutta
-methods.
+a framework for simulating multiple complexities of vehicle model. Goal is not
+precise plant modeling and validaion, like in bachelor thesis where i preformed
+a nd vladiated analysis on vehicle components, goal is to create a framework to
+perfom similar analyses easily. Goal is to perform sensitivity analysis of
+parameters. Goal is to find optimal parameters for given track and given car.
+Each parameter can be static, desgin varaible, or control variable For fast and
+sufficiently accurate vehicle simulation it is crucial to explore and compare
+various methods of transcribing the optimal control problem, such as global
+collocation using a single polynomial over the whole horizon, multi-segment
+collocation that splits the horizon into smaller intervals each with its own
+polynomial, and Runge Kutta methods.
 
 Goal is not to present results of specific car model or recommendation on car
 design, therefore validation and verification were not done in this thesis. i
@@ -79,9 +80,11 @@ similarity to real world. It uses performace envelope to describve vehicle, and
 to compute the laptime using classic initial value problem solvers. This
 technique is called Quasi-steady-state simulator and it is what most people
 think of when laptime simulaiton is mentioned. This is the standard tool for
-laptime simulations Open source implementation of the same method \cite{mc12027Mc12027OpenLAPLapTimeSimulator2026}.
+laptime simulations Open source implementation of the same method
+\cite{mc12027Mc12027OpenLAPLapTimeSimulator2026}.
 
 Popular open source C++ implementation of laptime simulator using nonlinear
-programming and automatic differentiaoton\cite{manzaneroJuanmanzaneroFastestlap2026}. It uses IPOPT and
+programming and automatic
+differentiaoton\cite{manzaneroJuanmanzaneroFastestlap2026}. It uses IPOPT and
 CppAD\cite{CoinorCppAD2026}. Vehicle model is 6DOF twintrack.
 

@@ -31,21 +31,29 @@ motor
 		\node[box] (wa) {Wheel\\Assembly};
 
 		% Top-left input: omega, v
-		\draw[arr] (-3.5, 0.5) -- node[above] {$\vec{\omega},\, \vec{v}$} ($(wa.west)+(0,0.5)$);
+		\draw[arr] (-3.5, 0.5) -- node[above] {$\symbf{\omega},\, \symbf{v}$} ($(wa.west)+(0,0.5)$);
 
 		% Top-right output: v_tire
-		\draw[arr] ($(wa.east)+(0,0.5)$) -- node[above] {$\vec{v}_{tire}$} (3.5, 0.5);
+		\draw[arr] ($(wa.east)+(0,0.5)$) -- node[above] {$\symbf{v}_{tire}$} (3.5, 0.5);
 
 		% Bottom-left output: F_CoG, M_CoG
-		\draw[arr] ($(wa.west)+(0,-0.5)$) -- node[below] {$\vec{F}_{CoG},\, \vec{M}_{CoG}$} (-4.5, -0.5);
+		\draw[arr] ($(wa.west)+(0,-0.5)$) -- node[below] {$\symbf{F}_{CoG},\, \symbf{M}_{CoG}$} (-4.5, -0.5);
 
 		% Bottom-right input: F_tire
-		\draw[arr] (3.5, -0.5) -- node[below] {$\vec{F}_{tire}$} ($(wa.east)+(0,-0.5)$);
+		\draw[arr] (3.5, -0.5) -- node[below] {$\symbf{F}_{tire}$} ($(wa.east)+(0,-0.5)$);
 
 	\end{tikzpicture}
 	\caption{Wheel Assembly component: velocity inputs (top-left) transform to tire frame (top-right), tire forces (bottom-right) transform to forces and moments on CoG (bottom-left).}
 	\label{fig:wheel_assembly}
 \end{figure}
+
+
+
+\section{Tire - road interface modelling}
+Job of the tire model in this thesis is to calculate forces acting on tire from
+the relative velocity and angle between tire and road. Input of general tire
+model is 3 speeds and 3 angles, output is 3 forces.
+
 
 \begin{figure}[H]
 	\centering
@@ -56,30 +64,22 @@ motor
 
 		\node[box] (tire) {Tire};
 
-		% Left input: v_tire (top)
-		\draw[arr] (-4, 0.4) -- node[above] {$\vec{v}_{tire}$} ($(tire.west)+(0,0.4)$);
+		% Left-top input: tire-frame velocity vector
+		\draw[arr] (-4, 0.5) -- node[above] {$\symbf{v}_{tire}$} ($(tire.west)+(0,0.5)$);
 
-		% Left input: T_in (bottom)
-		\draw[arr] (-4, -0.4) -- node[above] {$T_{in}$} ($(tire.west)+(0,-0.4)$);
+		% Left-bottom input: drive/brake torque
+		\draw[arr] (-4, -0.5) -- node[below] {$T_{in}$} ($(tire.west)+(0,-0.5)$);
 
-		% F_x exits right-bottom, inner bend
-		\draw[arr] ($(tire.east)+(0,-0.4)$) -- (2.8, -0.4) -- (2.8, -2) -- node[below] {$F_x$} (-4, -2);
-
-		% F_y exits right-top, outer bend
-		\draw[arr] ($(tire.east)+(0,0.4)$) -- (3.4, 0.4) -- (3.4, -2.6) -- node[below] {$F_y$} (-4, -2.6);
-
-		% Top input: F_z (normal force from suspension)
+		% Top input: normal force from suspension
 		\draw[arr] (0, 2) -- node[right] {$F_z$} (tire.north);
 
+		% Output bends around the right side and returns to the left (back to wheel assembly)
+		\draw[arr] ($(tire.east)+(0,-0.5)$) -- (3, -0.5) -- (3, -2.2) -- node[below] {$\symbf{F}_{tire}$} (-4, -2.2);
+
 	\end{tikzpicture}
-	\caption{Tire component: velocity and torque inputs (left) produce lateral and longitudinal forces (right), normal force input from suspension (top).}
-	\label{fig:tire}
+	\caption{Tire component: tire-frame velocity $\symbf{v}_{tire}$ and drive torque $T_{in}$ on the left, normal force $F_z$ from suspension on top, output is the tire force vector $\symbf{F}_{tire}$ consumed by the wheel assembly.}\label{fig:tire}
 \end{figure}
 
-\section{Tire - road interface modelling}
-Job of the tire model in this thesis is to calculate forces acting on tire from
-the relative velocity and angle between tire and road. Input of general tire
-model is 3 speeds and 3 angles, output is 3 forces.
 
 Most forces that govern vehicle movement are transferred by the tires. The tire
 is considered to be the most important system of a vehicle and it is
@@ -100,14 +100,73 @@ point mass with definition of wheel pivot points
 \section{Wheel Assembly model}
 Wheel pivot point is modelled as transformer. It defines the transformation of
 CoG velocities into tire frame and then transforms tire forces and torque into
-CoG frame.
+CoG frame. Angular velocity and position vectors are formed from yaw rate
+$\dot{\psi}$ and the longitudinal distance $l_i$ of the axle from the center of
+gravity:
+\begin{equation}
+    \symbf{\omega} = \begin{bmatrix} 0 \\ 0 \\ \dot{\psi} \end{bmatrix}, \qquad
+    \symbf{r}_i    = \begin{bmatrix} l_i \\ b/2 \\ 0 \end{bmatrix},
+\end{equation}
+where $b$ is the track width. Velocity at each tire pivot point is:
+\begin{equation}
+    \symbf{v}_{p_i} = \symbf{v} + \symbf{\omega} \times \symbf{r}_i.
+\end{equation}
+Velocities are then rotated from the pivot frame into the tire frame using the
+steering angle $\delta_i$:
+\begin{equation}
+    R_t = \begin{bmatrix}
+        \cos\delta_i & -\sin\delta_i & 0 \\
+        \sin\delta_i &  \cos\delta_i & 0 \\
+        0            &  0            & 1
+    \end{bmatrix}, \qquad
+    \symbf{v}_{t_i} = R_t\,\symbf{v}_{p_i}.
+\end{equation}
+Tire forces $F_{tx}$ and $F_{ty}$ are computed from $\symbf{v}_{t_i}$ by the tire
+model. Forces are then rotated back to the pivot frame:
+\begin{equation}
+    \begin{bmatrix} F_{x_i} \\ F_{y_i} \end{bmatrix}
+    =
+    \begin{bmatrix}
+         \cos\delta_i & \sin\delta_i \\
+        -\sin\delta_i & \cos\delta_i
+    \end{bmatrix}
+    \begin{bmatrix} F_{tx} \\ F_{ty} \end{bmatrix}.
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+            box/.style={rectangle, draw, thick, minimum width=3.5cm, minimum height=3cm, align=center},
+            arr/.style={->, thick}
+        ]
+
+        \node[box] (wa) {Wheel\\Assembly};
+
+        % Top input: steering angle delta_i (control)
+        \draw[arr] (0, 2.2) -- node[right] {$\delta_i$} (wa.north);
+
+        % Left-top input: CoG velocity and angular velocity
+        \draw[arr] (-4.5, 0.6) -- node[above] {$\symbf{v},\,\symbf{\omega}$} ($(wa.west)+(0,0.6)$);
+
+        % Left-bottom output: forces and moment on CoG
+        \draw[arr] ($(wa.west)+(0,-0.6)$) -- node[below] {$\symbf{F}_{\!CoG},\,\symbf{M}_{\!CoG}$} (-4.5, -0.6);
+
+        % Right-top output: tire-frame velocity to tire model
+        \draw[arr] ($(wa.east)+(0,0.6)$) -- node[above] {$\symbf{v}_{t_i}$} (4.5, 0.6);
+
+        % Right-bottom input: tire forces from tire model
+        \draw[arr] (4.5, -0.6) -- node[below] {$\symbf{F}_{tire}$} ($(wa.east)+(0,-0.6)$);
+
+    \end{tikzpicture}
+    \caption{Wheel Assembly inputs and outputs. Steering angle $\delta_i$ is a control input. CoG velocity $\symbf{v}$ and angular velocity $\symbf{\omega}$ are mapped to tire-frame velocity $\symbf{v}_{t_i}$, which is consumed by the tire model. Tire force vector $\symbf{F}_{tire}$ is rotated and translated into forces $\symbf{F}_{\!CoG}$ and moment $\symbf{M}_{\!CoG}$ acting on the chassis.}\label{fig:wheel_assembly_io}
+\end{figure}
 
 \section{Aerodynamics model}
 Aerodynamic model is modelled as nonlinear resistance element, mapping velocity
 into forces. Drag and downforce scale with the square of longitudinal velocity:
 \begin{equation}
-    F_\text{drag} = \tfrac{1}{2}\,\rho\,C_D\,v_x^2, \qquad
-    F_\text{down} = \tfrac{1}{2}\,\rho\,|C_L|\,v_x^2.
+	F_\text{drag} = \tfrac{1}{2}\,\rho\,C_D\,v_x^2, \qquad
+	F_\text{lift} = \tfrac{1}{2}\,\rho\,C_L\,v_x^2.
 \end{equation}
 The downforce is split between front and rear axles by the center of pressure
 ratio $\mathrm{CoP} \in [0,1]$, where $\mathrm{CoP}=0.5$ corresponds to a balanced
@@ -116,20 +175,26 @@ level. Coefficients $C_L$, $C_D$ and $\mathrm{CoP}$ used per vehicle model are
 listed in Table~\ref{tab:aero-params}.
 
 \begin{table}[!ht]
-    \centering
-    \begin{tabular}{lrrrl}
-        \hline
-        \textbf{Symbol} & \textbf{Formula car} & \textbf{Generic car} & \textbf{Bus} & \textbf{Description} \\
-        \hline
-        $C_L$           & $-2.7$ & $-5.0$ & $0.0$ & Lift coefficient (negative = downforce) \\
-        $C_D$           & $1.4$  & $2.0$  & $6.0$ & Drag coefficient \\
-        $\mathrm{CoP}$  & $0.44$ & $0.5$  & $0.5$ & Center of pressure (front share) \\
-        $\rho$          & \multicolumn{3}{c}{$1.225\,\mathrm{kg/m^3}$}        & Air density at sea level \\
-        \hline
-    \end{tabular}
-    \caption{Aerodynamic parameters per vehicle model.}
-    \label{tab:aero-params}
+	\centering
+	\begin{tabular}{lll}
+		\hline
+		\textbf{Symbol} & \textbf{Unit}     & \textbf{Description}                            \\
+		\hline
+		$C_L$           & ---               & Lift coefficient (negative = downforce)         \\
+		$C_D$           & ---               & Drag coefficient                                \\
+		$\mathrm{CoP}$  & ---               & Center of pressure (front axle share, $0$--$1$) \\
+		$\rho$          & $\mathrm{kg/m^3}$ & Air density                                     \\
+		\hline
+	\end{tabular}
+	\caption{Parameters of the aerodynamic model.}
+	\label{tab:aero-params}
 \end{table}
+
+This model is sufficient when vehicle is driving relatively straight, that
+means lateral acceleration is roughly zero. With high lateral acceleration this
+model is no longer valid, becasue air speeds are different on left and right
+part of car and also the car starts rolling- one side of vehicle is closer than
+the other, crating inbalacne of forces.
 
 \section{Suspension model}
 Job of suspension in car is to maintain tire contact, distribute the load from
@@ -144,6 +209,24 @@ is limited as divigin force between more than two wheel on axis is staticky
 nedoruceny problem.
 \section{Gearbox model}
 gearbox is the textbook example of transformer and resistive element.
+\begin{equation}
+    T_\text{out} = \eta\, i\, T_\text{in}, \qquad
+    \omega_\text{out} = \frac{\omega_\text{in}}{i}.
+\end{equation}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{lll}
+        \hline
+        \textbf{Symbol} & \textbf{Unit} & \textbf{Description} \\
+        \hline
+        $i$    & ---  & Gear ratio (input to output speed) \\
+        $\eta$ & ---  & Mechanical efficiency \\
+        \hline
+    \end{tabular}
+    \caption{Parameters of the gearbox model.}\label{tab:gearbox-params}
+\end{table}
+
 \section{Accumulator model}
 Accumulator is modelled as capacitor from brown, with additional constraints on
 maximum and minimum power
@@ -232,20 +315,20 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 		\node[box] (aero) at (-4, 0) {Aero};
 
 		% CoG <-> Front WA (velocity down, force up)
-		\draw[arr] ($(cog.north)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\vec{v},\vec{\omega}$} ($(waf.south)+(-0.3,0)$);
-		\draw[arr] ($(waf.south)+(0.3,0)$) -- node[right, font=\scriptsize] {$\vec{F},\vec{M}$} ($(cog.north)+(0.3,0)$);
+		\draw[arr] ($(cog.north)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\symbf{v},\symbf{\omega}$} ($(waf.south)+(-0.3,0)$);
+		\draw[arr] ($(waf.south)+(0.3,0)$) -- node[right, font=\scriptsize] {$\symbf{F},\symbf{M}$} ($(cog.north)+(0.3,0)$);
 
 		% CoG <-> Rear WA
-		\draw[arr] ($(cog.south)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\vec{v},\vec{\omega}$} ($(war.north)+(-0.3,0)$);
-		\draw[arr] ($(war.north)+(0.3,0)$) -- node[right, font=\scriptsize] {$\vec{F},\vec{M}$} ($(cog.south)+(0.3,0)$);
+		\draw[arr] ($(cog.south)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\symbf{v},\symbf{\omega}$} ($(war.north)+(-0.3,0)$);
+		\draw[arr] ($(war.north)+(0.3,0)$) -- node[right, font=\scriptsize] {$\symbf{F},\symbf{M}$} ($(cog.south)+(0.3,0)$);
 
 		% Front WA <-> Front Tire (velocity right, force left)
-		\draw[arr] ($(waf.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\vec{v}_{tire}$} ($(tf.west)+(0,0.2)$);
-		\draw[arr] ($(tf.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\vec{F}_{tire}$} ($(waf.east)+(0,-0.2)$);
+		\draw[arr] ($(waf.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\symbf{v}_{tire}$} ($(tf.west)+(0,0.2)$);
+		\draw[arr] ($(tf.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\symbf{F}_{tire}$} ($(waf.east)+(0,-0.2)$);
 
 		% Rear WA <-> Rear Tire
-		\draw[arr] ($(war.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\vec{v}_{tire}$} ($(tr.west)+(0,0.2)$);
-		\draw[arr] ($(tr.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\vec{F}_{tire}$} ($(war.east)+(0,-0.2)$);
+		\draw[arr] ($(war.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\symbf{v}_{tire}$} ($(tr.west)+(0,0.2)$);
+		\draw[arr] ($(tr.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\symbf{F}_{tire}$} ($(war.east)+(0,-0.2)$);
 
 		% Motor -> Gearbox -> Tire (front)
 		\draw[arr] (mf.south) -- (gf.north);
