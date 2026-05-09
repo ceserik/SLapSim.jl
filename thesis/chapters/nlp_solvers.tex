@@ -57,6 +57,10 @@ Library(HSL) supplies ma27 ma87 ma97 \cite{hsl2011collection} pardiso solver
 \cite{pardiso}, Harwell Subroutine Library solvers are available free for
 academic usage and pardiso solver is available free for academic but only
 single core.
+\section{multithreading}
+linear solver are capable of multithreading, which needs to be explicitly
+turned on. Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
+5070
 
 \section{Sequential quadratic programming}
 
@@ -92,9 +96,14 @@ also sparsisty in constraints, that means not having super very long expression
 with many terms in constraint. I guess it is beacause deriavtive is difficult
 then and can lead solver in wrong direction or take small steps. Therefore
 using more decison variables to define same problem can actually lead to faster
-computation \cite{julia_discourse_ipopt_hessian}. Certain solvers can exploit the sprasity strcuture, such as FATROP\cite{vanroyeFATROPFastConstrained2023}. In source \cite{jorisgillisIPOPTSteroidsFatrop2024}  Joris gillis a  casadi developer compares IPOPT to FATROP, with  \textbf{FATROP being 33 times faster on a trajecotry optimisation problem.} 
+computation \cite{julia_discourse_ipopt_hessian}. Certain solvers can exploit
+the sprasity strcuture, such as FATROP\cite{vanroyeFATROPFastConstrained2023}.
+In source \cite{jorisgillisIPOPTSteroidsFatrop2024} Joris gillis a casadi
+developer compares IPOPT to FATROP, with \textbf{FATROP being 33 times faster
+    on a trajecotry optimisation problem.}
 
-Also \cite{betts} describes how sprasity structure helps with afster hessian aprprixmiation for using finite difference??? secant method.
+Also \cite{betts} describes how sprasity structure helps with afster hessian
+aprprixmiation for using finite difference??? secant method.
 
 \section{Initialization}
 NLP solvers require initial guess for all decision variables, to start solving.

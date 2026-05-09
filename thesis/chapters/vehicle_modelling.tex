@@ -96,7 +96,24 @@ the slip angle is highest
 Pacejka tire uses
 \subsection{Extended Pacejka}
 \section{Chassis model}
-point mass with definition of wheel pivot points
+point mass with definition of wheel pivot points.
+\begin{equation}
+    \symbf{M}_{\!CoG,i} = \symbf{r}_i \times \symbf{F}_i, \qquad
+    \symbf{F}_i = \begin{bmatrix} F_{x_i} \\ F_{y_i} \\ 0 \end{bmatrix}.
+\end{equation}
+\begin{equation}
+    \symbf{F}_{\!CoG} = \sum_i \symbf{F}_i + \begin{bmatrix} F_\text{drag} \\ 0 \\ 0 \end{bmatrix}, \qquad
+    \symbf{M}_{\!CoG} = \sum_i \symbf{M}_{\!CoG,i}.
+\end{equation}
+\begin{equation}
+    \dot{\symbf{v}} = \frac{\symbf{F}_{\!CoG}}{m} - \symbf{\omega} \times \symbf{v}, \qquad
+    \dot{\symbf{\omega}} = \frac{\symbf{M}_{\!CoG}}{I}.
+\end{equation}
+\begin{equation}
+    \symbf{x} = \begin{bmatrix} v_x \\ v_y \\ \psi \\ \omega_z \end{bmatrix}, \qquad
+    \dot{\symbf{x}} = \begin{bmatrix} \dot{v}_x \\ \dot{v}_y \\ \omega_z \\ \dot{\omega}_z \end{bmatrix}.
+\end{equation}
+
 \section{Wheel Assembly model}
 Wheel pivot point is modelled as transformer. It defines the transformation of
 CoG velocities into tire frame and then transforms tire forces and torque into
@@ -190,6 +207,28 @@ listed in Table~\ref{tab:aero-params}.
 	\label{tab:aero-params}
 \end{table}
 
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+            box/.style={rectangle, draw, thick, minimum width=3.5cm, minimum height=2.5cm, align=center},
+            arr/.style={->, thick}
+        ]
+
+        \node[box] (aero) {Aerodynamics};
+
+        % Left input: longitudinal velocity
+        \draw[arr] (-4, 0) -- node[above] {$v_x$} (aero.west);
+
+        % Right-top output: drag force
+        \draw[arr] ($(aero.east)+(0,0.5)$) -- node[above] {$F_\text{drag}$} (4, 0.5);
+
+        % Right-bottom output: downforce
+        \draw[arr] ($(aero.east)+(0,-0.5)$) -- node[below] {$F_\text{down}$} (4, -0.5);
+
+    \end{tikzpicture}
+    \caption{Aerodynamics component: longitudinal velocity $v_x$ maps to drag force $F_\text{drag}$ and downforce $F_\text{down}$.}\label{fig:aero}
+\end{figure}
+
 This model is sufficient when vehicle is driving relatively straight, that
 means lateral acceleration is roughly zero. With high lateral acceleration this
 model is no longer valid, becasue air speeds are different on left and right
@@ -207,6 +246,35 @@ didnt have enough time to implement it. this quarter car model would be very
 beneficial toward the goal of scalability, now without it the model scalability
 is limited as divigin force between more than two wheel on axis is staticky
 nedoruceny problem.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+            box/.style={rectangle, draw, thick, minimum width=3.8cm, minimum height=3.6cm, align=center},
+            arr/.style={->, thick}
+        ]
+
+        \node[box] (sus) {Suspension};
+
+        % Left-top input: downforce
+        \draw[arr] (-4.5, 0.9) -- node[above] {$F_\text{down}$} ($(sus.west)+(0,0.9)$);
+
+        % Left-middle input: center of pressure
+        \draw[arr] (-4.5, 0.0) -- node[above] {$\mathrm{CoP}$} ($(sus.west)+(0,0.0)$);
+
+        % Left-bottom input: chassis (mass + CoG offsets)
+        \draw[arr] (-4.5, -0.9) -- node[below] {$m,\,x_{CoG},\,y_{CoG}$} ($(sus.west)+(0,-0.9)$);
+
+        % Right outputs: four wheel normal loads
+        \draw[arr] ($(sus.east)+(0, 1.2)$) -- node[above] {$F_{z,FL}$} (4.5,  1.2);
+        \draw[arr] ($(sus.east)+(0, 0.4)$) -- node[above] {$F_{z,FR}$} (4.5,  0.4);
+        \draw[arr] ($(sus.east)+(0,-0.4)$) -- node[below] {$F_{z,RL}$} (4.5, -0.4);
+        \draw[arr] ($(sus.east)+(0,-1.2)$) -- node[below] {$F_{z,RR}$} (4.5, -1.2);
+
+    \end{tikzpicture}
+    \caption{Simple suspension component: downforce $F_\text{down}$, center of pressure $\mathrm{CoP}$ and chassis geometry (mass $m$, CoG offsets $x_{CoG},y_{CoG}$) map to the four wheel normal loads $F_{z,FL},F_{z,FR},F_{z,RL},F_{z,RR}$.}\label{fig:suspension}
+\end{figure}
+
 \section{Gearbox model}
 gearbox is the textbook example of transformer and resistive element.
 \begin{equation}
@@ -227,10 +295,83 @@ gearbox is the textbook example of transformer and resistive element.
     \caption{Parameters of the gearbox model.}\label{tab:gearbox-params}
 \end{table}
 
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+            box/.style={rectangle, draw, thick, minimum width=3.5cm, minimum height=2.5cm, align=center},
+            arr/.style={->, thick}
+        ]
+
+        \node[box] (gb) {Gearbox};
+
+        % Left-top input: motor torque
+        \draw[arr] (-4, 0.5) -- node[above] {$T_\text{in}$} ($(gb.west)+(0,0.5)$);
+
+        % Left-bottom output: motor angular velocity
+        \draw[arr] ($(gb.west)+(0,-0.5)$) -- node[below] {$\omega_\text{in}$} (-4, -0.5);
+
+        % Right-top output: wheel torque
+        \draw[arr] ($(gb.east)+(0,0.5)$) -- node[above] {$T_\text{out}$} (4, 0.5);
+
+        % Right-bottom input: wheel angular velocity
+        \draw[arr] (4, -0.5) -- node[below] {$\omega_\text{out}$} ($(gb.east)+(0,-0.5)$);
+
+    \end{tikzpicture}
+    \caption{Gearbox component: motor-side torque $T_\text{in}$ enters from the left, wheel-side angular velocity $\omega_\text{out}$ enters from the right; outputs are the geared-up torque $T_\text{out}$ to the wheel and motor-side angular velocity $\omega_\text{in}$ to the motor.}\label{fig:gearbox}
+\end{figure}
+
 \section{Accumulator model}
 Accumulator is modelled as capacitor from brown, with additional constraints on
 maximum and minimum power
+
+\section{Motor model}
+\begin{equation}
+    P_\text{mech} = T\,\omega, \qquad
+    P_\text{elec} = \max\!\left(\frac{P_\text{mech}}{\eta},\; P_\text{mech}\,\eta\right).
+\end{equation}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{lll}
+        \hline
+        \textbf{Symbol} & \textbf{Unit} & \textbf{Description} \\
+        \hline
+        $T$               & $\mathrm{Nm}$    & Shaft torque \\
+        %$\omega$          & $\mathrm{rad/s}$ & Shaft angular velocity \\
+        %$T_\text{max}(\omega)$ & $\mathrm{Nm}$ & Torque-speed envelope \\
+        $\eta$            & ---              & Motor + inverter efficiency \\
+        $P_\text{mech}$   & $\mathrm{W}$     & Mechanical shaft power \\
+        $P_\text{elec}$   & $\mathrm{W}$     & Electrical port power (battery side) \\
+        \hline
+    \end{tabular}
+    \caption{Parameters of the motor model.}\label{tab:motor-params}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+            box/.style={rectangle, draw, thick, minimum width=3.5cm, minimum height=2.5cm, align=center},
+            arr/.style={->, thick}
+        ]
+
+        \node[box] (mot) {Motor};
+
+        % Left-top input: electrical power from battery
+        \draw[arr] (-4, 0.5) -- node[above] {$P_\text{elec}$} ($(mot.west)+(0,0.5)$);
+
+        % Left-bottom output: angular velocity feedback to battery side (none) -- omit, motor electrical port is power only
+        % Right-top output: shaft torque
+        \draw[arr] ($(mot.east)+(0,0.5)$) -- node[above] {$T$} (4, 0.5);
+
+        % Right-bottom input: shaft angular velocity from gearbox
+        \draw[arr] (4, -0.5) -- node[below] {$\omega$} ($(mot.east)+(0,-0.5)$);
+
+    \end{tikzpicture}
+    \caption{Motor component: electrical power $P_\text{elec}$ enters from the battery side, shaft angular velocity $\omega$ is imposed by the drivetrain, output is shaft torque $T$.}\label{fig:motor}
+\end{figure}
+
 \section{Car models}
+These models must work when used in NLP transcription for solving boundary value problem, but they also must work for inital value problem, when the model is initialized or verified for transcription error. Some toolboxes can automatically create constraints from ODE models\cite{wilhelm2022eago}. In my implementation I have and if statment that switches between IVP and BVP variant of models equations, major disadvatage of this approach is that the equations for both variants must be effectively the same and finding erros is diffuct in this.
 \subsection{Generic car model}
 one of the goals is calability, therefore any car Parameter can be assigned as
 state, control, static parameter, decision variable or sensitivty analysis
@@ -279,7 +420,7 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 \subsection{Mass Point}
 \subsection{Single track}
 
-\begin{figure}[h]
+\begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
 			box/.style={rectangle, draw, thick, minimum width=2cm, minimum height=1.2cm, align=center, font=\small},
@@ -368,7 +509,7 @@ fields evaluated at each node:
 	\item friction coefficient $\mu(s)$,
 	\item inclination $\phi(s)$.
 \end{itemize}
-Each field is interpolated by a cubic spline in the arc length $s$, yielding $C^2$-continuous fields along the entire trajectory. Obtaining suitable track for optimization from GPS is non-trivial, simple methods lead to noisy data, which then corrupts the optimization result. Therefore smoothing method described in \cite{perantoniOptimalControlFormula2014} has been used.
+Each field is interpolated by a cubic spline in the arc length $s$, yielding $C^2$-continuous fields along the entire trajectory, no nono no this did not work well, loinear interpolation was better. Obtaining suitable track for optimization from GPS is non-trivial, simple methods lead to noisy data, which then corrupts the optimization result. Therefore smoothing method described in \cite{perantoniOptimalControlFormula2014} has been used.
 
 \section{Change of independent variable, time to path}
 When differential equations for vehicle movement are stated. For use in lap
