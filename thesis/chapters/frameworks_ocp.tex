@@ -31,32 +31,125 @@ is that:
 \cite{Falck2021}\cite{DymosDocs}
 This chapter is aobut tool that define the OCP, and supply derivatives of the problem, they cannot solve the problem by themselves.
 \section{GPOPS-II}
-GPOPS-II \cite{Patterson2014} is perhaps the most advaced tool for otimal
-control, it was developed ad University of Florida by Michael patterson and
-Anil V. Rao. other tools allows defininng the problem, but GPOPS-II is a level
-higher. It also includes advanced mesh refinement strategies, multiple phase
-OCP and automatic scaling. It interaces with MATLAB and C++, uses ADigator
+GPOPS-II \cite{pattersonGPOPSIIMATLABSoftware2014} is perhaps the most advaced
+tool for otimal control, it was developed ad University of Florida by Michael
+patterson and Anil V. Rao. other tools allows defininng the problem, but
+GPOPS-II is a level higher. It also includes advanced mesh refinement
+strategies, multiple phase OCP and automatic scaling. For solving the problem
+it uses IPOPT or SNOPT. It interaces with MATLAB and C++, uses ADigator
 \cite{weinstein2017algorithm} for automatic differetnation. This tool is
 commercial and closed source. Implementaion in this thesis is heavily based on
 work of community from University of Florida.
 \section{CasADi}
 CasADi is an open-source tool for nonlinear optimization and algorithmic
 differentiation.\cite{CasADi}\cite{anderssonCasADiSoftwareFramework2019}.
-interfaces with C++,Python,MATLAB.
+interfaces with C++,Python,MATLAB. It provides a framework INE SLOVO to build
+the problem, and calculate the hessian and jacobian for nlp solver it does not
+have any mesh refinemnt algorithms. Commonly paired with IPOPT for nonliner
+programming, but is compatible with large variety of solvers.
 
 \section{dymos + OpenMDAO}
-Python
+Python has hp mesh refinemnt uses OpenMDAO \cite{Gray2019a} developed at NASA
+Glenn research center for evaluating aircraft concepts. Lobatto and radau
+collocation as default \cite{Falck2021}. According to forum post from julia
+discourse, which may be biased towards julia it is slower compared to infiteOpt
+in julia \cite{DoesAnybodyKnow2024}. But it has mesh refinemnt so that is good.
 \section{Acados}
 
 \cite{Verschueren2021}
 
-\section{Julia + JuMP}
+\section{Julia + JuMP/ infititeopt/ examomdels}
 ExaModels, JuMP
 
 JuMP is the go to tool for algebraic modelling in julia, it is mature,
-versatile. Supports Linear programming, quadartic programming, mixed linear programming, Nonlinear programming.
-ExaModels \cite{shin2023accelerating} is a specialized algebraic
-modelling tool, it utilisies Single instruction, multiple data methods,enabling
-derivative evaluation on GPU accelerators. Coupled with MadNLP solver, the
-entire computation of nonlinear optimisation can be run on a GPU.
+versatile. Supports Linear programming, quadartic programming, mixed linear
+programming, Nonlinear programming. ExaModels \cite{shin2023accelerating} is a
+specialized algebraic modelling tool, it utilisies Single instruction, multiple
+data methods,enabling derivative evaluation on GPU accelerators. Coupled with
+MadNLP solver, the entire computation of nonlinear optimisation can be run on a
+GPU.
+
+Julia options
+\begin{enumerate}
+  \item Julia + jump
+  \item Julia + jump + infinte opt
+  \item julia + ExaModels
+\end{enumerate}
+
+Infite opt already has various collocation methods implemented. For learning
+purposes and in fear that in future down the road i would realise that
+infniteopt blocks all the stuff i want to do i decided to use jump, without
+infite opt.
+
+No julia package has  mesh refinement
+I chose julia + jump,
+
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{|p{4.5cm}|p{4.5cm}|p{4.5cm}|}
+    \hline
+    \textbf{Aspect} & \textbf{Julia + JuMP + InfiniteOpt} & \textbf{Python + OpenMDAO + dymos} \\
+    \hline
+    Language / runtime
+      & Julia, JIT-compiled, no GIL
+      & Python, interpreted, GIL (NumPy releases) \\
+    \hline
+    License
+      & MIT (all components)
+      & Apache 2.0 \\
+    \hline
+    Algebraic modelling style
+      & Macro-based (\texttt{@variable}, \texttt{@constraint}, \texttt{@objective})
+      & Component graph (\texttt{ExplicitComponent}, \texttt{Group}, promotes/connects) \\
+    \hline
+    Derivatives
+      & AD via MathOptInterface; sparsity from expression graph
+      & MAUD unified derivatives; mix analytic / AD / FD / complex-step per component, framework chains them \\
+    \hline
+    Transcription methods
+      & Finite difference (Forward, Central, Backward); orthogonal collocation on finite elements with Gauss--Lobatto nodes only
+      & Radau pseudospectral, Gauss--Lobatto, explicit shooting, ExplicitShooting RK \\
+    \hline
+    Mesh / grid refinement
+      & None built-in; user must re-solve on refined supports
+      & Built-in ph- and hp-adaptive grid refinement \\
+    \hline
+    Multi-phase trajectories
+      & Manual; user concatenate \texttt{InfiniteModel}s and link
+      & Native \texttt{Trajectory} and \texttt{Phase} with linkage constraints \\
+    \hline
+    Multidisciplinary coupling
+      & Not supported; pure infinite-dim model
+      & Native MDO coupling with implicit/explicit components, cyclic groups, nonlinear/linear sub-solvers \\
+    \hline
+    NLP solvers
+      & IPOPT, MadNLP, Knitro, SNOPT and any MOI-compatible solver
+      & IPOPT, SNOPT, scipy via pyOptSparse \\
+    \hline
+    GPU acceleration
+      & Yes via ExaModels + MadNLP (SIMD on GPU)
+      & Not native \\
+    \hline
+    Parallelism
+      & Native multithreading, Distributed, MPI
+      & MPI across components \\
+    \hline
+    Sparse total Jacobian
+      & Yes, from MOI expression graph
+      & Yes, MAUD assembles sparse total Jacobian from component partials \\
+    \hline
+    Maturity / community
+      & JuMP mature in OR / energy; InfiniteOpt newer, smaller user base
+      & NASA-backed, large aerospace user base \\
+    \hline
+    Learning curve for OCP only
+      & Low; close to mathematical formulation
+      & Higher; OpenMDAO component model required even for single-discipline OCP \\
+    \hline
+  \end{tabular}
+  \caption{Comparison of Julia (JuMP + InfiniteOpt) and Python (OpenMDAO + dymos) stacks for optimal control problem formulation.}
+  \label{tab:julia-vs-python-ocp}
+\end{table}
 

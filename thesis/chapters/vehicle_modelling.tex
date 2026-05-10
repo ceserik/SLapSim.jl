@@ -1,9 +1,14 @@
 \chapter{Vehicle and Track modelling framework}
+In assignemntof theis is 
+
+A key aspect will be the selection of
+a sufficiently accurate yet computationally tractable model of the vehicle 
+
 There is not one model of vehicle that would fit all requirements of race
 engineers. For each problems, a different complexity of the vehicle model is
 sufficient, e.g.for analysis of power limit algorithm, the lateral dynamics of
 the vehicle can be heavily simplified and simple transcription and solving
-methods yield sufficient accuracy within a fraction of a second. Whereas
+methods yield sufficient accuracy within a fraction of a second, this is described in \ref{}. Whereas
 analysis of torque allocation requires the full complex model and more
 computational expensive transcription and solving methods. Therefore, a vehicle
 modeling framework is needed to satisfy he needs of different types of
@@ -18,7 +23,7 @@ can be reused and chained together easily. ADD DESCRIPRION OF THE BROWN GRAPH
 THEORY HERE. veloity goes one direction and forces go the other direction, must
 give better description.
 
-Vehicle components are chassis, wheel assembly, tire, aerodynamics, suspension,
+Vehicle components are chassis, wheel pivot, tire, aerodynamics, suspension,
 motor
 
 \begin{figure}[h]
@@ -43,8 +48,8 @@ motor
 		\draw[arr] (3.5, -0.5) -- node[below] {$\symbf{F}_{tire}$} ($(wa.east)+(0,-0.5)$);
 
 	\end{tikzpicture}
-	\caption{Wheel Assembly component: velocity inputs (top-left) transform to tire frame (top-right), tire forces (bottom-right) transform to forces and moments on CoG (bottom-left).}
-	\label{fig:wheel_assembly}
+	\caption{Wheel Pivot component: velocity inputs (top-left) transform to tire frame (top-right), tire forces (bottom-right) transform to forces and moments on CoG (bottom-left).}
+	\label{fig:wheel_pivot}
 \end{figure}
 
 
@@ -73,11 +78,11 @@ model is 3 speeds and 3 angles, output is 3 forces.
 		% Top input: normal force from suspension
 		\draw[arr] (0, 2) -- node[right] {$F_z$} (tire.north);
 
-		% Output bends around the right side and returns to the left (back to wheel assembly)
+		% Output bends around the right side and returns to the left (back to wheel pivot)
 		\draw[arr] ($(tire.east)+(0,-0.5)$) -- (3, -0.5) -- (3, -2.2) -- node[below] {$\symbf{F}_{tire}$} (-4, -2.2);
 
 	\end{tikzpicture}
-	\caption{Tire component: tire-frame velocity $\symbf{v}_{tire}$ and drive torque $T_{in}$ on the left, normal force $F_z$ from suspension on top, output is the tire force vector $\symbf{F}_{tire}$ consumed by the wheel assembly.}\label{fig:tire}
+	\caption{Tire component: tire-frame velocity $\symbf{v}_{tire}$ and drive torque $T_{in}$ on the left, normal force $F_z$ from suspension on top, output is the tire force vector $\symbf{F}_{tire}$ consumed by the wheel pivot.}\label{fig:tire}
 \end{figure}
 
 
@@ -114,7 +119,7 @@ point mass with definition of wheel pivot points.
     \dot{\symbf{x}} = \begin{bmatrix} \dot{v}_x \\ \dot{v}_y \\ \omega_z \\ \dot{\omega}_z \end{bmatrix}.
 \end{equation}
 
-\section{Wheel Assembly model}
+\section{Wheel Pivot model}
 Wheel pivot point is modelled as transformer. It defines the transformation of
 CoG velocities into tire frame and then transforms tire forces and torque into
 CoG frame. Angular velocity and position vectors are formed from yaw rate
@@ -175,7 +180,7 @@ model. Forces are then rotated back to the pivot frame:
         \draw[arr] (4.5, -0.6) -- node[below] {$\symbf{F}_{tire}$} ($(wa.east)+(0,-0.6)$);
 
     \end{tikzpicture}
-    \caption{Wheel Assembly inputs and outputs. Steering angle $\delta_i$ is a control input. CoG velocity $\symbf{v}$ and angular velocity $\symbf{\omega}$ are mapped to tire-frame velocity $\symbf{v}_{t_i}$, which is consumed by the tire model. Tire force vector $\symbf{F}_{tire}$ is rotated and translated into forces $\symbf{F}_{\!CoG}$ and moment $\symbf{M}_{\!CoG}$ acting on the chassis.}\label{fig:wheel_assembly_io}
+    \caption{Wheel Pivot inputs and outputs. Steering angle $\delta_i$ is a control input. CoG velocity $\symbf{v}$ and angular velocity $\symbf{\omega}$ are mapped to tire-frame velocity $\symbf{v}_{t_i}$, which is consumed by the tire model. Tire force vector $\symbf{F}_{tire}$ is rotated and translated into forces $\symbf{F}_{\!CoG}$ and moment $\symbf{M}_{\!CoG}$ acting on the chassis.}\label{fig:wheel_pivot_io}
 \end{figure}
 
 \section{Aerodynamics model}
@@ -423,39 +428,49 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
-			box/.style={rectangle, draw, thick, minimum width=2cm, minimum height=1.2cm, align=center, font=\small},
-			smallbox/.style={rectangle, draw, minimum width=1.5cm, minimum height=0.8cm, align=center, font=\scriptsize},
+			box/.style={rectangle, draw, thick, fill=white, minimum width=2cm, minimum height=1.2cm, align=center, font=\small},
+			smallbox/.style={rectangle, draw, fill=white, minimum width=1.5cm, minimum height=0.8cm, align=center, font=\scriptsize},
 			arr/.style={->, thick},
 			darr/.style={<->, thick},
 		]
 
+		% Car silhouette (background layer, top view: nose up, 4 wheels)
+		\begin{scope}[on background layer]
+			% main body (sedan proportions, length:width ~2:1)
+			\fill[gray!12, draw=gray!40, line width=0.4pt, rounded corners=22pt]
+				(-3.0, -6) rectangle (3.0, 5.5);
+			% 2 wheels (centerline, large) — front wheel steered
+			\begin{scope}[rotate around={20:(0,5)}]
+				\fill[gray!45, draw=gray!60, rounded corners=6pt] (-1.4, 3.2) rectangle (1.4, 6.8);
+			\end{scope}
+			\fill[gray!45, draw=gray!60, rounded corners=6pt] (-1.4, -6.8) rectangle (1.4, -3.2);
+		\end{scope}
+
 		% CoG
 		\node[box, minimum width=2.5cm, minimum height=1.5cm] (cog) at (0,0) {CoG\\$m, I_z$};
 
-		% Front wheel assembly
-		\node[box] (waf) at (0, 4) {WA\\Front};
+		% Front tire (top = front of vehicle)
+		\node[box] (tf) at (0, 5) {Tire\\Front};
 
-		% Rear wheel assembly
-		\node[box] (war) at (0, -4) {WA\\Rear};
+		% Front wheel pivot between CoG and front tire
+		\node[box] (waf) at (0, 2.5) {Wheel Pivot\\Front};
 
-		% Front tire
-		\node[box] (tf) at (4, 4) {Tire\\Front};
+		% Rear wheel pivot between CoG and rear tire
+		\node[box] (war) at (0, -2.5) {Wheel Pivot\\Rear};
 
-		% Rear tire
-		\node[box] (tr) at (4, -4) {Tire\\Rear};
+		% Rear tire (bottom = rear of vehicle)
+		\node[box] (tr) at (0, -5) {Tire\\Rear};
 
-		% Front motor + gearbox
-		\node[smallbox] (mf) at (7, 4.4) {Motor};
-		\node[smallbox] (gf) at (7, 3.4) {Gearbox};
+		% Front motor + gearbox (single box, inline right of front tire)
+		\node[smallbox, minimum width=2cm] (mgf) at (3.5, 5) {Motor +\\Gearbox};
 
-		% Rear motor + gearbox
-		\node[smallbox] (mr) at (7, -3.6) {Motor};
-		\node[smallbox] (gr) at (7, -4.6) {Gearbox};
+		% Rear motor + gearbox (single box, inline right of rear tire)
+		\node[smallbox, minimum width=2cm] (mgr) at (3.5, -5) {Motor +\\Gearbox};
 
 		% Aero
 		\node[box] (aero) at (-4, 0) {Aero};
 
-		% CoG <-> Front WA (velocity down, force up)
+		% CoG <-> Front WA (velocity up, force down)
 		\draw[arr] ($(cog.north)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\symbf{v},\symbf{\omega}$} ($(waf.south)+(-0.3,0)$);
 		\draw[arr] ($(waf.south)+(0.3,0)$) -- node[right, font=\scriptsize] {$\symbf{F},\symbf{M}$} ($(cog.north)+(0.3,0)$);
 
@@ -463,31 +478,32 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 		\draw[arr] ($(cog.south)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\symbf{v},\symbf{\omega}$} ($(war.north)+(-0.3,0)$);
 		\draw[arr] ($(war.north)+(0.3,0)$) -- node[right, font=\scriptsize] {$\symbf{F},\symbf{M}$} ($(cog.south)+(0.3,0)$);
 
-		% Front WA <-> Front Tire (velocity right, force left)
-		\draw[arr] ($(waf.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\symbf{v}_{tire}$} ($(tf.west)+(0,0.2)$);
-		\draw[arr] ($(tf.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\symbf{F}_{tire}$} ($(waf.east)+(0,-0.2)$);
+		% Front WA <-> Front Tire (velocity up, force down)
+		\draw[arr] ($(waf.north)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\symbf{v}_{tire}$} ($(tf.south)+(-0.3,0)$);
+		\draw[arr] ($(tf.south)+(0.3,0)$) -- node[right, font=\scriptsize] {$\symbf{F}_{tire}$} ($(waf.north)+(0.3,0)$);
 
 		% Rear WA <-> Rear Tire
-		\draw[arr] ($(war.east)+(0,0.2)$) -- node[above, font=\scriptsize] {$\symbf{v}_{tire}$} ($(tr.west)+(0,0.2)$);
-		\draw[arr] ($(tr.west)+(0,-0.2)$) -- node[below, font=\scriptsize] {$\symbf{F}_{tire}$} ($(war.east)+(0,-0.2)$);
+		\draw[arr] ($(war.south)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\symbf{v}_{tire}$} ($(tr.north)+(-0.3,0)$);
+		\draw[arr] ($(tr.north)+(0.3,0)$) -- node[right, font=\scriptsize] {$\symbf{F}_{tire}$} ($(war.south)+(0.3,0)$);
 
-		% Motor -> Gearbox -> Tire (front)
-		\draw[arr] (mf.south) -- (gf.north);
-		\draw[arr] (gf.west) -- node[above, font=\scriptsize] {$T_{out}$} (tf.east);
+		% Motor + Gearbox -> Tire (front)
+		\draw[arr] (mgf.west) -- node[above, font=\scriptsize] {$T_{out}$} (tf.east);
 
-		% Motor -> Gearbox -> Tire (rear)
-		\draw[arr] (mr.south) -- (gr.north);
-		\draw[arr] (gr.west) -- node[above, font=\scriptsize] {$T_{out}$} (tr.east);
+		% Motor + Gearbox -> Tire (rear)
+		\draw[arr] (mgr.west) -- node[above, font=\scriptsize] {$T_{out}$} (tr.east);
 
 		% Aero -> CoG
 		\draw[arr] (aero.east) -- node[above, font=\scriptsize] {$F_{drag}$} (cog.west);
 
 		% Aero -> Tires (Fz via downforce)
-		\draw[arr] (aero.north) -- (-4, 5.5) -- node[above, font=\scriptsize] {$F_z$} (4, 5.5) -- (tf.north);
-		\draw[arr] (aero.south) -- (-4, -5.5) -- node[below, font=\scriptsize] {$F_z$} (4, -5.5) -- (tr.south);
+		\draw[arr] (aero.north) -- (-4, 7.3) -- node[above, font=\scriptsize] {$F_z$} (0, 7.3) -- (tf.north);
+		\draw[arr] (aero.south) -- (-4, -7.3) -- node[below, font=\scriptsize] {$F_z$} (0, -7.3) -- (tr.south);
 
 		% Steering input
-		\draw[arr] (-3, 4) -- node[above, font=\scriptsize] {$\delta$} (waf.west);
+		\draw[arr] (-3, 5) -- node[above, font=\scriptsize] {$\delta$} (tf.west);
+
+		% States out of CoG
+		\draw[arr] (cog.east) -- node[above, font=\scriptsize] {$\symbf{x} = [v_x,\, v_y,\, \psi,\, \omega_z]^T$} (5.5, 0);
 
 	\end{tikzpicture}
 	\caption{Single-track (bicycle) model computational graph. Velocity flows from CoG through wheel assemblies to tires, forces flow back. Motors provide torque through gearboxes, aerodynamics provides drag and normal forces.}

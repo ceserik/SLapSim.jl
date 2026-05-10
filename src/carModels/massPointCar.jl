@@ -69,6 +69,14 @@ function createCTU25_1D()
     n = carParameter{carVar}(0.0,"Distance from centerline","m")
     nControls = carParameter{carVar}(1.0,"number of controlled parameters","-")
     nStates = carParameter{carVar}(1.0,"number of car states","-")
+    s = carParameter{carVar}(1.0, "longitudinal position on track", "-", :static, [0.0, 200.0])
+
+    state_descriptor = VarEntry[
+        VarEntry("vx", [velocity => 1], :state),
+    ]
+    control_descriptor = VarEntry[
+        VarEntry("motorForce", [motorForce => 0], :control),
+    ]
 
     p = CarParameters(
         mass,
@@ -85,7 +93,10 @@ function createCTU25_1D()
         lateralTransfer,
         brakeBias,
         nControls,
-        nStates
+        nStates,
+        s,
+        state_descriptor,
+        control_descriptor,
     )
 
     

@@ -6,7 +6,7 @@ car = createCTU25_1D()
 track = 0
 #track = singleTurn()
 path = "tracks/FSCZ.kml"
-track = kml2track(path,true)
+track = kml2track(path,true,false)
 
 #smooth_by_OCP(track,0.01,0.5)
 N = length(track.curvature)

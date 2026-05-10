@@ -5,16 +5,17 @@ software.
 I have already done a lot in Python and julia seemed like new interesting thing
 to learn. Julia is supposed to be fast and high level language, bridging the
 gap between C++ and python. Julia packages offer a lot of ready to use
-mathematical tools developed by community. Julia has 
+mathematical tools developed by community. Julia has
 
 JuMP~\cite{Lubin2023} (Julia for Mathematical Programming) is a modelling
 language and collection of optimization packages in Julia. JuMP makes it
 possible to create decision variables and constraints symbolically and uses
 automatic differentiation, to supply first and second derivative to solvers.
 Solver used in this thesis is IPOPT~\cite{wachter_implementation_2006} and
-MadNLP\cite{shin2021graph}\cite{shin2024accelerating}. MadNLP also allows utilising GPU for solver computation. 
+MadNLP\cite{shin2021graph}\cite{shin2024accelerating}. MadNLP also allows
+utilising GPU for solver computation.
 
-\section{My optimization stack}
+%\section{My optimization stack}
 
 \begin{figure}[H]
 	\centering
@@ -60,19 +61,14 @@ MadNLP\cite{shin2021graph}\cite{shin2024accelerating}. MadNLP also allows utilis
 	\label{fig:opt_stack}
 \end{figure}
 
-\section{Gauss methods as pseudospectral collocation}
-I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global
-collocation methods, that is one polynomial approximating the entire
-trajectory. I have implemented them according to~\cite{garg_overview_nodate}
-\section{Gauss methods as h-method}
-\section{Diving problem into many lower degree polynomials}
-\section{Mesh refinement methods}
-
 \section{sensitivity Analysis}
+I have used DiffOpt.jl \cite{} for the sensitivity analysis. By adding vehicle
+parameters susch ass, mass, lift coeffcient, CoG position etc. into
+optimisation as decisions variables fixed to a value by contraints. This addes them to the algebraic model, then the solution of minimum laptime can be differentiated by these parameters. AKO POMENOVAT TEN STROM CO JUMP VYTCORI TEN GRAF? algebraic model. Result of this is on figure \ref{fig:sensitivity}
 
 \begin{figure}[H]
-    \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/sensitivity.png}}
-    \caption{Node-interval ODE error for power-test case.}
-    \label{fig:power_node_controls}
+	\centering
+	\makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/sensitivity.png}}
+	\caption{Node-interval ODE error for power-test case.}
+	\label{fig:sensitivity}
 \end{figure}

@@ -2,6 +2,48 @@
 Once the objective function and constraints are created, the problem is passed
 to NLP solver. Very popular methods are sequential quadratic solvers and
 interior point solvers.
+
+\section{Nonlinear programming}
+
+General NLP problems can be written as:
+\begin{equation}
+    \begin{aligned}
+        \min_{\mathbf{x} \in \mathbb{R}^n} \quad & f(\mathbf{x})                 \\
+        \text{s.t.} \quad                        & \mathbf{h}(\mathbf{x}) = 0    \\
+                                                 & \mathbf{g}(\mathbf{x}) \leq 0
+    \end{aligned}
+    \label{eq:general_nlp}
+\end{equation}
+
+\subsection{KKT conditions}
+alpha and omega of nolinear programming, lord praise the KKT conditions.
+
+\begin{equation}
+    \begin{aligned}
+        \nabla f(\mathbf{x}) + \sum_{i=1}^{m} \lambda_i \nabla h_i(\mathbf{x}) + \sum_{i=1}^{p} \mu_i \nabla g_i(\mathbf{x}) & = 0                            \\
+        \mathbf{h}(\mathbf{x})                                                                                               & = \mathbf{0}                   \\
+        \mathbf{g}(\mathbf{x})                                                                                               & \leq \mathbf{0}                \\
+        \mu_i                                                                                                                & \geq 0, \quad i = 1, \ldots, p \\
+        \mu_i g_i(\mathbf{x})                                                                                                & = 0, \quad i = 1, \ldots, p
+    \end{aligned}
+\end{equation}
+
+\begin{equation}
+    \begin{pmatrix}
+        \nabla^2 \mathcal{L} & A^T \\
+        A                    & 0
+    \end{pmatrix}
+    \begin{pmatrix}
+        -\Delta x \\
+        \lambda
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+        \nabla f(x) \\
+        c(x)
+    \end{pmatrix}
+\end{equation}
+
 \section{Interior point methods: IPOPT, MadNLP}
 \label{sec:interior_point}
 
@@ -56,13 +98,13 @@ which is free. There are several linear commercial solvers, Harwell Subroutine
 Library(HSL) supplies ma27 ma87 ma97 \cite{hsl2011collection} pardiso solver
 \cite{pardiso}, Harwell Subroutine Library solvers are available free for
 academic usage and pardiso solver is available free for academic but only
-single core.
-\section{multithreading}
-linear solver are capable of multithreading, which needs to be explicitly
+single core. Latter solvers run on CPU, MadNLP solver is able to leverage GPU.
+Linear solver are capable of multithreading on CPU, which needs to be explicitly
 turned on. Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 5070
 
 \section{Sequential quadratic programming}
+Sequential quadratic programming is less commonly used for offline trajectory optimisation, usage of IPOPT prevails.
 
 \section{Hessian calculation trough Algorithmic differentiation}
 Mayor complication of many NLP solvers is that hey require Hessian of the

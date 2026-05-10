@@ -116,7 +116,7 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 \usepackage{tikz}
 \usepackage{emoji}
 \usepackage{fontspec}
-\usetikzlibrary{positioning,calc,shapes.geometric,arrows.meta}
+\usetikzlibrary{positioning,calc,shapes.geometric,arrows.meta,backgrounds}
 
 \begin{document}
 
@@ -127,11 +127,10 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 \part{Theory}
 \input{chapters/vehicle_modelling.tex}
 \input{chapters/optimal_control_problem.tex}
-\input{chapters/adjoint_methods.tex}
+\input{chapters/nlp_solvers.tex}
 
 \part{Implementation of Optimal Control problem}
 \input{chapters/frameworks_ocp.tex}
-\input{chapters/nlp_solvers.tex}
 \input{chapters/my_implementation.tex}
 
 \part{results}
