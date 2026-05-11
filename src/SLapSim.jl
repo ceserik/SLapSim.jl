@@ -75,7 +75,7 @@ export AnalysisConfig, GlobalConstraint, EnergyBudget, MeshRefinementConfig
 export build_model, run_experiment!, run_analysis!
 export apply_boundary_conditions!, apply_global!,getSegmentErrors, getNodeErrors
 export plotCarPath_interpolated, plotCarStates_interp, getError, getErrors,get_sampling_density,plot_on_path, plot_states_controls
-export timeSimulation_interpolated, snapshot_car, plot_parameters,createR20_pacejka, createQuasi_steady_Suspension,formulaE2026,plot_controls_on_path
+export timeSimulation_interpolated, snapshot_car, plot_parameters,createR20_pacejka, createR20_perantoni, createQuasi_steady_Suspension,formulaE2026,plot_controls_on_path
 export compute_optimal_jacobian, compute_optimal_hessian, plot_jacobian_spy, plot_hessian_spy
 #println("SLapSim module loaded")
 

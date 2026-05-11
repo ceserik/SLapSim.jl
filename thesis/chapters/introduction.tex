@@ -10,36 +10,51 @@ state turning? How to use limited energy from accumulator more effectively, how
 faster can we go if we made better power limiting algorithm? How large the
 accumulator should be? Which torque allocation algorithm should be used? How to
 design the suspension kinematics to maximize the tire utilization? Is rear
-wheel steering worth it? All of these problems can be analyzed by using purpose
-built tool, good engineering practices or using pen and paper with heavily
-simplified model. Formula student season is 10 months for development and
-construction of the vehicle, 2 months for competition. That puts enormous
-pressure on deciding on vehicle concept fast. In my opinion what formula
-student teams need is a tool to quickly evaluate different car concepts. As my
-bachelor thesis I created a prototype of such tool, goals of this thesis come
-from computational and user experience form my previous tool.
+wheel steering worth the increased weight? All of these problems can be
+analyzed by using purpose built tool, good engineering practices or using pen
+and paper with heavily simplified model. Formula student season is 10 months
+for development and construction of the vehicle, 2 months for competition. That
+puts enormous pressure on deciding on vehicle concept fast. In my opinion what
+formula student teams need is a tool to quickly evaluate different car
+concepts. As my bachelor thesis I created a prototype of such tool, goals of
+this thesis come from computational and user experience form my previous tool.
 
 \section{Goals}
-Goal of this thesis is to lay the groundwork for a tool which would be able to
-quickly and reliably evaluate different vehicle concepts. Thesis should present
-a framework for simulating multiple complexities of vehicle model. Goal is not
-precise plant modeling and validaion, like in bachelor thesis where i preformed
-a nd vladiated analysis on vehicle components, goal is to create a framework to
-perfom similar analyses easily. Goal is to perform sensitivity analysis of
-parameters. Goal is to find optimal parameters for given track and given car.
-Each parameter can be static, desgin varaible, or control variable For fast and
-sufficiently accurate vehicle simulation it is crucial to explore and compare
-various methods of transcribing the optimal control problem, such as global
-collocation using a single polynomial over the whole horizon, multi-segment
-collocation that splits the horizon into smaller intervals each with its own
-polynomial, and Runge Kutta methods.
+\begin{itemize}
+	\item Primary goal of this thesis is to investigate available methods for numerical
+	      optimal control with respect to their suitability for planning an optimal
+	      trajectory of a vehicle aiming to achieve the minimum lap time on a racing
+	      circuit. To do this for various vehicle concepts, thesis has to present a
+	      vehicle modelling framework.
+	\item Benchmark performance of available numerical methods
+	\item Thesis should present a tool for convenient vehicle modelling, and vehicle
+	      concept evaluation.
+	\item Support vehicle parameter optimization, using any vehicle parameter as control
+	      input and sensitivity analysis of vehicle parameters.
+	\item Goal is not precise vehicle modeling and validation, goal is to create a
+	      framework to perform vehicle concept analyses easily.
+\end{itemize}
 
-Goal is not to present results of specific car model or recommendation on car
-design, therefore validation and verification were not done in this thesis. i
-ahev already done them in bachelor thesis
-\cite{ciglanskyAnalysisVehicleComponents}
+%Goal of this thesis is to lay the groundwork for a tool which would be able to quickly and reliably evaluate different vehicle concepts. 
+%Thesis should presenta framework for simulating multiple complexities of vehicle model. 
+%like in bachelor thesis where i preformeda nd vladiated analysis on vehicle components, 
+
+%Each parameter can be static, desgin varaible, or control variable.
+
+%For fast and sufficiently accurate vehicle simulation it is crucial to explore and compare
+%various methods of transcribing the optimal control problem
+
+% such as global collocation using a single polynomial over the whole horizon, multi-segment collocation that splits the horizon into smaller intervals each with its own polynomial, and Runge Kutta methods.
+
+%Goal is not to present results of specific car model or recommendation on car
+%design, therefore validation and verification were not done in this thesis. i
+%ahev already done them in bachelor thesis
+%\cite{ciglanskyAnalysisVehicleComponents}
 
 \section{Structure of thesis}
+First part of thesis with vehicle modelling in the context of optimal control.
+A universal model strcuture inspired by \cite{brown_engineering_2006} is
+presented. Then the theory of optimal control idem spat ja neviem co pisat uz.
 \begin{enumerate}
 	\item ODE models of cars
 	\item Solving methods: time marching forward, backward pass, NLP,
@@ -53,42 +68,35 @@ ahev already done them in bachelor thesis
 
 \section{Literature overview/ survey of laptime simulators}
 Early attempts at lap-time computation started in 1950's. In 1970s computers
-became commonly used to solve MLTS using Quasi Steady State methods (QSS).
-Where car is modeled as point mass moving along predefined trajectory with
-lateral and longitudinal acclerations limited by steady state performance
+became commonly used to solve MLTS using Quasi Steady State methods (QSS),
+these methods are what most race engineers think of when laptime simulaiton is
+mentioned. Here a car is modeled as point mass moving along predefined trajectory
+with lateral and longitudinal acclerations limited by steady state performance
 envelope\cite{Roland1971}, transient dynamics such as yaw acceleration are
-neglected.Formulations of MLTS as OCP appeard in late 1980s
+neglected. Formulations of MLTS as OCP appeard in late 1980s
 \cite{Hatwal1986SomeIS}. Article which summarizes history and state of the art
 methods of computing MLTS is
-\cite{massaroMinimumlaptimeOptimisationSimulation2021}. Article commonly cited
-in articles dealing with minimum lap-time problem is
-\cite{perantoniOptimalControlFormula2014}.The article defines the track model,
-change of independent variable from time to distance traveled, and a twin-track
-Formula 1 model, with some parameters as decision variables. It is a very good
-description of most modern MLTS solving methods using NLP. Methods of computing
-minimum lap time is still active topic in race engineering, as for determining
-better setup of a race car for a given track, on a given day yieds significant
-advantage. With more precise model the accuracy of setup improves, but also the
-computational time increases. In \cite{ComputationallyEfficientFramework}
-authors deal with computationally efficiency of computing minimum lap-time, by
-using sequential convex programming. SEM SKOPIROVAT VECI Z BAKALRKY ZO STATE OF
-THE ART OVERVIEW
+\cite{massaroMinimumlaptimeOptimisationSimulation2021}. Article
+\cite{perantoniOptimalControlFormula2014} is widely regarded as the reference
+work, many parts of this thesis are taken from it. This article defines the
+track model, change of independent variable from time to distance traveled, and
+a twin-track Formula 1 model, with some parameters as decision variables. It is
+a very good description of most modern MLTS solving methods using NLP. Methods
+of computing minimum lap time is still active topic in race engineering, as for
+determining better setup of a race car for a given track, on a given day yieds
+significant advantage. With more precise model the accuracy of setup improves,
+but also the computational time increases. In
+\cite{ComputationallyEfficientFramework} authors deal with computationally
+efficiency of computing minimum lap-time, by using sequential convex
+programming. SEM SKOPIROVAT VECI Z BAKALRKY ZO STATE OF THE ART OVERVIEW
 
-A very popular laptime simulator is OptimumLap form OptimumG
-\cite{OptimumLapOptimumG}, It is a free commercial tool advertised to give 10\%
-similarity to real world. It uses performace envelope to describve vehicle, and
-to compute the laptime using classic initial value problem solvers. This
-technique is called Quasi-steady-state simulator and it is what most people
-think of when laptime simulaiton is mentioned. This is the standard tool for
-laptime simulations Open source implementation of the same method
-\cite{mc12027Mc12027OpenLAPLapTimeSimulator2026}.
+A very popular laptime simulator is OptimumLap from OptimumG
+\cite{OptimumLapOptimumG}, It is a free commercial tool advertised to achieve
+10\% accuracy with real vehicles. It uses Quasi Steady State methods (QSS) This
+is the standard tool for laptime simulations. Open source implementation of the
+same method \cite{mc12027Mc12027OpenLAPLapTimeSimulator2026}, My implementation of this method in chapter ??. QSS methods are very fast, but the models for which they can be used is equally very simple.
 
 Popular open source C++ implementation of laptime simulator using nonlinear
-programming and automatic
-differentiaoton\cite{manzaneroJuanmanzaneroFastestlap2026}. It uses IPOPT and
-CppAD\cite{CoinorCppAD2026}. Vehicle model is 6DOF twintrack.
-
-
-work from austria or germany\cite{Heilmeier2019}
-
-class project from Georgia institute of technology \cite{2026ClassProject}
+programming and automatic differentiaoton\cite{manzaneroJuanmanzaneroFastestlap2026}. It uses IPOPT and
+CppAD\cite{CoinorCppAD2026}. Vehicle model is 6DOF twintrack. Other implementations are
+work from austria or germany\cite{Heilmeier2019} class project from Georgia institute of technology \cite{2026ClassProject}

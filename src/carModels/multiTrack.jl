@@ -41,6 +41,12 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         tireRR = createR20lin(motorRR, gearboxRR)
 
     end
+
+    #tireFL = createR20_perantoni(motorFL, gearboxFL)
+    #tireFR = createR20_perantoni(motorFR, gearboxFR)
+    #tireRL = createR20_perantoni(motorRL, gearboxRL)
+    #tireRR = createR20_perantoni(motorRR, gearboxRR)
+
     accumulator = createAccumulator()
     drivetrain = Drivetrain(
         [motorFL, motorFR, motorRL, motorRR],

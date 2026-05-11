@@ -94,26 +94,20 @@ function singleTurn(straightLength::Float64,circleLength::Float64,vis::Bool = fa
     # 0 degree around Z axis is X axis
     # ENU
 
-    #straightLength = 5
     straightLength = Int(straightLength)
     circleRadius = 10
     straightX = zeros(straightLength)
-    straightY = LinRange(0,straightLength,straightLength)
+    straightY = LinRange(0, straightLength, straightLength)
 
-    clothoidLength = Int(circleLength)
-    clothoidAngle = LinRange(pi/2, -pi/2*0, clothoidLength)
-    clothoidX = zeros(clothoidLength)
-    clothoidY = zeros(clothoidLength)
+    # proper quarter-circle arc, tangent to straight at (0, straightLength)
+    # center at (circleRadius, straightLength); arc ends at (circleRadius, straightLength + circleRadius)
+    arcLength = max(Int(circleLength), 1) * 10
+    t = LinRange(0, pi/2, arcLength)
+    arcX = circleRadius .- circleRadius .* cos.(t)
+    arcY = straightLength .+ circleRadius .* sin.(t)
 
-    for i in 1:clothoidLength
-        s = i / clothoidLength
-        clothoidX[i] = circleRadius * s * cos(clothoidAngle[i])
-        clothoidY[i] = straightLength + circleRadius * s * sin(clothoidAngle[i])
-    end
-
-
-    X = [straightX; clothoidX]
-    Y = [straightY; clothoidY]
+    X = [straightX; arcX[2:end]]
+    Y = [straightY; arcY[2:end]]
     track = Track(
         [0.0],#curvature,
         [1.225],

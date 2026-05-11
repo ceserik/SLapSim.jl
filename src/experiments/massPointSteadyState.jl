@@ -4,9 +4,10 @@ using SLapSim
 # solver solves first forward pass, then bakcward pass and takes minimums of speeds
 car = createCTU25_1D()
 track = 0
-#track = singleTurn()
-path = "tracks/FSCZ.kml"
-track = kml2track(path,true,false)
+track = singleTurn(50.0, 5.0)
+track = doubleTurn()
+#path = "tracks/FSCZ.kml"
+#track = kml2track(path,true,false)
 
 #smooth_by_OCP(track,0.01,0.5)
 N = length(track.curvature)

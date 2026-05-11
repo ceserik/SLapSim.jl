@@ -23,9 +23,9 @@ GLMakie.closeall()
 #track = doubleTurn(true,0.1)
 
 path = "tracks/FSCZ.kml"
-track = kml2track(path, false, true)
+#track = kml2track(path, false, true)
 #track = csv2track("src/Track/berlin_2018.csv")
-#track = doubleTurn(false, 0.1)
+track = doubleTurn(false, 0.1)
 #track = skidpad(false)
 #car = createSimplestSingleTrack(track)
 #car = formulaE2026(track)
@@ -69,13 +69,13 @@ exp = Experiment(
     car = car,
     track = track,
     discipline = Open(v_start=5.0),             # or Closed() for periodic BCs
-    #solver = IpoptBackend(
-    #    performSensitivity = false,
-    #    attributes = ipopt_attrs,
-    #),
-    solver = MadNLPBackend(
-        attributes = madnlp_attrs,
+    solver = IpoptBackend(
+        performSensitivity = false,
+        attributes = ipopt_attrs,
     ),
+    #solver = MadNLPBackend(
+    #    attributes = madnlp_attrs,
+    #),
     mesh_refinement = MeshRefinementConfig(
         tol            = 1e-1,
         method         = :h,    # :h | :p | :hp
@@ -93,7 +93,7 @@ exp = Experiment(
         plot_states     = true,
         plot_jacobian   = false,
         plot_hessian    = false,
-        animate         = false,
+        animate         = true,
         animation_speedup = 1.0,
         time_simulation = false,
         plot_initialization = false,
