@@ -57,8 +57,7 @@ function createBus(track::Union{Track,Nothing}=nothing)
     # accumulator from formula, override capacity
     accu = createAccumulator()
     accu.capacity.value = 200.0
-    accu.maxPower.value = 300.0
-    accu.minPower.value = 300.0
+    accu.power.limits = [-300_000.0, 300_000.0]
     accu.voltage.value = 650.0
     accu.mass.value = 1500.0
 
