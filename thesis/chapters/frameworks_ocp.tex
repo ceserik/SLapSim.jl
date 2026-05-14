@@ -9,7 +9,7 @@ solving of nonlinear program, optional mesh refinment
       block/.style={rectangle, draw, thick, font=\small, minimum width=4cm, minimum height=0.9cm, align=center, fill=white},
       exit/.style={ellipse, draw, thick, font=\small, minimum width=3cm, minimum height=0.8cm, align=center, fill=white}
     ]
-    \node[block] (def) {1. Problem definition};
+    \node[block] (def) {1. Problem Transcription};
     \node[block, below=of def] (nlp) {2. NLP solve};
     \node[block, below=of nlp] (mesh) {3. Mesh refinement (optional)};
     \node[exit, below=of mesh] (sol) {Solution};
@@ -42,7 +42,7 @@ commercial and closed source. Implementaion in this thesis is heavily based on
 work of community from University of Florida.
 \section{CasADi}
 CasADi is an open-source tool for nonlinear optimization and algorithmic
-differentiation.\cite{CasADi}\cite{anderssonCasADiSoftwareFramework2019}.
+differentiation.\cite{CasADi}\cite{Andersson2019}.
 interfaces with C++,Python,MATLAB. It provides a framework INE SLOVO to build
 the problem, and calculate the hessian and jacobian for nlp solver it does not
 have any mesh refinemnt algorithms. Commonly paired with IPOPT for nonliner
@@ -55,8 +55,8 @@ collocation as default \cite{Falck2021}. According to forum post from julia
 discourse, which may be biased towards julia it is slower compared to infiteOpt
 in julia \cite{DoesAnybodyKnow2024}. But it has mesh refinemnt so that is good.
 \section{Acados}
+Acados is a modular open-source framework for fast embedded optimal control, developed at University of Freiburg~\cite{Verschueren2021}. It has C, Python, MATLAB + Simulink and Octave interface. This framework support generating C code. It is demonstrated by numerous real-world examples, such as drone racing with replanning, robot navigation in cluttered environment and many others \cite{acados_real_world_examples}.
 
-\cite{Verschueren2021}
 
 \section{Julia + JuMP/ infititeopt/ examomdels}
 ExaModels, JuMP

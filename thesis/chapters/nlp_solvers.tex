@@ -12,43 +12,37 @@ High level overview required for this thesis of Lagrange-Newton methods is in Fi
 
 \begin{figure}[H]
 \centering
-\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
   >={Latex[length=2mm]},
-  node distance=0.8cm and 0.3cm,
+  node distance=0.6cm and 0.15cm,
   every node/.style={font=\small, align=center},
-  box/.style={draw, minimum height=0.8cm, inner sep=4pt},
+  box/.style={draw, minimum height=0.7cm, inner sep=3pt},
   problem/.style={box},
-  branch/.style={box, font=\small\bfseries},
-  stagebox/.style={box},
-  deriv/.style={box, font=\small, text width=2.2cm},
+  branch/.style={box, font=\small, text width=2.2cm},
+  stagebox/.style={box, text width=2.6cm, font=\footnotesize},
+  deriv/.style={box, text width=1.4cm, font=\footnotesize},
   terminal/.style={box, line width=1pt}
 ]
 
-\node[problem] (nlp) {NLP problem statement};
+\node[problem] (nlp) {Transcribed nonlinear programming problem};
 
-\node[branch, below left=1.2cm and 2.2cm of nlp] (sqp) {Sequential Quadratic programming};
-\node[branch, below right=1.2cm and 2.2cm of nlp] (ipm) {Interior point methods};
+\node[branch, below=0.75cm of nlp, xshift=-1.5cm] (sqp) {Sequential\\Quadratic\\Programming};
+\node[branch, below=0.75cm of nlp, xshift=1.5cm]  (ipm) {Interior\\Point\\Methods};
 
-\node[stagebox, below=of sqp] (qp) {Quadratic model of Lagrangian,\\linearized constraints,\\QP subproblem};
-\node[stagebox, below=of ipm] (bar) {Barrier problem reformulation};
+\node[problem, below=3cm of nlp] (need) {Compute derivatives};
 
-\node[problem, below=3.5cm of nlp] (need) {Calucate first and second derivatives};
+\node[deriv, below=1cm of need] (fd) {Finite\\differences};
+\node[deriv, left=of fd]  (sym)  {Symbolic};
+\node[deriv, left=of sym] (anal) {Analytic};
+\node[deriv, right=of fd] (ad)   {Automatic\\diff.};
+\node[deriv, right=of ad] (qn)   {Quasi-\\Newton\\methods};
 
-\node[deriv, below=1.6cm of need] (fd) {Finite\\differences};
-\node[deriv, left=of fd]  (sym)  {Symbolic\\(CAS)};
-\node[deriv, left=of sym] (anal) {Analytic\\(hand-coded)};
-\node[deriv, right=of fd] (ad)   {Automatic differentiation};
-\node[deriv, right=of ad] (qn)   {Quasi-Newton Approximation};
-
-\node[terminal, below=4cm of need] (newton) {Assemble linear system of equations\\\textbf{Newton step}};
+\node[terminal, below=3cm of need] (newton) {Assemble linear system\\\textbf{Newton step}};
 
 \draw[->] (nlp) -- (sqp);
 \draw[->] (nlp) -- (ipm);
-\draw[->] (sqp) -- (qp);
-\draw[->] (ipm) -- (bar);
-\draw[->] (qp)  -- (need);
-\draw[->] (bar) -- (need);
+\draw[->] (sqp) -- (need);
+\draw[->] (ipm) -- (need);
 
 \draw[->] (need) -- (anal);
 \draw[->] (need) -- (sym);
@@ -62,7 +56,7 @@ High level overview required for this thesis of Lagrange-Newton methods is in Fi
 \draw[->] (ad)   -- (newton);
 \draw[->] (qn)   -- (newton);
 
-\end{tikzpicture}}
+\end{tikzpicture}
 \caption{NLP solution flow: problem statement $\to$ solver family (SQP / IPM) $\to$ derivative computation $\to$ assembled Newton step.}
 \label{fig:nlp_flowchart}
 \end{figure}
@@ -160,6 +154,7 @@ computes the Newton step:
         c(x_k)                              \\
         X_k Z_k e - \mu_j e
     \end{bmatrix}.
+    \label{eq:Newton-Step}
 \end{equation}
 Here $W_k = \nabla^2 \mathcal{L}(x_k, \lambda_k, z_k)$ is the Hessian of the Lagrangian, $A_k$ is the Jacobian of the equality constraints $c(x)$ and $\nabla f(x_k)$ is the gradient of the objective. The unknowns $d_x^k$, $d_\lambda^k$ and $d_z^k$ are the Newton steps in the primal variables, equality multipliers and bound multipliers; $\mu_j$ is the barrier parameter, which is driven to zero across outer iterations.
 
@@ -183,32 +178,28 @@ Major complication of many Lagrange-Newton methods is that they require gradient
 \section{Scaling and matrix conditioning}
 Common pitfall of nonlinear programming is poor scaling. This happens when the
 solver encounters variables, that are orders of magnitude apart, for example
-motor force in thousands of newton and heading angle in radians. This happens,
-because at the core of nonlinear programming solver is a linear solver WROOOOONG elipsa zoptimalziace to inka ukazuje
-(MUMPS,MA97,PARDISO,...), that has to do matrix factorization every iteration,
-to solve KKT linear system. If this linear system is ill conditioned due to
-improper scaling, the factorization may be imprecise and search direction
-corrupted.
+motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.~\cite[p.~21]{wachter_implementation_2006}. With improper scaling Lagrange multiplers in \ref{eq:Newton-Step} may become large when active contraints are nearly linearly dependant and this causes numerical difficulties. TOTO SOM CELKOM OPSIAL Z IPOPT PAPERU ALE NEVIEM AKO TO INAK NAPISAT VLSTNYIM SLOVAMI.
+%(MUMPS,MA97,PARDISO,...), that has to do matrix factorization every iteration,
+%to solve KKT linear system. If this linear system is ill conditioned due to
+%improper scaling, the factorization may be imprecise and search direction
+%   corrupted.
 
 Another thing which led to issues is constraints qualification. Linear
-indpendence constiant qualification requires gradients of the active
-constraints to be linearly independent. If it is violated, the jacobian of the constraints is
-rank deficient and linear solve may fails
+independence constraint qualification requires gradients of the active
+constraints to be linearly independent. If it is violated, the Jacobian of the constraints is rank deficient and linear solve may fail. This happens when for example one constraint is created twice.
 
-\section{sparsity}
-Sparsity is good, sparsity means matrix hessians and jacobians with many zeros
-also sparsisty in constraints, that means not having super very long expression
-with many terms in constraint. I guess it is beacause deriavtive is difficult
-then and can lead solver in wrong direction or take small stages. Therefore
-using more decison variables to define same problem can actually lead to faster
-computation \cite{julia_discourse_ipopt_hessian}. Certain solvers can exploit
-the sprasity strcuture, such as FATROP\cite{vanroyeFATROPFastConstrained2023}.
-In source \cite{jorisgillisIPOPTSteroidsFatrop2024} Joris gillis a casadi
+\section{Sparsity}
+Sparsity is a desirable property. Sparse Hessian and Jacobian matrices
+contain a large fraction of zero entries, which interior-point solvers
+exploit through specialized linear algebra. Sparsity in the constraints
+themselves is also important: individual constraints should involve only
+a small subset of the decision variables, rather than being formulated as
+deeply nested nonlinear expressions. Example of this is that state derivatives of vehicle at each point, can be fully determied from only 7 variables:  accelerator pedal, brake pedal, steering angle, forward speed, lateral speed, yaw rate and heading. Using only these variables results in a deeply nested nonlinear expression in the constraints. Adding redundant decision variables like forces on all wheels can reduce the iterations needed and calculation time of derivatives. Counter intuitively this larger problem was faster to solve, this is elaborated on in~\cite{julia_discourse_ipopt_hessian,jump_issue_4024}
+Certain solvers can heavily exploit the sparsity structure, such as FATROP\cite{vanroyeFATROPFastConstrained2023}.
+In source~\cite{jorisgillisIPOPTSteroidsFatrop2024} Joris Gillis a CasADi
 developer compares IPOPT to FATROP, with \textbf{FATROP being 33 times faster
     on a trajecotry optimisation problem.}
-
-Also \cite{betts} describes how sprasity structure helps with afster hessian
-aprprixmiation for using finite difference??? secant method.
+Also,~\cite{betts} describes how sparsity structure helps with faster derivatives approximation with finite difference and Quasi-Newton methods.
 
 \section{Initialization}
 NLP solvers require initial guess for all decision variables, to start solving.
@@ -217,11 +208,10 @@ PD controller is used to keep the car on the centerline and P controller is
 used to keep velocity at 5m/s. In general, it is possible to initialize all
 variables at zero, but with large scale nonlinear programming this approach is
 not used. For this problem initialization with zeros leads to singularity in
-equation \ref{time2path} and is not possible at all. must be ineitialzied
-otherwise very baaaadt?
+equation \ref{time2path} and is not possible at all.
 
 \section{Global and local optimums}
-This optimization problem is generally non convex, therefore any local optimum
-does not guarantee global optimum.Commonly used NLP solvers, like IPOPT
-guarantee only local optimums and not global ones. Good initization is basis
-for finding a local optimum close to the global optimum. Source?????
+This optimization problem is generally non-convex, therefore any local optimum
+does not guarantee global optimum. Commonly used NLP solvers, like IPOPT
+guarantee only local optimums and not global ones. Good initialization is basis
+for finding a local optimum close to the global optimum~\cite[§5.1, p.~11]{kellyIntroductionTrajectoryOptimization2017}.

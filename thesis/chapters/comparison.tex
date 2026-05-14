@@ -1,7 +1,7 @@
 \chapter{comparison of methods}
 Performace of NLP solvers and frameworks is often tested on benchmark problems. like CUTEst \cite{gouldCUTEstConstrainedUnconstrained2014} dataset?
 Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
-5070
+5070. Important caveat is that IPOPT has many (probably too many) options which can be adjusted, and that is true for all solvers. Some of differences in this benchmark may be due to sub optimal setup of the solver.
 \begin{table}[!ht]
 \centering
 \input{../sync/thesisTables/summary.tex}
@@ -54,4 +54,18 @@ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 \caption{NLP solver / backend benchmark results by track, vehicle model, and transcription variant.}
 \label{tab:backend-results}
 \end{table}
+
+\begin{table}[!ht]
+\centering
+\input{../sync/thesisTables/hessian/summary.tex}
+\caption{Hessian approximation benchmark summary statistics (exact vs.\ limited-memory quasi-Newton).}
+\label{tab:hessian-summary}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\input{../sync/thesisTables/hessian/results.tex}
+\caption{Hessian approximation benchmark results by track, vehicle model, and transcription variant.}\label{tab:hessian-results}
+\end{table}
+
 

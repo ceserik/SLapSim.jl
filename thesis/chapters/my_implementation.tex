@@ -62,7 +62,7 @@ utilising GPU for solver computation.
 \end{figure}
 
 \section{sensitivity Analysis}
-I have used DiffOpt.jl \cite{} for the sensitivity analysis. By adding vehicle
+I have used DiffOpt.jl~\cite{besancon2023diffopt} for the sensitivity analysis. By adding vehicle
 parameters susch ass, mass, lift coeffcient, CoG position etc. into
 optimisation as decisions variables fixed to a value by contraints. This addes them to the algebraic model, then the solution of minimum laptime can be differentiated by these parameters. AKO POMENOVAT TEN STROM CO JUMP VYTCORI TEN GRAF? algebraic model. Result of this is on figure \ref{fig:sensitivity}
 
@@ -72,3 +72,147 @@ optimisation as decisions variables fixed to a value by contraints. This addes t
 	\caption{Node-interval ODE error for power-test case.}
 	\label{fig:sensitivity}
 \end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  >={Latex[length=2mm]},
+  node distance=0.7cm and 0.2cm,
+  every node/.style={font=\normalsize, align=center},
+  box/.style={draw, minimum height=0.7cm, inner sep=3pt},
+  problem/.style={box},
+  branch/.style={box, font=\normalsize\bfseries},
+  stagebox/.style={box, text width=3cm},
+  deriv/.style={box, text width=1.9cm},
+  terminal/.style={box, line width=1pt},
+  chosen/.style={fill=green!30}
+]
+
+\node[problem] (nlp) {NLP problem statement};
+
+\node[branch, below left=1cm and 2cm of nlp] (sqp) {SQP};
+\node[branch, below right=1cm and 2cm of nlp, chosen] (ipm) {Interior point};
+
+\node[stagebox, below=1cm of sqp] (qp) {Quadratic model,\\linearized constraints,\\QP subproblem};
+\node[stagebox, below=1cm of ipm, chosen] (bar) {Barrier problem\\reformulation};
+
+\node[problem, below=5cm of nlp] (need) {Calculate first and second derivatives};
+
+\node[deriv, below=1.2cm of need] (fd) {Finite\\differences};
+\node[deriv, left=of fd]  (sym)  {Symbolic};
+\node[deriv, left=of sym] (anal) {Analytic};
+\node[deriv, right=of fd, chosen] (ad)   {Automatic\\diff.};
+\node[deriv, right=of ad, chosen] (qn)   {Quasi-\\Newton};
+
+\node[terminal, below=3cm of need] (newton) {Assemble linear system\\\textbf{Newton step}};
+
+\draw[->] (nlp) -- (sqp);
+\draw[->, very thick, green!60!black] (nlp) -- (ipm);
+\draw[->] (sqp) -- (qp);
+\draw[->, very thick, green!60!black] (ipm) -- (bar);
+\draw[->] (qp)  -- (need);
+\draw[->, very thick, green!60!black] (bar) -- (need);
+
+\draw[->] (need) -- (anal);
+\draw[->] (need) -- (sym);
+\draw[->] (need) -- (fd);
+\draw[->, very thick, green!60!black] (need) -- (ad);
+\draw[->, very thick, green!60!black] (need) -- (qn);
+
+\draw[->] (anal) -- (newton);
+\draw[->] (sym)  -- (newton);
+\draw[->] (fd)   -- (newton);
+\draw[->, very thick, green!60!black] (ad)   -- (newton);
+\draw[->, very thick, green!60!black] (qn)   -- (newton);
+
+\end{tikzpicture}
+\caption{NLP solution flow with the methods used in this thesis highlighted in green: interior point with barrier reformulation (IPOPT, MadNLP), automatic differentiation provided by JuMP, and the quasi-Newton (L-BFGS) Hessian approximation used in IPOPT's \texttt{limited-memory} mode.}
+\label{fig:nlp_flowchart_chosen}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  >={Latex[length=2mm]},
+  node distance=0.7cm and 0.35cm,
+  method/.style={draw, text width=2.4cm, minimum height=0.9cm, align=center, font=\small, inner sep=3pt},
+  layer/.style={draw, minimum height=0.8cm, inner sep=4pt, align=center, font=\normalsize\bfseries},
+  chosen/.style={fill=green!30}
+]
+
+\node[method, chosen]      (p)   {$p$-refinement\\(raise polynomial degree)};
+\node[method, chosen, right=of p]  (h)   {$h$-refinement\\(subdivide segments)};
+\node[method, right=of h]  (hp)  {$hp$-refinement\\(p first, then h)};
+\node[method, right=of hp] (ph)  {$ph$-refinement\\(h first, then p)};
+
+\node[layer, above=1cm of $(p.north)!0.5!(ph.north)$] (mesh)
+  {Mesh refinement strategy};
+
+\draw[->, very thick, green!60!black] (mesh.south) -- (p.north);
+\draw[->, very thick, green!60!black] (mesh.south) -- (h.north);
+\draw[->] (mesh.south) -- (hp.north);
+\draw[->] (mesh.south) -- (ph.north);
+
+\end{tikzpicture}
+\caption{Mesh refinement layer with the strategies implemented in this thesis highlighted in green: $p$-refinement (raising the polynomial degree on fixed segments) and $h$-refinement (subdividing segments at fixed degree).}
+\label{fig:mesh_refinement_chosen}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  >={Latex[length=2mm]},
+  node distance=0.55cm and 0.18cm,
+  basis/.style={draw, text width=1.4cm, minimum height=0.8cm, align=center, font=\scriptsize, inner sep=2pt},
+  scheme/.style={draw, text width=3.2cm, minimum height=0.8cm, align=center, font=\small, inner sep=3pt},
+  form/.style={draw, text width=1.25cm, minimum height=0.6cm, align=center, font=\scriptsize, inner sep=2pt},
+  layer/.style={draw, minimum height=0.8cm, inner sep=4pt, align=center, font=\normalsize\bfseries},
+  chosen/.style={fill=green!30}
+]
+
+\node[basis]                    (cheb) {Chebyshev\\I \& II};
+\node[basis, right=of cheb]     (her)  {Hermite};
+\node[basis, right=of her]      (lag)  {Laguerre};
+\node[basis, right=of lag, chosen] (leg)  {Legendre};
+\node[basis, right=of leg]      (alag) {Assoc.\\Laguerre};
+\node[basis, right=of alag]     (geg)  {Gegenbauer};
+\node[basis, right=of geg]      (jac)  {Jacobi};
+
+\node[layer, above=1cm of $(cheb.north)!0.5!(jac.north)$] (trans)
+  {Transcription:\\orthogonal polynomial basis};
+
+\foreach \n in {cheb,her,lag,alag,geg,jac}
+  \draw[->] (trans.south) -- (\n.north);
+\draw[->, very thick, green!60!black] (trans.south) -- (leg.north);
+
+\node[scheme, chosen, below=1.8cm of leg] (lgr) {Legendre--Gauss--Radau\\(LGR) Quadrature};
+\node[scheme, chosen, left=of lgr]  (lg)  {Legendre--Gauss\\(LG) Quadrature};
+\node[scheme, chosen, right=of lgr] (lgl) {Legendre--Gauss--Lobatto\\(LGL) Quadrature};
+
+\draw[->, very thick, green!60!black] (leg.south) -- (lg.north);
+\draw[->, very thick, green!60!black] (leg.south) -- (lgr.north);
+\draw[->, very thick, green!60!black] (leg.south) -- (lgl.north);
+
+\foreach \n in {cheb,her,lag,alag,geg,jac}
+  \node[font=\Large, below=0.35cm of \n] {$\vdots$};
+
+\node[form, below=0.8cm of lg, xshift=-0.85cm]         (lg-int)  {Integral};
+\node[form, chosen, below=0.8cm of lg, xshift=0.85cm]  (lg-diff) {Differ.};
+\draw[->] (lg.south) -- (lg-int.north);
+\draw[->, very thick, green!60!black] (lg.south) -- (lg-diff.north);
+
+\node[form, below=0.8cm of lgr, xshift=-0.85cm]         (lgr-int)  {Integral};
+\node[form, chosen, below=0.8cm of lgr, xshift=0.85cm]  (lgr-diff) {Differ.};
+\draw[->] (lgr.south) -- (lgr-int.north);
+\draw[->, very thick, green!60!black] (lgr.south) -- (lgr-diff.north);
+
+\node[form, chosen, below=0.8cm of lgl, xshift=-0.85cm] (lgl-int)  {Integral};
+\node[form, below=0.8cm of lgl, xshift=0.85cm]          (lgl-diff) {Differ.};
+\draw[->, very thick, green!60!black] (lgl.south) -- (lgl-int.north);
+\draw[->] (lgl.south) -- (lgl-diff.north);
+
+\end{tikzpicture}
+\caption{Transcription layer with the methods used in this thesis highlighted in green: Legendre basis with all three Gauss-type quadrature schemes (LG, LGR, LGL), where LG and LGR are implemented in differential form and LGL in integral form.}
+\label{fig:transcription_chosen}
+\end{figure}
+
