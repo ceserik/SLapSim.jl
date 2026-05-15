@@ -33,6 +33,98 @@ DESCRIBE POPULAR LAPTIME SIMULATION METHOD THAT USES FORWARD AND BACKWARD PASS
 FOR A MODEL OF LOW COMPLEXITY
 
 \section{Transcription methods}
+Transcription methods rewrite continuous (infinite-dimensional) OCP into finite-dimensional NLP.\@ That means representing the continuous trajectory of a state by values sampled at discrete points.
+The terminology of transcription methods can be difficult to understand, as it is complex topic and often articles present conflicting information~\cite{kelly_traj_opt_terminology}. Website~\cite{kelly_traj_opt_terminology} and other work from Matthew Kelly~\cite{kelly_traj_opt_video,kelly_homepage,doi:10.1137/16M1062569} offers a very digestible introduction into the topic. This thesis focuses only on direct methods. Classification of methods in this thesis is based on~\cite{kelly_traj_opt_terminology} Figure~\ref{fig:ocp_methods_taxonomy} contrasts the three axes along which transcription methods are commonly classified.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  >={Latex[length=2mm]},
+  every node/.style={align=center},
+  root/.style={draw, font=\bfseries\footnotesize, text width=3.6cm, minimum height=0.7cm, inner sep=3pt},
+  box/.style={draw, font=\bfseries\footnotesize, text width=3.2cm, minimum height=0.7cm, inner sep=3pt},
+  leaf/.style={draw, font=\footnotesize, text width=2.0cm, minimum height=0.6cm, inner sep=2pt}
+]
+
+\node[root] (ocp) {OCP solution methods};
+
+\node[box, below left=1.4cm and 0.1cm of ocp]  (indirect) {Indirect Methods};
+\node[box, below right=1.4cm and 0.1cm of ocp] (direct)   {Direct Methods};
+
+\draw[->] (ocp.south) -- (indirect.north);
+\draw[->] (ocp.south) -- (direct.north);
+
+\node[box, below=1.6cm of indirect, xshift=-0.3cm] (shoot) {Shooting Methods};
+\node[box, below=1.6cm of direct,   xshift=0.3cm]  (rkt)   {Nonlinear programming};
+
+\draw[->] (indirect.south) -- (shoot.north);
+\draw[->] (indirect.south) -- (rkt.north);
+\draw[->] (direct.south)   -- (shoot.north);
+\draw[->] (direct.south)   -- (rkt.north);
+
+\node[leaf, below=1.4cm of shoot, xshift=-1.2cm] (ss) {Single shooting};
+\node[leaf, below=1.4cm of shoot, xshift=1.2cm]  (ms) {Multiple shooting};
+
+\draw[->] (shoot.south) -- (ss.north);
+\draw[->] (shoot.south) -- (ms.north);
+
+\node[leaf, below=1.4cm of rkt, xshift=-1.2cm] (erk) {Explicit RK};
+\node[leaf, below=1.4cm of rkt, xshift=1.2cm]  (irk) {Implicit RK\\(Collocation)};
+
+\draw[->] (rkt.south) -- (erk.north);
+\draw[->] (rkt.south) -- (irk.north);
+
+\node[leaf, below=2.6cm of rkt, xshift=-1.4cm] (hm) {``$h$-methods''};
+\node[leaf, below=2.6cm of rkt, xshift=1.4cm]  (pm) {``$p$-methods''};
+
+\draw[->] (erk.south) -- (hm.north);
+\draw[->] (erk.south) -- (pm.north);
+\draw[->] (irk.south) -- (hm.north);
+\draw[->] (irk.south) -- (pm.north);
+
+\end{tikzpicture}
+\caption{Flowchart of transcription method classification, adapted from~\cite{kelly_traj_opt_terminology}}
+\label{fig:ocp_methods_taxonomy}
+\end{figure}
+
+\subsection{Shooting methods}
+Shooting methods get their name from aiming artillery canon analogy, with given powder load canon and target location find the aiming angle to hit the target. In depth explanation with animation and example code is here~\cite{kelly_cannon} This is classical boundary value problem. Methods shoot, miss, adjust aim, shoot again and iterate until target is hit. These methods are solving boundary value problem using an IVP solver. More precisely,
+\begin{enumerate}
+  \item Guess the controls
+  \item Compute the solution using an initial value problem solver
+  \item Compare the simulated value at the end of interval from 2.~with the boundary value(targets location)
+  \item Based on error update the controls and go to 2.
+\end{enumerate}
+
+Shooting methods are split into single and multiple shooting. They differ in way they handle state discretisation. Single shooting discretizes the state only at start and end of interval and computes the trajectory in one shot. Whereas multiple shooting discretizes the states along the trajectory and computes multiple shots, this can be also parallelized on a CPU~\cite{FANG2022110926}. Shooting methods are progressively being displaced by collocation methods~\cite{raoSurveyNumericalMethods2010}
+
+\subsection{Nonlinear Programming with Runge Kutta constraints}
+These methods are not using initial value solvers to solve boundary value problem, instead they use nonlinear programming.
+Most straightforward method to transcribe continuos optimal control problem
+into non-linear program, is to use explicit Runge Kutta solving methods from
+initial value problem as equality constraints on the dynamics of a vehicle. Using
+Euler method, the constraints for the dynamics of vehicle are:
+\begin{equation}
+    \mathbf{x}_{k+1} = \mathbf{x}_k + h \cdot f(\mathbf{x}_k, \mathbf{u}_k),
+\end{equation}
+where $f$ denotes the vehicle dynamics, $h$ the step size, and $\mathbf{x}$ the state vector.
+This works, but it may be the worst possible transcription method, due to high error and instability of euler method \cite{SolvingOrdinaryDifferential1987}. Problems of euler method encountered when solving initial value problems also translate to nonlinear programming. Implict RK methods can be used too, In Initial value problems they are used less often, as they require iterative solving. Optimal control problem is Boundary value problem and not initial value problem, therefore:
+
+\begin{quote}
+    \ldots for a boundary value problem \ldots any scheme becomes effectively implicit. Thus, the distinction between explicit and implicit initial value schemes becomes less important in the BVP context.
+\end{quote}
+\cite[p.~69]{Ascher1995}
+
+For boundary value problem it makes no sense to use explicit Runge Kutta
+methods, as they have inferior stability compared to implicit Runge Kutta
+methods.\cite[p.~4]{raoSurveyNumericalMethods2010}. Implicit Runge Kutta methods, which are commonly used are from LobattoIIIA family, but any other method can be used. Book \cite{betts} uses
+only these.
+
+\subsection{Collocation methods}
+The objective of collocation method is to find a polynomial that approximates the solution of a boundary value problem along independent variable (most commonly time, in this thesis it is distance travelled along centerline). Collocation methods are a subset of implicit Runge Kutta methods.
+The main distinction between Runge Kutta methods and collocation, is that the result of collocation is always polynomial, that does not hold for general Runge Kutta method.
+
+Collocation methods are based on theory of orthogonal polynomials
 %https://en.wikipedia.org/wiki/Classical_orthogonal_polynomials#Table_of_classical_orthogonal_polynomials
 
 \begin{figure}[H]
@@ -83,37 +175,12 @@ FOR A MODEL OF LOW COMPLEXITY
 \label{fig:transcription_layer}
 \end{figure}
 
-\subsection{RK methods}
-Most straightforward method to transcribe continuos optimal control problem
-into non linear program, is to use explicit Runge Kutta solving methods from
-initial vlaue problem as equality constraints on the dynamics of vehicle. Using
-euler method, the constraints for the dynamics of vehicle:
-\begin{equation}
-    \mathbf{x}_{k+1} = \mathbf{x}_k + h \cdot f(\mathbf{x}_k, \mathbf{u}_k)
-\end{equation}
-This works, but it may be the worst possible transcription method, due to high error and instability of euler method \cite{SolvingOrdinaryDifferential1987}. Problems of euler method encountered in time marching simulation also translate to nonlinear programming. Implict RK methods can be used too, In Initial value problems they are used less often, as they require iterative solving. Optimal control problem is Boundary value problem and not initial value problem, therefore:
-
-\begin{quote}
-    \ldots for a boundary value problem \ldots any scheme becomes effectively implicit. Thus, the distinction between explicit and implicit initial value schemes becomes less important in the BVP context.
-\end{quote}
-\cite[p.~69]{Ascher1995}
-
-For boundary value problem it makes no sense to use explicit Runge kutta
-methods, as they have inferior stability compared to implicit runge kutta
-metthods.\cite[p.~4]{raoSurveyNumericalMethods2010}
-
-For Boundary value problems commonly implicit runge kutta method used is from
-LobattoIIIA family, but any other method can be used. Book \cite{betts} uses
-only these.
-
-\subsection{Collocation methods}
 
 \begin{quote}
     The concept of collocation is old and universal in numerical analysis \ldots For ordinary differential equations it consists in searching for a polynomial of de-gree s whose derivative coincides ("co-locates") at s given points with the vectorfield of the differential equation \ldots
     \cite[p.~224]{hairer}
 \end{quote}
-Job of collocation method is to find a polynomial that approximates the solution of BVP along independent variable(most commonly time). Collocation methods are a subset of implicit runge kutta methods.
-The main distinction between runge kutta merthods and collocation. Is that the result of collocation is always polynomial, that does not hold for general Runge Kutta method.
+
 Collocation methods are the core of this thesis, I have implemented  Gauss radau, gauss, gauss lobatto. Collocation methods differ in points at which the derivative of polynomial coincides ("co-locates) with the vector field of differential equation. Commonly used methods in optimal control are radau, lobatto, legendre. They can be written in integral and differential form\cite{garg_overview_nodate}. Collocatiom methods in this thesis are based on Framework described in\cite{gargUnifiedFrameworkNumerical2010}
 
 Polynomial that aproximates the solution of ODE is based on Legendre
