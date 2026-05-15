@@ -85,71 +85,71 @@ No julia package has  mesh refinement
 I chose julia + jump,
 
 
-\begin{table}[h]
-  \centering
-  \small
-  \begin{tabular}{|p{4.5cm}|p{4.5cm}|p{4.5cm}|}
-    \hline
-    \textbf{Aspect} & \textbf{Julia + JuMP + InfiniteOpt} & \textbf{Python + OpenMDAO + dymos} \\
-    \hline
-    Language / runtime
-      & Julia, JIT-compiled, no GIL
-      & Python, interpreted, GIL (NumPy releases) \\
-    \hline
-    License
-      & MIT (all components)
-      & Apache 2.0 \\
-    \hline
-    Algebraic modelling style
-      & Macro-based (\texttt{@variable}, \texttt{@constraint}, \texttt{@objective})
-      & Component graph (\texttt{ExplicitComponent}, \texttt{Group}, promotes/connects) \\
-    \hline
-    Derivatives
-      & AD via MathOptInterface; sparsity from expression graph
-      & MAUD unified derivatives; mix analytic / AD / FD / complex-step per component, framework chains them \\
-    \hline
-    Transcription methods
-      & Finite difference (Forward, Central, Backward); orthogonal collocation on finite elements with Gauss--Lobatto nodes only
-      & Radau pseudospectral, Gauss--Lobatto, explicit shooting, ExplicitShooting RK \\
-    \hline
-    Mesh / grid refinement
-      & None built-in; user must re-solve on refined supports
-      & Built-in ph- and hp-adaptive grid refinement \\
-    \hline
-    Multi-phase trajectories
-      & Manual; user concatenate \texttt{InfiniteModel}s and link
-      & Native \texttt{Trajectory} and \texttt{Phase} with linkage constraints \\
-    \hline
-    Multidisciplinary coupling
-      & Not supported; pure infinite-dim model
-      & Native MDO coupling with implicit/explicit components, cyclic groups, nonlinear/linear sub-solvers \\
-    \hline
-    NLP solvers
-      & IPOPT, MadNLP, Knitro, SNOPT and any MOI-compatible solver
-      & IPOPT, SNOPT, scipy via pyOptSparse \\
-    \hline
-    GPU acceleration
-      & Yes via ExaModels + MadNLP (SIMD on GPU)
-      & Not native \\
-    \hline
-    Parallelism
-      & Native multithreading, Distributed, MPI
-      & MPI across components \\
-    \hline
-    Sparse total Jacobian
-      & Yes, from MOI expression graph
-      & Yes, MAUD assembles sparse total Jacobian from component partials \\
-    \hline
-    Maturity / community
-      & JuMP mature in OR / energy; InfiniteOpt newer, smaller user base
-      & NASA-backed, large aerospace user base \\
-    \hline
-    Learning curve for OCP only
-      & Low; close to mathematical formulation
-      & Higher; OpenMDAO component model required even for single-discipline OCP \\
-    \hline
-  \end{tabular}
-  \caption{Comparison of Julia (JuMP + InfiniteOpt) and Python (OpenMDAO + dymos) stacks for optimal control problem formulation.}
-  \label{tab:julia-vs-python-ocp}
-\end{table}
+%\begin{table}[h]
+%  \centering
+%  \small
+%  \begin{tabular}{|p{4.5cm}|p{4.5cm}|p{4.5cm}|}
+%    \hline
+%    \textbf{Aspect} & \textbf{Julia + JuMP + InfiniteOpt} & \textbf{Python + OpenMDAO + dymos} \\
+%    \hline
+%    Language / runtime
+%      & Julia, JIT-compiled, no GIL
+%      & Python, interpreted, GIL (NumPy releases) \\
+%    \hline
+%    License
+%      & MIT (all components)
+%      & Apache 2.0 \\
+%    \hline
+%    Algebraic modelling style
+%      & Macro-based (\texttt{@variable}, \texttt{@constraint}, \texttt{@objective})
+%      & Component graph (\texttt{ExplicitComponent}, \texttt{Group}, promotes/connects) \\
+%    \hline
+%    Derivatives
+%      & AD via MathOptInterface; sparsity from expression graph
+%      & MAUD unified derivatives; mix analytic / AD / FD / complex-step per component, framework chains them \\
+%    \hline
+%    Transcription methods
+%      & Finite difference (Forward, Central, Backward); orthogonal collocation on finite elements with Gauss--Lobatto nodes only
+%      & Radau pseudospectral, Gauss--Lobatto, explicit shooting, ExplicitShooting RK \\
+%    \hline
+%    Mesh / grid refinement
+%      & None built-in; user must re-solve on refined supports
+%      & Built-in ph- and hp-adaptive grid refinement \\
+%    \hline
+%    Multi-phase trajectories
+%      & Manual; user concatenate \texttt{InfiniteModel}s and link
+%      & Native \texttt{Trajectory} and \texttt{Phase} with linkage constraints \\
+%    \hline
+%    Multidisciplinary coupling
+%      & Not supported; pure infinite-dim model
+%      & Native MDO coupling with implicit/explicit components, cyclic groups, nonlinear/linear sub-solvers \\
+%    \hline
+%    NLP solvers
+%      & IPOPT, MadNLP, Knitro, SNOPT and any MOI-compatible solver
+%      & IPOPT, SNOPT, scipy via pyOptSparse \\
+%    \hline
+%    GPU acceleration
+%      & Yes via ExaModels + MadNLP (SIMD on GPU)
+%      & Not native \\
+%    \hline
+%    Parallelism
+%      & Native multithreading, Distributed, MPI
+%      & MPI across components \\
+%    \hline
+%    Sparse total Jacobian
+%      & Yes, from MOI expression graph
+%      & Yes, MAUD assembles sparse total Jacobian from component partials \\
+%    \hline
+%    Maturity / community
+%      & JuMP mature in OR / energy; InfiniteOpt newer, smaller user base
+%      & NASA-backed, large aerospace user base \\
+%    \hline
+%    Learning curve for OCP only
+%      & Low; close to mathematical formulation
+%      & Higher; OpenMDAO component model required even for single-discipline OCP \\
+%    \hline
+%  \end{tabular}
+%  \caption{Comparison of Julia (JuMP + InfiniteOpt) and Python (OpenMDAO + dymos) stacks for optimal control problem formulation.}
+%  \label{tab:julia-vs-python-ocp}
+%\end{table}
 
