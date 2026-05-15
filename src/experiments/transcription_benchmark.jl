@@ -251,9 +251,14 @@ function _summary_table(summary)
     )
 end
 
-function _write_resized_tex(path::String, table)
+function _header_with_label(table::NamedTuple, var_label::String)
+    return [k === :var ? var_label : String(k) for k in keys(table)]
+end
+
+function _write_resized_tex(path::String, table, header)
     buf = IOBuffer()
-    pretty_table(buf, table; backend=:latex, formatters=[_fmt_float])
+    pretty_table(buf, table; backend=:latex, column_labels=[header],
+        formatters=[_fmt_float])
     body = String(take!(buf))
     body = replace(body,
         "\\begin{tabular}" => "\\begin{longtable}",
@@ -266,21 +271,25 @@ function _write_resized_tex(path::String, table)
 end
 
 function export_results(results, summary; output_dir::String="results/benchmark",
-    show_terminal::Bool=true)
+    show_terminal::Bool=true, var_label::String="variant")
 
     mkpath(output_dir)
     results_table = _results_table(results)
     summary_table = _summary_table(summary)
+    results_header = _header_with_label(results_table, var_label)
+    summary_header = _header_with_label(summary_table, var_label)
 
     if show_terminal
         println("\n=== per-case results ===")
-        pretty_table(results_table; formatters=[_fmt_float])
-        println("\n=== variant summary ===")
-        pretty_table(summary_table; formatters=[_fmt_float])
+        pretty_table(results_table; column_labels=[results_header],
+            formatters=[_fmt_float])
+        println("\n=== $(var_label) summary ===")
+        pretty_table(summary_table; column_labels=[summary_header],
+            formatters=[_fmt_float])
     end
 
-    _write_resized_tex(joinpath(output_dir, "results.tex"), results_table)
-    _write_resized_tex(joinpath(output_dir, "summary.tex"), summary_table)
+    _write_resized_tex(joinpath(output_dir, "results.tex"), results_table, results_header)
+    _write_resized_tex(joinpath(output_dir, "summary.tex"), summary_table, summary_header)
 
     return joinpath(output_dir, "results.tex"), joinpath(output_dir, "summary.tex")
 end

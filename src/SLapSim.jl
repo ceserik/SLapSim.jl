@@ -5,6 +5,7 @@ using LinearAlgebra
 using StaticArrays
 using JuMP, Ipopt, Zygote, DiffOpt
 using MadNLP, MadNLPGPU
+using UnoSolver
 using CUDA
 using HSL_jll
 using ControlSystemsBase
@@ -70,7 +71,7 @@ export detect_dark_theme!, apply_slapsim_theme!, setup_plot_theme!
 export Result_interpolation, find_optimal_trajectory_adaptive, plotTrackStates
 # New experiment API
 export Experiment, Discipline, Open, Closed
-export SolverBackend, IpoptBackend, MadNLPBackend
+export SolverBackend, IpoptBackend, MadNLPBackend, UnoBackend
 export AnalysisConfig, GlobalConstraint, EnergyBudget, MeshRefinementConfig
 export build_model, run_experiment!, run_analysis!
 export apply_boundary_conditions!, apply_global!,getSegmentErrors, getNodeErrors

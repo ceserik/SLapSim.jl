@@ -104,6 +104,22 @@ Base.@kwdef mutable struct MadNLPBackend <: SolverBackend
     attributes::Dict{String,Any} = Dict{String,Any}()
 end
 
+"""
+    UnoBackend(; attributes=Dict())
+
+Uno SQP-family configuration. Every Uno option lives in `attributes`. Pick the
+algorithm via the `"preset"` attribute, e.g. `"filtersqp"`, `"funnelsqp"`,
+`"byrd"`, or `"ipopt"`. Example:
+    UnoBackend(attributes = Dict(
+        "preset"        => "filtersqp",
+        "max_iterations"=> 1000,
+        "tolerance"     => 1e-6,
+    ))
+"""
+Base.@kwdef mutable struct UnoBackend <: SolverBackend
+    attributes::Dict{String,Any} = Dict{String,Any}()
+end
+
 
 # ---------------------------------------------------------------------------
 # Mesh refinement configuration.
@@ -190,6 +206,14 @@ end
 
 function build_model(b::MadNLPBackend)
     model = Model(MadNLP.Optimizer)
+    for (k, v) in b.attributes
+        set_attribute(model, k, v)
+    end
+    return model
+end
+
+function build_model(b::UnoBackend)
+    model = Model(UnoSolver.Optimizer)
     for (k, v) in b.attributes
         set_attribute(model, k, v)
     end
