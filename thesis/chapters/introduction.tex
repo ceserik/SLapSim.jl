@@ -53,7 +53,7 @@ this thesis come from computational and user experience form my previous tool.
 
 \section{Structure of thesis}
 First part of thesis with vehicle modelling in the context of optimal control.
-A universal model strcuture inspired by \cite{brown_engineering_2006} is
+A universal model structure inspired by \cite{brown_engineering_2006} is
 presented. Then the theory of optimal control idem spat ja neviem co pisat uz.
 \begin{enumerate}
 	\item ODE models of cars
@@ -67,28 +67,25 @@ presented. Then the theory of optimal control idem spat ja neviem co pisat uz.
 \end{enumerate}
 
 \section{Literature overview/ survey of laptime simulators}
-Early attempts at lap-time computation started in 1950's. In 1970s computers
-became commonly used to solve MLTS using Quasi Steady State methods (QSS),
-these methods are what most race engineers think of when laptime simulaiton is
-mentioned. Here a car is modeled as point mass moving along predefined trajectory
-with lateral and longitudinal acclerations limited by steady state performance
-envelope\cite{Roland1971}, transient dynamics such as yaw acceleration are
-neglected. Formulations of MLTS as OCP appeard in late 1980s
-\cite{Hatwal1986SomeIS}. Article which summarizes history and state of the art
-methods of computing MLTS is
-\cite{massaroMinimumlaptimeOptimisationSimulation2021}. Article
-\cite{perantoniOptimalControlFormula2014} is widely regarded as the reference
-work, many parts of this thesis are taken from it. This article defines the
-track model, change of independent variable from time to distance traveled, and
-a twin-track Formula 1 model, with some parameters as decision variables. It is
-a very good description of most modern MLTS solving methods using NLP. Methods
-of computing minimum lap time is still active topic in race engineering, as for
-determining better setup of a race car for a given track, on a given day yieds
-significant advantage. With more precise model the accuracy of setup improves,
-but also the computational time increases. In
-\cite{ComputationallyEfficientFramework} authors deal with computationally
-efficiency of computing minimum lap-time, by using sequential convex
-programming. SEM SKOPIROVAT VECI Z BAKALRKY ZO STATE OF THE ART OVERVIEW
+
+
+Lap-time prediction dates back to the 1950s. Computers became common in the
+1970s and quasi-steady-state (QSS) methods became the standard approach for
+MLTS.\@ QSS is still what most race engineers mean by ``lap-time simulation''.
+In QSS the vehicle is a point mass on a fixed racing line, with lateral and
+longitudinal accelerations bounded by a steady-state performance
+envelope~\cite{Roland1971}. Transient effects such as yaw acceleration are
+ignored. MLTS was first formulated as an optimal control problem in the late
+1980s~\cite{Hatwal1986SomeIS}. A survey of current methods is given
+in~\cite{massaroMinimumlaptimeOptimisationSimulation2021}. The work of Perantoni
+and Limebeer~\cite{perantoniOptimalControlFormula2014} is the main reference:
+it uses a track-fixed coordinate system, switches the independent variable from
+time to travelled distance, and applies the formulation to a twin-track
+Formula 1 model with some vehicle parameters as decision variables. Parts of
+this thesis build on it. MLTS is still an active research area because better
+predictions give measurable setup gains, but higher fidelity models cost more
+solver time. The authors of~\cite{ComputationallyEfficientFramework} use
+sequential convex programming to cut compute cost without losing accuracy.
 
 A very popular laptime simulator is OptimumLap from OptimumG
 \cite{OptimumLapOptimumG}, It is a free commercial tool advertised to achieve

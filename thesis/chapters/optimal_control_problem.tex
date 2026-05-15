@@ -28,9 +28,27 @@ a feed forward control vector along the trajectory is computed. This chapter
 deals with transcribing the continuos problem into discrete steps
 
 \subsection{Initial vlaue problem}
-\subsection{Forward backward pass}
+\subsection{Quasi Steady state solvers}
 DESCRIBE POPULAR LAPTIME SIMULATION METHOD THAT USES FORWARD AND BACKWARD PASS
 FOR A MODEL OF LOW COMPLEXITY
+This is the classic approach to minimum manuevering time problem, the issue is that the trajectory of vehicle on track is fixed and cannot be optimized.
+
+This tool is supoer simple byut in right hands it can be impressive be very powerrufl povedat ako calude zoptimumg s tym pracuje.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{../sync/massPointSteadyState/track.pdf}
+    \caption{Test track used for the forward/backward pass example.}
+    \label{fig:mass_point_track}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{../sync/massPointSteadyState/speed_profile.pdf}
+    \caption{Speed profile from forward and backward passes on a mass-point model. The realized speed is the pointwise minimum of the maximum speed envelope and both passes.}
+    \label{fig:mass_point_speed_profile}
+\end{figure}
+
+
 
 \section{Transcription methods}
 Transcription methods rewrite continuous (infinite-dimensional) OCP into finite-dimensional NLP.\@ That means representing the continuous trajectory of a state by values sampled at discrete points.
@@ -121,11 +139,15 @@ methods.\cite[p.~4]{raoSurveyNumericalMethods2010}. Implicit Runge Kutta methods
 only these.
 
 \subsection{Collocation methods}
-The objective of collocation method is to find a polynomial that approximates the solution of a boundary value problem along independent variable (most commonly time, in this thesis it is distance travelled along centerline). Collocation methods are a subset of implicit Runge Kutta methods.
-The main distinction between Runge Kutta methods and collocation, is that the result of collocation is always polynomial, that does not hold for general Runge Kutta method.
+\begin{quote}
+    The concept of collocation is old and universal in numerical analysis \ldots For ordinary differential equations it consists in searching for a polynomial of de-gree s whose derivative coincides ("co-locates") at s given points with the vectorfield of the differential equation \ldots
+    \cite[p.~224]{hairer}
+\end{quote}
 
-Collocation methods are based on theory of orthogonal polynomials
-%https://en.wikipedia.org/wiki/Classical_orthogonal_polynomials#Table_of_classical_orthogonal_polynomials
+
+Collocation methods approximate the solution of a boundary value problem by a piecewise polynomial in the independent variable (distance along the centerline). On each interval the polynomial is fixed by requiring it to satisfy the ODE exactly at $N$ chosen points --- the \emph{collocation nodes}.
+
+There are numerous ways to construct a collocation method, in optimal control the classic methods are those based on Legendre polynomial basis and Chebyshev I basis. Figure\ref{fig:transcription_layer} depics multiple ways of constructing collocation methods.
 
 \begin{figure}[H]
 \centering
@@ -171,15 +193,37 @@ Collocation methods are based on theory of orthogonal polynomials
 }
 
 \end{tikzpicture}
-\caption{Transcription layer: choice of orthogonal polynomial basis (top row), the resulting collocation point schemes derived from the Legendre basis (middle row), and the two equivalent algebraic formulations available for each scheme --- integral and differential form~\cite{garg_overview_nodate} (bottom row). Vertical dots under the other bases indicate that they admit their own families of quadrature schemes, which are not expanded here.}
+\caption{Collocation transcription methods}
 \label{fig:transcription_layer}
 \end{figure}
 
 
-\begin{quote}
-    The concept of collocation is old and universal in numerical analysis \ldots For ordinary differential equations it consists in searching for a polynomial of de-gree s whose derivative coincides ("co-locates") at s given points with the vectorfield of the differential equation \ldots
-    \cite[p.~224]{hairer}
-\end{quote}
+Collocation is a subset of implicit Runge-Kutta methods. The distinguishing property is that the result is a polynomial of known degree on every interval. A general RK method only yields state values at the stage points.
+
+
+
+
+
+Node choice is not arbitrary. To keep the integration error small the nodes are taken as roots of orthogonal polynomials. In optimal control Legendre polynomials are standard. Let $P_N(\tau)$ denote the Legendre polynomial of degree $N$. Three node families are commonly used~\cite{garg_overview_nodate}:
+\begin{itemize}
+    \item Legendre-Gauss: roots of $P_N(\tau)$ no endpoints.
+    \item Legendre-Gauss-Radau: roots of $P_{N-1}(\tau) + P_N(\tau)$ one endpoint.
+    \item Legendre-Gauss-Lobatto: roots of $\dot{P}_{N-1}(\tau)$ both endpoints.
+\end{itemize}
+
+These are the same nodes used by Gauss quadrature, the numerical approximation of a definite integral:
+\begin{equation}
+    \int_{-1}^{1} f(\tau)\,\mathrm{d}\tau \approx \sum_{i=0}^{n} w_i \, f_i,
+    \label{eq:gauss_quadrature}
+\end{equation}
+where $w_i$ are the quadrature weights and $f_i = f(\tau_i)$ are samples at the nodes. Because collocation and quadrature share nodes, quadrature of the collocation polynomial is exact up to the appropriate polynomial degree.
+
+%https://en.wikipedia.org/wiki/Classical_orthogonal_polynomials#Table_of_classical_orthogonal_polynomials
+
+
+
+
+
 
 Collocation methods are the core of this thesis, I have implemented  Gauss radau, gauss, gauss lobatto. Collocation methods differ in points at which the derivative of polynomial coincides ("co-locates) with the vector field of differential equation. Commonly used methods in optimal control are radau, lobatto, legendre. They can be written in integral and differential form\cite{garg_overview_nodate}. Collocatiom methods in this thesis are based on Framework described in\cite{gargUnifiedFrameworkNumerical2010}
 

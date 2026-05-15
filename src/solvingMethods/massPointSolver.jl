@@ -37,7 +37,7 @@ function massPointSolver(car::Car, track::Track)
 
 
     ## plotting
-    velocityfig = Figure(size=(800, 600))
+    velocityfig = Figure(size=(500, 300))
     ax1 = Axis(velocityfig[1, 1],
         xlabel="Distance [m]",
         ylabel="Velocity [m/s]",
@@ -58,4 +58,5 @@ function massPointSolver(car::Car, track::Track)
     axislegend(ax1, position=:lt)
     display(GLMakie.Screen(), velocityfig)  # Force new window
 
+    return velocityfig, actualSpeed, vxMax, vForward, vBackward
 end

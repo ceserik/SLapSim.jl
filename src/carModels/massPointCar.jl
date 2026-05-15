@@ -26,7 +26,6 @@ function massPointCar(car::Car,track::Track,k::Int64, optiModel::Union{Nothing, 
 
     maxMotorForce = 6507 #calculated for ctu25 should be added to inputs, vx torque characerisitic
     FxPowerMax = maxPower/(vx)
-    #print(Fy)
     FxMaxsquared = max((Fz*μ + m*9.81*μ)^2 - Fy^2,0)
     # Add optimization constraints if model is provided
 
@@ -42,9 +41,6 @@ function massPointCar(car::Car,track::Track,k::Int64, optiModel::Union{Nothing, 
         inputForce = min(inputForce,maxMotorForce)
         inputForce = min(inputForce,FxPowerMax)
     end         
-
-   # lessContraint((Fy/maxMotorForce)^2 + (inputForce/maxMotorForce)^2 ,((Fz*μ + m*9.81*μ)/maxMotorForce)^2,optiModel)
-   # lessContraint(inputForce/FxPowerMax , FxPowerMax/FxPowerMax,optiModel)
 
         dstates =  [(inputForce -(1/2 *rho*CD*vx^2))/m 0  0    0     0 0]
     return dstates

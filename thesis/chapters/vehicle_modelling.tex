@@ -1,11 +1,7 @@
 \chapter{Vehicle and Track modelling framework}
-In assignemntof theis is 
-
-A key aspect will be the selection of
-a sufficiently accurate yet computationally tractable model of the vehicle 
-
+Goal of the thesis is to select a sufficiently accurate yet computationally tractable model of the vehicle 
 There is not one model of vehicle that would fit all requirements of race
-engineers. For each problems, a different complexity of the vehicle model is
+engineers. For each problem, a different complexity of the vehicle model is
 sufficient, e.g.for analysis of power limit algorithm, the lateral dynamics of
 the vehicle can be heavily simplified and simple transcription and solving
 methods yield sufficient accuracy within a fraction of a second, this is described in \ref{}. Whereas
@@ -525,7 +521,7 @@ fields evaluated at each node:
 	\item friction coefficient $\mu(s)$,
 	\item inclination $\phi(s)$.
 \end{itemize}
-Each field is interpolated by a cubic spline in the arc length $s$, yielding $C^2$-continuous fields along the entire trajectory, no nono no this did not work well, loinear interpolation was better. Obtaining suitable track for optimization from GPS is non-trivial, simple methods lead to noisy data, which then corrupts the optimization result. Therefore smoothing method described in \cite{perantoniOptimalControlFormula2014} has been used.
+Each field is linearly interpolated between the segments. Obtaining suitable track for optimization from GPS is non-trivial, simple methods lead to noisy data, which then corrupts the optimization result. Therefore, smoothing method described in \cite{perantoniOptimalControlFormula2014} has been used.
 
 \section{Change of independent variable, time to path}
 When differential equations for vehicle movement are stated. For use in lap
