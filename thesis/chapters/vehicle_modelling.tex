@@ -29,7 +29,7 @@ motor
 			arr/.style={->, thick}
 		]
 
-		\node[box] (wa) {Wheel\\Assembly};
+		\node[box] (wa) {Wheel\\Pivot};
 
 		% Top-left input: omega, v
 		\draw[arr] (-3.5, 0.5) -- node[above] {$\symbf{\omega},\, \symbf{v}$} ($(wa.west)+(0,0.5)$);
@@ -44,7 +44,7 @@ motor
 		\draw[arr] (3.5, -0.5) -- node[below] {$\symbf{F}_{tire}$} ($(wa.east)+(0,-0.5)$);
 
 	\end{tikzpicture}
-	\caption{Wheel Pivot component: velocity inputs (top-left) transform to tire frame (top-right), tire forces (bottom-right) transform to forces and moments on CoG (bottom-left).}
+	\caption{Wheel Pivot}
 	\label{fig:wheel_pivot}
 \end{figure}
 
@@ -78,7 +78,7 @@ model is 3 speeds and 3 angles, output is 3 forces.
 		\draw[arr] ($(tire.east)+(0,-0.5)$) -- (3, -0.5) -- (3, -2.2) -- node[below] {$\symbf{F}_{tire}$} (-4, -2.2);
 
 	\end{tikzpicture}
-	\caption{Tire component: tire-frame velocity $\symbf{v}_{tire}$ and drive torque $T_{in}$ on the left, normal force $F_z$ from suspension on top, output is the tire force vector $\symbf{F}_{tire}$ consumed by the wheel pivot.}\label{fig:tire}
+	\caption{Tire component}\label{fig:tire}
 \end{figure}
 
 
@@ -88,14 +88,15 @@ notoriously difficult to model \cite{Yuki-2019}. Thus tires need to be modeled
 with great caution in mind. Not only are there many parameters, such as tire
 wear, tire temperature, road roughness, road wetness, tire pressure, etc., that
 affect the resultant forces, they are also constantly changing during the lap.
-Therefore they are difficult to measure and model precisely
+Therefore they are difficult to measure and model precisely TOTO SOM SKOPIROVAL Z BAKALRKY, V CLANKOCH SOM VIDEL DOSLOVNE KOPIROVANIE SEBA, MOZEM TO ROBIT JA?
+Implementation of specific models is conver in part III Implementation.
 \cite{ciglanskyAnalysisVehicleComponents}.
-\subsection{Linear tire}
-Simplest tire model. Tire is defined by friction ellipse and an angle at which
-the slip angle is highest
-\subsection{Pacejka}
-Pacejka tire uses
-\subsection{Extended Pacejka}
+%\subsection{Linear tire}
+%Simplest tire model. Tire is defined by friction ellipse and an angle at which
+%the slip angle is highest
+%\subsection{Pacejka}
+%Pacejka tire uses
+%\subsection{Extended Pacejka}
 \section{Chassis model}
 point mass with definition of wheel pivot points.
 \begin{equation}
@@ -116,7 +117,7 @@ point mass with definition of wheel pivot points.
 \end{equation}
 
 \section{Wheel Pivot model}
-Wheel pivot point is modelled as transformer. It defines the transformation of
+Wheel pivot point is modeled as transformer. It defines the transformation of
 CoG velocities into tire frame and then transforms tire forces and torque into
 CoG frame. Angular velocity and position vectors are formed from yaw rate
 $\dot{\psi}$ and the longitudinal distance $l_i$ of the axle from the center of
@@ -158,7 +159,7 @@ model. Forces are then rotated back to the pivot frame:
             arr/.style={->, thick}
         ]
 
-        \node[box] (wa) {Wheel\\Assembly};
+        \node[box] (wa) {Wheel\\Pivot};
 
         % Top input: steering angle delta_i (control)
         \draw[arr] (0, 2.2) -- node[right] {$\delta_i$} (wa.north);
@@ -176,7 +177,7 @@ model. Forces are then rotated back to the pivot frame:
         \draw[arr] (4.5, -0.6) -- node[below] {$\symbf{F}_{tire}$} ($(wa.east)+(0,-0.6)$);
 
     \end{tikzpicture}
-    \caption{Wheel Pivot inputs and outputs. Steering angle $\delta_i$ is a control input. CoG velocity $\symbf{v}$ and angular velocity $\symbf{\omega}$ are mapped to tire-frame velocity $\symbf{v}_{t_i}$, which is consumed by the tire model. Tire force vector $\symbf{F}_{tire}$ is rotated and translated into forces $\symbf{F}_{\!CoG}$ and moment $\symbf{M}_{\!CoG}$ acting on the chassis.}\label{fig:wheel_pivot_io}
+    \caption{Wheel Pivot component}\label{fig:wheel_pivot_io}
 \end{figure}
 
 \section{Aerodynamics model}
@@ -227,14 +228,14 @@ listed in Table~\ref{tab:aero-params}.
         \draw[arr] ($(aero.east)+(0,-0.5)$) -- node[below] {$F_\text{down}$} (4, -0.5);
 
     \end{tikzpicture}
-    \caption{Aerodynamics component: longitudinal velocity $v_x$ maps to drag force $F_\text{drag}$ and downforce $F_\text{down}$.}\label{fig:aero}
+    \caption{Aerodynamics component}\label{fig:aero}
 \end{figure}
 
 This model is sufficient when vehicle is driving relatively straight, that
 means lateral acceleration is roughly zero. With high lateral acceleration this
-model is no longer valid, becasue air speeds are different on left and right
+model is no longer valid, because air speeds are different on left and right
 part of car and also the car starts rolling- one side of vehicle is closer than
-the other, crating inbalacne of forces.
+the other, creating imbalance of lift forces.
 
 \section{Suspension model}
 Job of suspension in car is to maintain tire contact, distribute the load from
@@ -273,7 +274,7 @@ nedoruceny problem.
         \draw[arr] ($(sus.east)+(0,-1.2)$) -- node[below] {$F_{z,RR}$} (4.5, -1.2);
 
     \end{tikzpicture}
-    \caption{Simple suspension component: downforce $F_\text{down}$, center of pressure $\mathrm{CoP}$ and chassis geometry (mass $m$, CoG offsets $x_{CoG},y_{CoG}$) map to the four wheel normal loads $F_{z,FL},F_{z,FR},F_{z,RL},F_{z,RR}$.}\label{fig:suspension}
+    \caption{Suspension component}\label{fig:suspension}
 \end{figure}
 
 \section{Gearbox model}
@@ -318,7 +319,7 @@ gearbox is the textbook example of transformer and resistive element.
         \draw[arr] (4, -0.5) -- node[below] {$\omega_\text{out}$} ($(gb.east)+(0,-0.5)$);
 
     \end{tikzpicture}
-    \caption{Gearbox component: motor-side torque $T_\text{in}$ enters from the left, wheel-side angular velocity $\omega_\text{out}$ enters from the right; outputs are the geared-up torque $T_\text{out}$ to the wheel and motor-side angular velocity $\omega_\text{in}$ to the motor.}\label{fig:gearbox}
+    \caption{Gearbox component}\label{fig:gearbox}
 \end{figure}
 
 \section{Accumulator model}
@@ -385,32 +386,26 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
-			outerbox/.style={rectangle, draw, thick, minimum width=10cm, minimum height=4.5cm, align=center},
-			innerbox/.style={rectangle, draw, thick, minimum width=6cm, minimum height=1.2cm, align=center},
+			outerbox/.style={rectangle, draw, thick, minimum width=7cm, minimum height=3.5cm, align=center},
+			innerbox/.style={rectangle, draw, thick, minimum width=5cm, minimum height=1cm, align=center, font=\small},
 			arr/.style={->, thick},
 		]
 
-		% Outer Car ODE box
 		\node[outerbox] (outer) at (0,0) {};
-		\node[anchor=north] at (outer.north) {\textbf{Car ODE}};
+		\node[anchor=north, font=\small\bfseries] at (outer.north) {Car ODE};
 
-		% Inner MAPPING box
-		\node[innerbox] (mapping) at (0, 0.8) {MAPPING\\Control \& States $\to$ parameter};
+		\node[innerbox] (mapping) at (0, 0.6) {MAPPING\\Control \& States $\to$ parameter};
+		\node[innerbox] (carode)  at (0,-0.9) {Parametrizable Car ODE};
 
-		% Inner Parametrizable Car ODE box
-		\node[innerbox] (carode) at (0, -0.9) {Parametrizable Car ODE};
+		\draw[arr] (mapping.south) -- (carode.north) node[midway, right, font=\scriptsize] {Parameters};
 
-		% Arrow from MAPPING to Parametrizable Car ODE
-		\draw[arr] (mapping.south) -- (carode.north) node[midway, right] {Parameters};
-
-		% Inputs on the left
-		\node[anchor=east] (ctrl) at (-6.5,  0.8) {Control Vector};
-		\node[anchor=east] (state) at (-6.5, 0.2) {State Vector};
+		% Inputs hug the outer box
+		\node[anchor=east, font=\small] (ctrl)  at (-4.6,  0.9) {Control Vector};
+		\node[anchor=east, font=\small] (state) at (-4.6,  0.3) {State Vector};
 		\draw[arr] (ctrl.east)  -- (mapping.west |- ctrl.east);
 		\draw[arr] (state.east) -- (mapping.west |- state.east);
 
-		% Output on the right
-		\node[anchor=west] (out) at (5.2, -0.9) {$\mathrm{d}x/\mathrm{d}t$};
+		\node[anchor=west, font=\small] (out) at (4.6, -0.9) {$\mathrm{d}x/\mathrm{d}t$};
 		\draw[arr] (carode.east) -- (out.west);
 
 	\end{tikzpicture}
@@ -418,9 +413,27 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 	\label{fig:generic_car}
 \end{figure}
 
-\subsection{Mass Point}
-\subsection{Single track}
 
+\subsection{Mass Point Quasi Steady State model}
+Simple and useful car model can be made using these equations
+\begin{align}
+    F_z &= \tfrac{1}{2}\, \rho\, C_L\, v_x^2, \\
+    F_y &= m\, v_x^2\, c, \\
+    F_{x,\mathrm{pwr}} &= \frac{P_{\max}}{v_x}, \\
+    F_{x,\max}^2 &= \max\!\left( \bigl[(F_z + m g)\mu\bigr]^2 - F_y^2,\; 0 \right), \\
+    F_x^2 + F_y^2 &\le \bigl[(F_z + m g)\, \mu\bigr]^2, \\
+    |F_x| &\le \min\!\bigl(F_{\mathrm{mot,max}},\; F_{x,\mathrm{pwr}}\bigr), \\
+    \dot{v}_x &= \frac{F_x - \tfrac{1}{2}\, \rho\, C_D\, v_x^2}{m}.
+    \label{QSS_model}
+\end{align}
+Where $\rho$ is air density $C_L$ is lift coefficient $v_x$ is longitudinal speed, $m$ is mass, $c$ is curvature of track in current point, $P_{max}$ is maximum power of motor, $\mu$ is friction coefficient, $C_D$ is drag coefficient.
+
+This model has only one state $v_x$ which makes it possible to use specialized solvers. Variations of this model, where for example $P_{max}$ is a lookup table, the grip does not scale linearly with downforce etc. are commonly used in motor-sport.
+
+
+
+\subsection{Single track}
+A more complex model and useful model is single-track. In this model the suspension effects are neglected. Singletrack is still considered to be simplified model and is used most commonly when computation limits are reached.
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
@@ -443,7 +456,7 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 		\end{scope}
 
 		% CoG
-		\node[box, minimum width=2.5cm, minimum height=1.5cm] (cog) at (0,0) {CoG\\$m, I_z$};
+		\node[box, minimum width=2.5cm, minimum height=1.5cm] (cog) at (0,0) {CoG};
 
 		% Front tire (top = front of vehicle)
 		\node[box] (tf) at (0, 5) {Tire\\Front};
@@ -464,7 +477,7 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 		\node[smallbox, minimum width=2cm] (mgr) at (3.5, -5) {Motor +\\Gearbox};
 
 		% Aero
-		\node[box] (aero) at (-4, 0) {Aero};
+		\node[box] (aero) at (-4, 0) {Aero + static \\ suspension};
 
 		% CoG <-> Front WA (velocity up, force down)
 		\draw[arr] ($(cog.north)+(-0.3,0)$) -- node[left, font=\scriptsize] {$\symbf{v},\symbf{\omega}$} ($(waf.south)+(-0.3,0)$);
@@ -499,15 +512,106 @@ the optimisation is finished, see Section~\ref{sec:adjoint}.
 		\draw[arr] (-3, 5) -- node[above, font=\scriptsize] {$\delta$} (tf.west);
 
 		% States out of CoG
-		\draw[arr] (cog.east) -- node[above, font=\scriptsize] {$\symbf{x} = [v_x,\, v_y,\, \psi,\, \omega_z]^T$} (5.5, 0);
+		\draw[arr] (cog.east) -- node[above, font=\scriptsize] {$\symbf{x} = [v_x,\, v_y,\, \dot\psi,\, \psi]^T$} (5.5, 0);
 
 	\end{tikzpicture}
 	\caption{Single-track (bicycle) model computational graph. Velocity flows from CoG through wheel assemblies to tires, forces flow back. Motors provide torque through gearboxes, aerodynamics provides drag and normal forces.}
 	\label{fig:singletrack}
 \end{figure}
 
-\subsection{Formula Student twin track}
-\subsection{Formula Electric twin track}
+\subsection{Twintrack model}
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+			box/.style={rectangle, draw, thick, fill=white, minimum width=1.7cm, minimum height=0.9cm, align=center, font=\scriptsize},
+			smallbox/.style={rectangle, draw, fill=white, minimum width=1.4cm, minimum height=0.7cm, align=center, font=\tiny},
+			arr/.style={->, thick},
+		]
+
+		\begin{scope}[on background layer]
+			\fill[gray!12, draw=gray!40, line width=0.4pt, rounded corners=22pt]
+				(-4.0, -6) rectangle (4.0, 5.5);
+			\begin{scope}[rotate around={20:(-3,5)}]
+				\fill[gray!45, draw=gray!60, rounded corners=6pt] (-3.6, 3.2) rectangle (-2.4, 6.8);
+			\end{scope}
+			\begin{scope}[rotate around={20:(3,5)}]
+				\fill[gray!45, draw=gray!60, rounded corners=6pt] (2.4, 3.2) rectangle (3.6, 6.8);
+			\end{scope}
+			\fill[gray!45, draw=gray!60, rounded corners=6pt] (-3.6, -6.8) rectangle (-2.4, -3.2);
+			\fill[gray!45, draw=gray!60, rounded corners=6pt] (2.4, -6.8) rectangle (3.6, -3.2);
+		\end{scope}
+
+		% CoG
+		\node[box, minimum width=2.4cm, minimum height=1.4cm] (cog) at (0,0) {CoG};
+
+		% Wheel pivots
+		\node[box] (wafl) at (-3, 2.5) {Wheel Pivot\\FL};
+		\node[box] (wafr) at ( 3, 2.5) {Wheel Pivot\\FR};
+		\node[box] (warl) at (-3,-2.5) {Wheel Pivot\\RL};
+		\node[box] (warr) at ( 3,-2.5) {Wheel Pivot\\RR};
+
+		% Tires
+		\node[box] (tfl) at (-3, 5) {Tire FL};
+		\node[box] (tfr) at ( 3, 5) {Tire FR};
+		\node[box] (trl) at (-3,-5) {Tire RL};
+		\node[box] (trr) at ( 3,-5) {Tire RR};
+
+		% Motors
+		\node[smallbox] (mgfl) at (-5.5, 5) {Motor+GB\\FL};
+		\node[smallbox] (mgfr) at ( 5.5, 5) {Motor+GB\\FR};
+		\node[smallbox] (mgrl) at (-5.5,-5) {Motor+GB\\RL};
+		\node[smallbox] (mgrr) at ( 5.5,-5) {Motor+GB\\RR};
+
+		% Aero (left) and Suspension (right)
+		\node[box] (aero) at (-7, 0) {Aero};
+		\node[box] (susp) at ( 7, 0) {Suspension};
+
+		% CoG <-> wheel pivots
+		\foreach \wp in {wafl, wafr, warl, warr}{%
+			\draw[arr] (cog) -- (\wp);
+			\draw[arr] (\wp) -- (cog);
+		}
+
+		% Wheel pivot <-> tire
+		\draw[arr] (wafl) -- (tfl); \draw[arr] (tfl) -- (wafl);
+		\draw[arr] (wafr) -- (tfr); \draw[arr] (tfr) -- (wafr);
+		\draw[arr] (warl) -- (trl); \draw[arr] (trl) -- (warl);
+		\draw[arr] (warr) -- (trr); \draw[arr] (trr) -- (warr);
+
+		% Motors -> tires
+		\draw[arr] (mgfl.east) -- node[above, font=\tiny] {$T_{out}$} (tfl.west);
+		\draw[arr] (mgfr.west) -- node[above, font=\tiny] {$T_{out}$} (tfr.east);
+		\draw[arr] (mgrl.east) -- node[above, font=\tiny] {$T_{out}$} (trl.west);
+		\draw[arr] (mgrr.west) -- node[above, font=\tiny] {$T_{out}$} (trr.east);
+
+		% Aero -> CoG
+		\draw[arr] (aero.east) -- node[above, font=\tiny] {$F_{drag}, F_{lift}$} (cog.west);
+
+		% Suspension <-> all 4 wheel pivots (bidirectional: F_susp into pivot, displacement back)
+		\foreach \wp in {wafl, wafr, warl, warr}{%
+			\draw[arr] (susp) -- (\wp);
+			\draw[arr] (\wp) -- (susp);
+		}
+
+		% Steering
+		\draw[arr] (-5, 6.5) -- node[above, font=\tiny] {$\delta_{FL}$} (tfl.north west);
+		\draw[arr] ( 5, 6.5) -- node[above, font=\tiny] {$\delta_{FR}$} (tfr.north east);
+
+		% State vector — straight down from CoG
+		\node[below=2.2cm of cog, font=\scriptsize, align=center] (statevec)
+			{$\symbf{x} = [v_x,\, v_y,\, \dot\psi,\, \psi,\,]^T$};
+		\draw[arr] (cog.south) -- (statevec.north);
+
+	\end{tikzpicture}
+	\caption{Twin-track model. Velocity flows from CoG through wheel pivots to tires; tire forces flow back. Motors deliver torque through gearboxes. Aerodynamics acts on the chassis; suspension exchanges loads and displacements with each wheel pivot. The chassis state $\symbf{x}$ is exported below the CoG.}
+	\label{fig:twintrack}
+\end{figure}
+
+
+
+
+
+
 
 \section{Track modeling}
 Track is sampled at discrete arc length nodes $s_i$ and stored as a set of
@@ -525,21 +629,26 @@ Each field is linearly interpolated between the segments. Obtaining suitable tra
 
 \section{Change of independent variable, time to path}
 When differential equations for vehicle movement are stated. For use in lap
-time simulation it is benefecial to describe the car states not in time but in
+time simulation it is beneficial to describe the car states not in time but in
 distance traveled. This introduces connection with location on track and
-reduces number of state variables by one. This tranformation is described
-in\cite{perantoniOptimalControlFormula2014}.
+reduces number of state variables by one. This transformation is taken from
+\cite{perantoniOptimalControlFormula2014}.
 
 \begin{equation}
 	\varepsilon = \psi - \theta(s)
 \end{equation}
+where $\psi$ is car heading, $\theta(s)$ is heading of track at distance s,
+
 \begin{equation}
-	S_f = \frac{\mathrm{d}t}{\mathrm{d}s} = \frac{1 - n\, C(s)}{v_x \cos\varepsilon - v_y \sin\varepsilon}
+	S_f = \frac{\mathrm{d}t}{\mathrm{d}s} = \frac{1 - n\, C(s)}{v_x \cos\varepsilon - v_y \sin\varepsilon},
 	\label{time2path}
 \end{equation}
+
+ $n$ is vehicles distance from centerline , $C(s)$ is curvature of track at distance~s. The change in $n$ is defined as:
 \begin{equation}
-	\frac{\mathrm{d}n}{\mathrm{d}t} = v_x \sin\varepsilon + v_y \cos\varepsilon
+	\frac{\mathrm{d}n}{\mathrm{d}t} = v_x \sin\varepsilon + v_y \cos\varepsilon.
 \end{equation}
+Then the model can be transformed from time as independed variable to distance travelled along centerline$s$ as independent variable by equation:
 \begin{equation}
 	\frac{\mathrm{d}}{\mathrm{d}s}
 	\begin{pmatrix} v_x \\ v_y \\ \psi \\ \omega \\ n \\ t \end{pmatrix}
@@ -552,6 +661,43 @@ in\cite{perantoniOptimalControlFormula2014}.
 		\dot{\omega} \\
 		\dot{n}      \\
 		1
-	\end{pmatrix}
+	\end{pmatrix}.
 \end{equation}
 
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+			outermost/.style={rectangle, draw, thick, minimum width=9cm, minimum height=5cm, align=center},
+			outerbox/.style={rectangle, draw, thick, minimum width=6cm, minimum height=3.2cm, align=center},
+			innerbox/.style={rectangle, draw, thick, minimum width=4.6cm, minimum height=1cm, align=center, font=\small},
+			arr/.style={->, thick},
+		]
+
+		\node[outermost] (wrap) at (0,0) {};
+		\node[anchor=north, font=\small\bfseries] at (wrap.north) {Time$\to$Path transformation};
+
+		\node[outerbox] (outer) at (-1.0, -0.3) {};
+		\node[anchor=north, font=\small\bfseries] at (outer.north) {Car ODE};
+
+		\node[innerbox] (mapping) at (-1.0, 0.3)  {MAPPING\\Control \& States $\to$ parameter};
+		\node[innerbox] (carode)  at (-1.0,-1.1)  {Parametrizable Car ODE};
+
+		\draw[arr] (mapping.south) -- (carode.north) node[midway, right, font=\scriptsize] {Parameters};
+
+		\node[anchor=east, font=\small] (ctrl)  at (-5.1, 0.6) {Control Vector};
+		\node[anchor=east, font=\small] (state) at (-5.1, 0.0) {State Vector};
+		\draw[arr] (ctrl.east)  -- (mapping.west |- ctrl.east);
+		\draw[arr] (state.east) -- (mapping.west |- state.east);
+
+		\draw[arr] (carode.east) -- node[above, font=\scriptsize] {$\mathrm{d}\symbf{x}/\mathrm{d}t$} (wrap.east |- carode.east);
+
+		\node[anchor=west, font=\small] (out) at (4.6, -1.1) {$\mathrm{d}\symbf{x}/\mathrm{d}s$};
+		\draw[arr] (wrap.east |- out.west) -- (out.west);
+
+	\end{tikzpicture}
+	\caption{Generic car model wrapped in a time-to-path transformation layer}
+	%\label{fig:generic_car_t2p}
+	\label{fig:generic_car_t2p}
+\end{figure}
+
+Now the vehicle is modeled and placed on the track. Next step is to drive it as fast as possible.

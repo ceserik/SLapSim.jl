@@ -90,7 +90,7 @@ optimisation as decisions variables fixed to a value by contraints. This addes t
 
 \node[problem] (nlp) {NLP problem statement};
 
-\node[branch, below left=1cm and 2cm of nlp] (sqp) {SQP};
+\node[branch, below left=1cm and 2cm of nlp] (sqp) {Sequential Quadratic Programming};
 \node[branch, below right=1cm and 2cm of nlp, chosen] (ipm) {Interior point};
 
 \node[stagebox, below=1cm of sqp] (qp) {Quadratic model,\\linearized constraints,\\QP subproblem};
@@ -126,7 +126,7 @@ optimisation as decisions variables fixed to a value by contraints. This addes t
 \draw[->, very thick, green!60!black] (qn)   -- (newton);
 
 \end{tikzpicture}
-\caption{NLP solution flow with the methods used in this thesis highlighted in green: interior point with barrier reformulation (IPOPT, MadNLP), automatic differentiation provided by JuMP, and the quasi-Newton (L-BFGS) Hessian approximation used in IPOPT's \texttt{limited-memory} mode.}
+\caption{NLP solution flow with the methods used in this thesis highlighted in green}
 \label{fig:nlp_flowchart_chosen}
 \end{figure}
 
@@ -154,7 +154,7 @@ optimisation as decisions variables fixed to a value by contraints. This addes t
 \draw[->] (mesh.south) -- (ph.north);
 
 \end{tikzpicture}
-\caption{Mesh refinement layer with the strategies implemented in this thesis highlighted in green: $p$-refinement (raising the polynomial degree on fixed segments) and $h$-refinement (subdividing segments at fixed degree).}
+\caption{Mesh refinement layer with the strategies implemented in this thesis highlighted in green}
 \label{fig:mesh_refinement_chosen}
 \end{figure}
 
@@ -212,7 +212,7 @@ optimisation as decisions variables fixed to a value by contraints. This addes t
 \draw[->] (lgl.south) -- (lgl-diff.north);
 
 \end{tikzpicture}
-\caption{Transcription layer with the methods used in this thesis highlighted in green: Legendre basis with all three Gauss-type quadrature schemes (LG, LGR, LGL), where LG and LGR are implemented in differential form and LGL in integral form.}
+\caption{Transcription layer with the methods used in this thesis highlighted in green}
 \label{fig:transcription_chosen}
 \end{figure}
 

@@ -390,7 +390,10 @@ function plot_on_path(problem,itp,legend; axis=nothing, colormap=:turbo, colorsc
 
     created = false
     if axis === nothing
-        fig = Figure()
+        xr = extrema(carX); yr = extrema(carY)
+        data_aspect = (xr[2]-xr[1]) / (yr[2]-yr[1])
+        h_px = 200
+        fig = Figure(size = (round(Int, data_aspect * h_px) + 120, h_px))
         axis = Axis(fig[1,1], aspect = DataAspect())
         created = true
     end

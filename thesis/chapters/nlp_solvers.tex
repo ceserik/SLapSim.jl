@@ -1,7 +1,6 @@
 \chapter{Solvers for nonlinear programming}
 Once the objective function and constraints are created, the problem is passed
-to the NLP solver. Popular methods are Lagrange-Newton methods, these are sequential quadratic solvers and
-interior point solvers. These solvers are perhaps the most complex component used in this thesis, this chapter will cover them at high leve, as full theory is beyond the scope. A comprehensive overview of Lagrange-Newton methods is in article\cite{vanaret_implementing_2025}, where the methods are broken down into key algorithmic components and unifying framework of solvers is presented. Figure\ref{fig:wheel} shows the key algorithmic components.
+to the NLP solver. Commonly used methods are Lagrange-Newton methods, these are sequential quadratic solvers and interior point solvers. These solvers are perhaps the most complex component used in this thesis, this chapter will cover them at high level, as full theory is beyond the scope. A comprehensive overview of Lagrange-Newton methods is in article \cite{vanaret_implementing_2025}, where the methods are broken down into key algorithmic components and unifying framework of solvers is presented. Figure \ref{fig:wheel} demonstrates the complexity of these methods.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/wheel.png}
@@ -57,7 +56,7 @@ High level overview required for this thesis of Lagrange-Newton methods is in Fi
 \draw[->] (qn)   -- (newton);
 
 \end{tikzpicture}
-\caption{NLP solution flow: problem statement $\to$ solver family (SQP / IPM) $\to$ derivative computation $\to$ assembled Newton step.}
+\caption{NLP solution flow}
 \label{fig:nlp_flowchart}
 \end{figure}
 
@@ -158,33 +157,37 @@ computes the Newton step:
 \end{equation}
 Here $W_k = \nabla^2 \mathcal{L}(x_k, \lambda_k, z_k)$ is the Hessian of the Lagrangian, $A_k$ is the Jacobian of the equality constraints $c(x)$ and $\nabla f(x_k)$ is the gradient of the objective. The unknowns $d_x^k$, $d_\lambda^k$ and $d_z^k$ are the Newton steps in the primal variables, equality multipliers and bound multipliers; $\mu_j$ is the barrier parameter, which is driven to zero across outer iterations.
 
-There are numerous commercial and free algorithms to solve this. For smaller
+There are numerous commercial and free algorithms to solve this system of linear equation. For smaller
 systems it is LU decomposition, but for larger sparse problems a dedicated
 solver is a must. IPOPT is most commonly used with MUMPS \cite{MUMPS:1} solver
 which is free. There are several linear commercial solvers, Harwell Subroutine
 Library(HSL) offers ma27 ma87 ma97 \cite{hsl2011collection}.Panua technologies offers PARDISO solver
-\cite{pardiso}. Harwell Subroutine Library solvers are available free for
-academic usage and PARDISO solver is available free for academic usage. Latter solvers run on CPU, Nvidia has linear solver CuDSS\cite{nvidia_cudss} which runs on GPU.
-Linear solver are capable of multithreading on CPU, which needs to be explicitly
+\cite{pardiso}. Harwell Subroutine Library solvers and PARDISO solver limited to 2 cores are available free for
+academic usage. These solvers run on CPU, Nvidia has linear solver CuDSS\cite{nvidia_cudss} which runs on GPU.
+Linear solvers are capable of multi threading on CPU, which needs to be explicitly
 turned on. 
 
 \section{Sequential quadratic programming}
-Sequential quadratic programming is less commonly used for offline trajectory optimisation, usage of IPOPT prevails.
+Sequential quadratic programming is less commonly used for offline trajectory optimisation, usage of IPOPT prevails. celu sekciu prec
 
 \section{Calculation of derivatives}
-Major complication of many Lagrange-Newton methods is that they require gradient of the objective function, Jacobian of the constraints and Hessian of the Lagrangian to compute the Newton step. Computing these derivatives can be time intensive. The most universal method is finite differences, which means evaluating the function around the current point and estimating the derivative, this works even for a black box model, but the derivatives are not exact. When the model is available, symbolic differentiation can be used, however, the full symbolic expression is often too large to be evaluated effectively due to repeated chain and product rules. Automatic differentiation aims to solve the problems of previous methods, by applying the chain rule to the elementary operations of a function. A comprehensive review of automatic differentiation is given in~\cite{cortildBriefReviewAutomatic2023}.
+A significant computational burden of Lagrange-Newton methods is that they require gradient of the objective function, Jacobian of the constraints and Hessian of the Lagrangian to compute every Newton step. Computing these derivatives can be time intensive. The most universal method is finite differences, which means evaluating the function around the current point and estimating the derivative, this works even for a black box model, but the derivatives are not exact. When the model is available, symbolic differentiation can be used, however, the full symbolic expression is often too large to be evaluated effectively due to repeated chain and product rules. Automatic differentiation aims to solve the problems of previous methods, by applying the chain rule to the elementary operations of a function. A comprehensive review of automatic differentiation is given in~\cite{cortildBriefReviewAutomatic2023}.
 
 
 \section{Scaling and matrix conditioning}
 Common pitfall of nonlinear programming is poor scaling. This happens when the
 solver encounters variables, that are orders of magnitude apart, for example
-motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.~\cite[p.~21]{wachter_implementation_2006}. With improper scaling Lagrange multiplers in \ref{eq:Newton-Step} may become large when active contraints are nearly linearly dependant and this causes numerical difficulties. TOTO SOM CELKOM OPSIAL Z IPOPT PAPERU ALE NEVIEM AKO TO INAK NAPISAT VLSTNYIM SLOVAMI.
+motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.~\cite[p.~21]{wachter_implementation_2006}. With improper scaling, Lagrange multiplers in \ref{eq:Newton-Step} may become large when active contraints are nearly linearly dependant and this causes numerical difficulties. TOTO SOM CELKOM OPSIAL Z IPOPT PAPERU ALE NEVIEM AKO TO INAK NAPISAT VLSTNYIM SLOVAMI.
+
+Similar problems happen when nonsmooth function is used in the model, like abs(), max(), branching. These have to be replaced by smooth approximation or completely reformulated.
 %(MUMPS,MA97,PARDISO,...), that has to do matrix factorization every iteration,
 %to solve KKT linear system. If this linear system is ill conditioned due to
 %improper scaling, the factorization may be imprecise and search direction
 %   corrupted.
 
-Another thing which led to issues is constraints qualification. Linear
+
+
+A related issue is constraints qualification. Linear
 independence constraint qualification requires gradients of the active
 constraints to be linearly independent. If it is violated, the Jacobian of the constraints is rank deficient and linear solve may fail. This happens when for example one constraint is created twice.
 

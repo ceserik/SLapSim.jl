@@ -1,6 +1,7 @@
 \chapter{Frameworks for Optimal Control Problem Formulation}
 Process of solving optimal control problem has 3 parts. Problem defintion,
-solving of nonlinear program, optional mesh refinment
+solving of nonlinear program, optional mesh refinment. This chapter decribes framerowks in which the NLP problem can be created and solved. I have stated the theory, these are possible ways to implement the theory
+By frameowrk i mean programming language + AD tool + mesh refining
 
 \begin{figure}[h]
   \centering
@@ -30,13 +31,7 @@ is that:
 \end{quote}
 \cite{Falck2021}\cite{DymosDocs}
 This chapter is aobut tool that define the OCP, and supply derivatives of the problem, they cannot solve the problem by themselves.
-\section{GPOPS-II}
-GPOPS-II \cite{pattersonGPOPSIIMATLABSoftware2014} is perhaps the most advaced
-tool for otimal control, it was developed ad University of Florida by Michael
-patterson and Anil V. Rao. other tools allows defininng the problem, but
-GPOPS-II is a level higher. It also includes advanced mesh refinement
-strategies, multiple phase OCP and automatic scaling. For solving the problem
-it uses IPOPT or SNOPT. It interaces with MATLAB and C++, uses ADigator
+
 \cite{weinstein2017algorithm} for automatic differetnation. This tool is
 commercial and closed source. Implementaion in this thesis is heavily based on
 work of community from University of Florida.
@@ -57,6 +52,13 @@ in julia \cite{DoesAnybodyKnow2024}. But it has mesh refinemnt so that is good.
 \section{Acados}
 Acados is a modular open-source framework for fast embedded optimal control, developed at University of Freiburg~\cite{Verschueren2021}. It has C, Python, MATLAB + Simulink and Octave interface. This framework support generating C code. It is demonstrated by numerous real-world examples, such as drone racing with replanning, robot navigation in cluttered environment and many others \cite{acados_real_world_examples}.
 
+\section{GPOPS-II}
+GPOPS-II \cite{pattersonGPOPSIIMATLABSoftware2014} is perhaps the most advaced
+tool for otimal control, it was developed ad University of Florida by Michael
+patterson and Anil V. Rao. other tools allows defininng the problem, but
+GPOPS-II is a level higher. It also includes advanced mesh refinement
+strategies, multiple phase OCP and automatic scaling. For solving the problem
+it uses IPOPT or SNOPT. It interaces with MATLAB and C++, uses ADigator
 
 \section{Julia + JuMP/ infititeopt/ examomdels}
 ExaModels, JuMP
