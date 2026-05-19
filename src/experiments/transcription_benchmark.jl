@@ -96,19 +96,15 @@ function _run_case(track_name::String, track_fn, car_name::String, car_fn, varia
     end
 end
 
-function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
-    linear_solvers=nothing, backends=nothing, tol=1e-1, method::Symbol=:h,
-    max_iterations::Int=10, pol_order::Int=2, ipopt_attrs=_default_ipopt_attrs(),
-    output_dir::String="results/benchmark", tracks=nothing, cars=nothing)
-
-    cases = [
+function _default_cases()
+    return [
         (
+            # FSCZ + FSG tracks are too narrow for the bus
             track = "FSCZ",
             track_fn = () -> kml2track("tracks/FSCZ.kml", false, true),
             cars = [
                 ("singletrack", t -> createSimplestSingleTrack(t)),
                 ("twintrack", t -> createTwintrack(true, t)),
-#                ("bus", t -> createBus(t)),
             ],
         ),
         (
@@ -127,7 +123,6 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
             cars = [
                 ("singletrack", t -> createSimplestSingleTrack(t)),
                 ("twintrack", t -> createTwintrack(true, t)),
-#                ("bus", t -> createBus(t)),
             ],
         ),
         (
@@ -149,7 +144,14 @@ function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
             ],
         ),
     ]
+end
 
+function run_transcription_benchmarks(; variants=TRANSCRIPTION_VARIANTS,
+    linear_solvers=nothing, backends=nothing, tol=1e-1, method::Symbol=:h,
+    max_iterations::Int=10, pol_order::Int=2, ipopt_attrs=_default_ipopt_attrs(),
+    output_dir::String="results/benchmark", tracks=nothing, cars=nothing)
+
+    cases = _default_cases()
     tracks !== nothing && (cases = filter(c -> c.track in tracks, cases))
     backend_mode = backends !== nothing
     solver_mode = linear_solvers !== nothing
