@@ -1,8 +1,10 @@
 \chapter{comparison of methods}
-Performace of NLP solvers and frameworks is often tested on benchmark problems. like CUTEst \cite{gouldCUTEstConstrainedUnconstrained2014} dataset. I have created my own ataset for this purpose.
-Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
-5070. Important caveat is that IPOPT has many (probably too many) options which can be adjusted, and that is true for all solvers. Some of differences in this benchmark may be due to sub optimal setup of the solver.
-\begin{table}[!ht]
+Performance of NLP solvers and frameworks is often tested on benchmark problems. like CUTEst \cite{gouldCUTEstConstrainedUnconstrained2014} dataset. I have created my own dataset for this purpose.
+As written on Ipopt website: Ipopt has many (probably too many) options \cite{ipopt_options} that can be adjusted, and that is true for all solvers. Some of differences in this benchmark may be due to sub optimal setup of the solver. Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
+5070.
+
+This benchmark was performed with vehicles :singletrack, twintrack, formula, bus on all tracks with h mesh refinement. Legendre and Lobatto methods failed in one of 14 tests Radau did not fail, but took little longer than lobatto method.
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/summary.tex}
 \caption{Benchmark summary statistics by transcription variant.}
@@ -11,7 +13,7 @@ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 
 
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/results.tex}
 \caption{Benchmark results by track, vehicle model, and transcription variant.}
@@ -20,8 +22,8 @@ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 
 
 
-
-\begin{table}[!ht]
+Surprisingly free MUMPS solver performed better than proprietary source Harwell Subroutine Library, In this test I did not include PARDISO  as my license was limited only to two cores.
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/linearSolvers/summary.tex}
 \caption{Linear solver benchmark summary statistics.}
@@ -30,7 +32,7 @@ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 
 
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/linearSolvers/results.tex}
 \caption{Linear solver benchmark results by track, vehicle model, and transcription variant.}
@@ -39,7 +41,7 @@ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 
 
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/backends/summary.tex}
 \caption{NLP solver / backend benchmark summary statistics (IPOPT-MUMPS, MadNLP-CPU, MadNLP-GPU).}
@@ -48,21 +50,21 @@ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 
 
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/backends/results.tex}
 \caption{NLP solver / backend benchmark results by track, vehicle model, and transcription variant.}
 \label{tab:backend-results}
 \end{table}
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/hessian/summary.tex}
 \caption{Hessian approximation benchmark summary statistics (exact vs.\ limited-memory quasi-Newton).}
 \label{tab:hessian-summary}
 \end{table}
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \input{../sync/thesisTables/hessian/results.tex}
 \caption{Hessian approximation benchmark results by track, vehicle model, and transcription variant.}\label{tab:hessian-results}

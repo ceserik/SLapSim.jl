@@ -1,7 +1,6 @@
 \chapter{Frameworks for Optimal Control Problem Formulation}
-Process of solving optimal control problem has 3 parts. Problem defintion,
-solving of nonlinear program, optional mesh refinment. This chapter decribes framerowks in which the NLP problem can be created and solved. I have stated the theory, these are possible ways to implement the theory
-By frameowrk i mean programming language + AD tool + mesh refining
+Process of solving optimal control problem has 3 parts. Problem definition,
+solving nonlinear program and optional mesh refinement. This chapter describes frameworks in which the NLP problem can be defined and solved. Framework is: programming language + algebraic modeling tool + automatic differentiation tool + mesh refining algorithm. Solving optimal control problem can be split into 3 steps described in figure \ref{fig:ocp-pipeline}
 
 \begin{figure}[h]
   \centering
@@ -10,80 +9,69 @@ By frameowrk i mean programming language + AD tool + mesh refining
       block/.style={rectangle, draw, thick, font=\small, minimum width=4cm, minimum height=0.9cm, align=center, fill=white},
       exit/.style={ellipse, draw, thick, font=\small, minimum width=3cm, minimum height=0.8cm, align=center, fill=white}
     ]
-    \node[block] (def) {1. Problem Transcription};
+    \node[block] (def) {1. Problem definition};
     \node[block, below=of def] (nlp) {2. NLP solve};
     \node[block, below=of nlp] (mesh) {3. Mesh refinement (optional)};
     \node[exit, below=of mesh] (sol) {Solution};
     \draw[->, thick] (def) -- (nlp);
     \draw[->, thick] (nlp) -- (mesh);
     \draw[->, thick] (mesh) -- node[right, font=\small]{converged} (sol);
-    \draw[->, thick] let \p1=(mesh.east), \p2=(nlp.east) in
-    (mesh.east) -- (\x1+1.5cm,\y1) -- node[right, font=\small, align=left]{needs\\ refinement} (\x1+1.5cm,\y2) -- (nlp.east);
+    \draw[->, thick] let \p1=(mesh.east), \p2=(def.east) in
+    (mesh.east) -- (\x1+1.5cm,\y1) -- node[right, font=\small, align=left]{needs\\ refinement} (\x1+1.5cm,\y2) -- (def.east);
   \end{tikzpicture}
-  \caption{Optimal control problem solving pipeline.}
+  \caption{Optimal control problem solving pipeline. Adapted from \cite[p. 91]{betts}}
   \label{fig:ocp-pipeline}
 \end{figure}
 
-The concensus in optimal control community about tools for prolbem formulation
+The consensus in optimal control community about tools for problem formulation
 is that:
 \begin{quote}
-  There is no shortage of optimal control software based on pseudospectral approaches. There are a number of other optimal control libraries that tackle similar kinds of problems, such as OTIS4, GPOPS-II,and CASADI.
+  There is no shortage of optimal control software based on pseudospectral approaches. There are a number of other optimal control libraries that tackle similar kinds of problems, such as OTIS4, GPOPS-II,and CASADI. \cite{Falck2021,dymos2024}
 \end{quote}
-\cite{Falck2021}\cite{DymosDocs}
-This chapter is aobut tool that define the OCP, and supply derivatives of the problem, they cannot solve the problem by themselves.
 
-\cite{weinstein2017algorithm} for automatic differetnation. This tool is
-commercial and closed source. Implementaion in this thesis is heavily based on
-work of community from University of Florida.
+
 \section{CasADi}
 CasADi is an open-source tool for nonlinear optimization and algorithmic
 differentiation.\cite{CasADi}\cite{Andersson2019}.
-interfaces with C++,Python,MATLAB. It provides a framework INE SLOVO to build
-the problem, and calculate the hessian and jacobian for nlp solver it does not
-have any mesh refinemnt algorithms. Commonly paired with IPOPT for nonliner
-programming, but is compatible with large variety of solvers.
+interfaces with C++,Python,MATLAB. It provides a framework to build
+the problem, and calculate the hessian and Jacobian for NLP solver it does not
+have any mesh refinement algorithm. Commonly paired with Ipopt, but is compatible with large variety of solvers.
 
-\section{dymos + OpenMDAO}
-Python has hp mesh refinemnt uses OpenMDAO \cite{Gray2019a} developed at NASA
-Glenn research center for evaluating aircraft concepts. Lobatto and radau
-collocation as default \cite{Falck2021}. According to forum post from julia
+\section{OpenMDAO + dymos}
+OpenMDAO \cite{Gray2019a} was developed at NASA
+Glenn research center in python for evaluating aircraft concepts. Dymos implelemnts hp mesh refinemnt and Lobatto and radau collocation as default \cite{Falck2021}. According to forum post from julia
 discourse, which may be biased towards julia it is slower compared to infiteOpt
-in julia \cite{DoesAnybodyKnow2024}. But it has mesh refinemnt so that is good.
+in julia \cite{DoesAnybodyKnow2024}. It is the only open source tool I found that offers mesh refinement.
 \section{Acados}
-Acados is a modular open-source framework for fast embedded optimal control, developed at University of Freiburg~\cite{Verschueren2021}. It has C, Python, MATLAB + Simulink and Octave interface. This framework support generating C code. It is demonstrated by numerous real-world examples, such as drone racing with replanning, robot navigation in cluttered environment and many others \cite{acados_real_world_examples}.
+Acados is a modular open-source framework for fast embedded optimal control, developed at University of Freiburg~\cite{Verschueren2021}. It has C, Python, MATLAB + Simulink and Octave interface. This framework supports generating C code. It is demonstrated by numerous real-world examples, such as drone racing with \emph{replanning}, robot navigation in cluttered environment and many others \cite{acados_real_world_examples}.
 
 \section{GPOPS-II}
-GPOPS-II \cite{pattersonGPOPSIIMATLABSoftware2014} is perhaps the most advaced
-tool for otimal control, it was developed ad University of Florida by Michael
-patterson and Anil V. Rao. other tools allows defininng the problem, but
+GPOPS-II \cite{pattersonGPOPSIIMATLABSoftware2014} is perhaps the most advanced
+tool for optimal control, it was developed ad University of Florida by Michael
+Patterson and Anil V. Rao. other tools allows defining the problem, but
 GPOPS-II is a level higher. It also includes advanced mesh refinement
 strategies, multiple phase OCP and automatic scaling. For solving the problem
-it uses IPOPT or SNOPT. It interaces with MATLAB and C++, uses ADigator
-
-\section{Julia + JuMP/ infititeopt/ examomdels}
+it uses Ipopt or SNOPT. It interfaces with MATLAB and C++, uses ADigator
+\cite{weinstein2017algorithm} for automatic differentiation. This tool is
+commercial and closed source. Implementation in this thesis is heavily based on
+work of community from University of Florida.
+\section{Julia + JuMP + infititeOpt / examomdels}
 ExaModels, JuMP
 
-JuMP is the go to tool for algebraic modelling in julia, it is mature,
-versatile. Supports Linear programming, quadartic programming, mixed linear
+JuMP is the go to tool for algebraic modeling in julia, it is mature,
+versatile. Supports Linear programming, quadratic programming, mixed linear
 programming, Nonlinear programming. ExaModels \cite{shin2023accelerating} is a
-specialized algebraic modelling tool, it utilisies Single instruction, multiple
+specialized algebraic modeling tool, it utilizes Single instruction, multiple
 data methods,enabling derivative evaluation on GPU accelerators. Coupled with
-MadNLP solver, the entire computation of nonlinear optimisation can be run on a
-GPU.
-
-Julia options
+MadNLP solver, the entire computation of nonlinear optimization can be run on a
+GPU. No julia package has  mesh refinement. Julia offers several framework options
 \begin{enumerate}
   \item Julia + jump
   \item Julia + jump + infinte opt
   \item julia + ExaModels
 \end{enumerate}
+Although package InfiteOpt.jl already contains implementation of various collocation methods, I chose not to use it. This decision was motivated by two considerations. Implementing the transcription methods myself provides deeper understanding of the topic. InfiteOpt abstracts away some of the low lever control that JuMP offers, which may prevent mesh refinement implementation, usage of parametric vehicle model or sensitivity analysis.
 
-Infite opt already has various collocation methods implemented. For learning
-purposes and in fear that in future down the road i would realise that
-infniteopt blocks all the stuff i want to do i decided to use jump, without
-infite opt.
-
-No julia package has  mesh refinement
 I chose julia + jump,
 
 

@@ -1,15 +1,18 @@
 \chapter{Conclusion}
 
-All goals were achievied. One thing which was not a goal but, would be super useful if i managed to do a validation on real world data. Valdiation of sensitivity analysys. I wanted to do it for a long time but there was not enough of it.
+All goals were achieved. More investigation would be nice into differentiate orthogonal polynomials, Chebyshev type I. polynomials are often used with high order due to their good suppression of Runge phenomena. One thing which was not a goal but, would be super useful if i managed to do a validation on real world data. Validation of sensitivity analysys. I wanted to do it for a long time but there was not enough of it.
 
 Julia was interesting language to learn, it offers blazing fast execution, but that comes with caveats. Debugging is way more cmplicated. When working on a smaller project, the debugging is not such a pain, but when the project is bigger debugging is not user friendly. Debugging in python and MATLAB is way easier. Julias selling point is that it is just in time cmpiled language, rivalling C. That is true BUT you have to know what you are doing, if you dont declare types in functions it is as slow as python.
 
 
-At the begging of this project I wanted a more complex model, I wanted to go deepr with cmplexity than my bachelor thesis. That is add pitch, roll and full model of suspension into the simulation. Also this simulation does not account for gearboxes with discrete stages, and no combustion engine.
+At the begging of this project I wanted a more complex model, I wanted to go deeper with complexity than my bachelor thesis. That is add pitch, roll and add suspension with damper and spring for each wheel. Also this simulation does not account for gearboxes with discrete stages, and no combustion engine.
 
 Believing 100\% this tool and designing car according to it would most likely lead to undriveable vehicle, as there is no force pushing for stability driveability in NLP \cite{perantoniOptimalControlFormula2014} deals also with this. The optimal driving created by NLP is unachievable by real driver, as the vehicle is on its limit and one mistake woul overload tires and cause failure. 
 
 Track model is also heavily simplified, neglecting slope and bank of the track.
+
+Accumulator energy constraints I have modeled them but not verified that they work, this is also needed.
+Motor constraints for softmax
 %\input{chapters/conclusion.tex}
 
 
