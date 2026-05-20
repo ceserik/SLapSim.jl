@@ -1,6 +1,6 @@
 \chapter{My implementation, julia + JuMP}
 I have decided to use julia +JuMP, because I wanted to use free and open source
-software.
+software. All code is available on github https://github.com/ceserik/SLapSim.jl.
 
 I have already done a lot in Python and julia seemed like new interesting thing
 to learn. Julia is supposed to be fast and high level language, bridging the
@@ -14,6 +14,17 @@ automatic differentiation, to supply first and second derivative to solvers.
 Solver used in this thesis is IPOPT~\cite{wachter_implementation_2006} and
 MadNLP\cite{shin2021graph}\cite{shin2024accelerating}. MadNLP also allows
 utilising GPU for solver computation.
+
+
+
+
+
+Although package InfiteOpt.jl already contains implementation of various collocation methods, I chose not to use it. This decision was motivated by two considerations. Implementing the transcription methods myself provides deeper understanding of the topic. InfiteOpt abstracts away some of the low lever control that JuMP offers, which may prevent mesh refinement implementation, usage of parametric vehicle model or sensitivity analysis.
+
+I chose julia + jump,
+
+
+
 
 %\section{My optimization stack}
 
@@ -63,8 +74,8 @@ utilising GPU for solver computation.
 
 \section{sensitivity Analysis}
 I have used DiffOpt.jl~\cite{besancon2023diffopt} for the sensitivity analysis. By adding vehicle
-parameters susch ass, mass, lift coeffcient, CoG position etc. into
-optimisation as decisions variables fixed to a value by contraints. This addes them to the algebraic model, then the solution of minimum laptime can be differentiated by these parameters. AKO POMENOVAT TEN STROM CO JUMP VYTCORI TEN GRAF? algebraic model. Result of this is on figure \ref{fig:sensitivity}
+parameters susch as, mass, lift coeffcient, CoG position etc. into
+optimization as decisions variables fixed to a value by constraints. This added them to the algebraic model, then the solution of minimum laptime can be differentiated by these parameters. AKO POMENOVAT TEN STROM CO JUMP VYTCORI TEN GRAF? algebraic model. Result of this is on figure \ref{fig:sensitivity}
 
 \begin{figure}[H]
 	\centering
@@ -77,41 +88,36 @@ optimisation as decisions variables fixed to a value by contraints. This addes t
 \centering
 \begin{tikzpicture}[
   >={Latex[length=2mm]},
-  node distance=0.7cm and 0.2cm,
-  every node/.style={font=\normalsize, align=center},
+  node distance=0.6cm and 0.15cm,
+  every node/.style={font=\small, align=center},
   box/.style={draw, minimum height=0.7cm, inner sep=3pt},
   problem/.style={box},
-  branch/.style={box, font=\normalsize\bfseries},
-  stagebox/.style={box, text width=3cm},
-  deriv/.style={box, text width=1.9cm},
+  branch/.style={box, font=\small, text width=2.2cm},
+  stagebox/.style={box, text width=2.6cm, font=\footnotesize},
+  deriv/.style={box, text width=1.4cm, font=\footnotesize},
   terminal/.style={box, line width=1pt},
   chosen/.style={fill=green!30}
 ]
 
-\node[problem] (nlp) {NLP problem statement};
+\node[problem] (nlp) {Transcribed nonlinear programming problem};
 
-\node[branch, below left=1cm and 2cm of nlp] (sqp) {Sequential Quadratic Programming};
-\node[branch, below right=1cm and 2cm of nlp, chosen] (ipm) {Interior point};
+\node[branch, below=0.75cm of nlp, xshift=-1.5cm] (sqp) {Sequential\\Quadratic\\Programming};
+\node[branch, below=0.75cm of nlp, xshift=1.5cm, chosen] (ipm) {Interior\\Point\\Methods};
 
-\node[stagebox, below=1cm of sqp] (qp) {Quadratic model,\\linearized constraints,\\QP subproblem};
-\node[stagebox, below=1cm of ipm, chosen] (bar) {Barrier problem\\reformulation};
+\node[problem, below=3cm of nlp] (need) {Compute derivatives};
 
-\node[problem, below=5cm of nlp] (need) {Calculate first and second derivatives};
-
-\node[deriv, below=1.2cm of need] (fd) {Finite\\differences};
+\node[deriv, below=1cm of need] (fd) {Finite\\differences};
 \node[deriv, left=of fd]  (sym)  {Symbolic};
 \node[deriv, left=of sym] (anal) {Analytic};
 \node[deriv, right=of fd, chosen] (ad)   {Automatic\\diff.};
-\node[deriv, right=of ad, chosen] (qn)   {Quasi-\\Newton};
+\node[deriv, right=of ad, chosen] (qn)   {Quasi-\\Newton\\methods};
 
 \node[terminal, below=3cm of need] (newton) {Assemble linear system\\\textbf{Newton step}};
 
 \draw[->] (nlp) -- (sqp);
 \draw[->, very thick, green!60!black] (nlp) -- (ipm);
-\draw[->] (sqp) -- (qp);
-\draw[->, very thick, green!60!black] (ipm) -- (bar);
-\draw[->] (qp)  -- (need);
-\draw[->, very thick, green!60!black] (bar) -- (need);
+\draw[->] (sqp) -- (need);
+\draw[->, very thick, green!60!black] (ipm) -- (need);
 
 \draw[->] (need) -- (anal);
 \draw[->] (need) -- (sym);
@@ -216,3 +222,62 @@ optimisation as decisions variables fixed to a value by contraints. This addes t
 \label{fig:transcription_chosen}
 \end{figure}
 
+
+\section{My trancription}
+my mesh refinbment error calc + my methods implemented
+
+
+\section{My models}
+PUT CAR MODELS HERE
+
+\subsection{my tires}
+
+\subsection{my suspensions}
+
+\section{Benchmark tracks}
+The following tracks are used in the benchmark in
+Section~\ref{sec:benchmark}. They cover real Formula Student layouts
+(FSCZ, FSG), a Formula~E street circuit (Berlin) and two synthetic
+geometries (DoubleTurn, FigureEight).
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{../sync/thesisImages/benchmark_track_FSCZ.png}
+        \caption{Formula Student Czech track}
+        \label{fig:track_fscz}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{../sync/thesisImages/benchmark_track_FSG.png}
+        \caption{Formula Student Germany track}
+        \label{fig:track_fsg}
+    \end{subfigure}
+
+    \vspace{0.5em}
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{../sync/thesisImages/benchmark_track_Berlin.png}
+        \caption{Berlin (Formula~E)}
+        \label{fig:track_berlin}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{../sync/thesisImages/benchmark_track_DoubleTurn.png}
+        \caption{DoubleTurn}
+        \label{fig:track_doubleturn}
+    \end{subfigure}
+
+    \vspace{0.5em}
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{../sync/thesisImages/benchmark_track_FigureEight.png}
+        \caption{FigureEight}
+        \label{fig:track_figureeight}
+    \end{subfigure}
+    \caption{Tracks used in the solver/transcription benchmark.}
+    \label{fig:benchmark_tracks}
+\end{figure}
+
+\section{Actual constriants, exampleconstraints like cannot leave road}

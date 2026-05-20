@@ -135,7 +135,7 @@ only these.
     The concept of collocation is old and universal in numerical analysis \ldots For ordinary differential equations it consists in searching for a polynomial of de-gree s whose derivative coincides ("co-locates") at s given points with the vectorfield of the differential equation \ldots
     \cite[p.~224]{hairer}
 \end{quote}
-The article \cite{kelly_traj_opt_video} is an in depth explanation of inner working and implementation  of direct collocation methods, theory here is based on it and on \cite{garg_overview_nodate}.
+The article \cite{kelly_traj_opt_video} is an introductory explanation of inner working and implementation  of direct collocation methods, theory here is based on it and on \cite{garg_overview_nodate}. More in depth theory behind these methods was developed by Lloyd N. Trefethen in \cite{trefethenApproximationTheoryApproximation} and implementation in \cite{SpectralMethodsinMatlab}.
 Collocation methods are a subset of implicit Runge-Kutta methods. The distinguishing property is that the solution of a boundary value problem is approximated by a piecewise polynomial in the independent variable (distance along the centerline). On each interval the polynomial is fixed by requiring it to satisfy the ODE exactly at $N$ chosen points the collocation nodes. 
 
 
@@ -210,7 +210,7 @@ Quadrature rule is the approximation of definite integral of a function by a sum
     \label{eq:gauss_quadrature}
 \end{equation}
 where $w$ are Gaussian quadrature weights.
-A useful property of Gaussian quadrature of order $n$ is that it approximates the integral to machine precision whenever the integrated function is a polynomial of degree at most $2n-1$. Node selection for Gauss quadrature is \emph{not arbitrary}, in collocation methods the node positions are based on roots of Legendre polynomial. Node positions specify the type of collocation method and are creating in following manner.
+A useful property of Gaussian quadrature of order $N$ is that it approximates the integral to machine precision whenever the integrated function is a polynomial of degree at most $2N-1$. Node selection for Gauss quadrature is \emph{not arbitrary}, in collocation methods the node positions are based on roots of Legendre polynomial. Node positions specify the type of collocation method and are creating in following manner.
 %Pairing Gauss quadrature with Legendre polynomials creates a collocation method. Commonly used collocation methods constructed using Legendre polynomials and Gauss quadrature are constructed in following manner.
 Let $P_N(\tau)$ denote the Legendre polynomial of degree $N$. Three node families are commonly used~\cite{garg_overview_nodate}:
 \begin{itemize}
@@ -234,7 +234,7 @@ Let $P_N(\tau)$ denote the Legendre polynomial of degree $N$. Three node familie
 
 %Polynomial that aproximates the solution of ODE is based on Legendre polynomials.
 Legendre-Gauss collocation methods uses nodes strictly inside the interval for approximation using polynomial.
-With $n$ nodes, it is possible to approximate functions up to degree $2n-1$ with machine precision.
+With $N$ nodes, it is possible to approximate functions up to degree $N-1$ with machine precision.
 States are approximated by series
 \begin{equation}
     x^N_j(\tau) = \sum_{i=0}^{N} x_{ij}\, L_i(\tau),
@@ -268,7 +268,7 @@ Where $w$ are the Gauss quadrate weights.
 This is the differential form of Legendre-Gauss collocation method, integral from is described in \cite{gargUnifiedFrameworkNumerical2010}.
 \section{Collocation at Legendre-Gauss-Radau points}
 This method is constructed in similar manner to previous, with difference that one endpoint is a collocation node. This is an advantage, as the resulting nonlinear programming formulation does not require the gauss quadrature rule for endpoint and it is smaller.
-This method approximates functions up degree $2n-2$ with machine precision, this is lower precision than Legendre-Gauss.
+This method approximates functions up degree $2N-2$ with machine precision, this is lower precision than Legendre-Gauss.
 \begin{equation}
 \begin{aligned}
 \min \quad & \Phi(\mathbf{X}_N) \\
@@ -278,24 +278,40 @@ This method approximates functions up degree $2n-2$ with machine precision, this
 \end{equation}
 This is also a differential formulation.
 \section{Collocation at Legendre-Gauss-Lobatto points}
-The Gauss-Lobatto family includes both endpoints as collocation points, achieving a quadrature degree of exactness of $2N - 3$. It encompasses widely used schemes such as the trapezoidal and Hermite–Simpson methods. Legendre-Gauss-Lobatto method is formulated using Bucher table of LobattoIIIA methods developed in \cite{ehlePadeApproximationsExponential}.
-Then constraints are formulated in classical RK way
+The Gauss-Lobatto family includes both endpoints as collocation nodes and has a quadrature degree of exactness $2N-3$. It contains classical low-order schemes like the trapezoidal rule and Hermite--Simpson. I implement it using the Butcher tableau of LobattoIIIA implicit Runge--Kutta methods from \cite{ehlePadeApproximationsExponential}.
 
+The dynamics is collocated at $N$ LobattoIIIA nodes $c_i \in [-1,1]$ with coefficient matrix $a_{ij}$ taken from the Butcher tableau. $\mathbf{X}_i$ and $\mathbf{U}_i$ are the state and control at node $i$, placed at $\tau_i = c_i h/2$, where $h$ is the length of the interval. The node constraints are
+\begin{equation}
+    \mathbf{X}_i = \mathbf{X}_0 + \frac{h}{2} \sum_{j=1}^{N} a_{ij}\, \mathbf{F}(\mathbf{X}_j, \mathbf{U}_j), \qquad i = 2, \dots, N,
+\label{eq:lobattoIIIA-stage}
+\end{equation}
+where $\mathbf{X}_0$ is the left endpoint.
+The resulting NLP is
+\begin{equation}
+\begin{aligned}
+\min \quad & \Phi(\mathbf{X}_N) \\
+\text{subject to} \quad & \mathbf{X}_i = \mathbf{X}_0 +  \sum_{j=1}^{N} a_{ij}\, \mathbf{F}(\mathbf{X}_j, \mathbf{U}_j), \quad i = 2, \dots, N, \\
+& \mathbf{X}_0 = \mathbf{x}_0.
+\end{aligned}
+\end{equation}
+This is an integral formulation of collocation method, in book \cite{betts} trapezoidal and Hermite-Simpson methods written in this form.
 
-\section{Gauss methods as pseudospectral collocation}
-I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global
-collocation methods, that is one polynomial approximating the entire
-trajectory. I have implemented them according to~\cite{garg_overview_nodate}
-\section{Gauss methods as h-method}
-\subsection{collocation integral form}
-integral form is straight forward, same as other unge kutta Methods
-\subsection{collocation differential form}
-differeanital form requires to create differentiation matrix of the
-aproximating polnomial,which contains the difference of the approximating
-polynomial.
+%\section{Gauss methods as pseudospectral collocation}
+%I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global collocation methods, that is one polynomial approximating the entire trajectory. I have implemented them according to~\cite{garg_overview_nodate}
+%\section{Gauss methods as h-method}
+%\subsection{collocation integral form}
+%integral form is straight forward, same as other unge kutta Methods
+%\subsection{collocation differential form}
+%differeanital form requires to create differentiation matrix of the
+%aproximating polnomial,which contains the difference of the approximating
+%polynomial.
 
+\subsection{h and p methods for collocation}
+A function can be approximated in three ways. The first uses a single high-order polynomial over the entire trajectory, these are p methods. The second uses many piecewise continuous polynomials of low and fixed order, as in \cite{betts}, these are h methods. The third combines both ideas, using many polynomials whose order is allowed to vary between segments, these are hp methods. The Legendre-Gauss, Legendre-Gauss-Radau and Legendre-Gauss-Lobatto schemes presented above are the building blocks for all three categories. A single global instance gives a p method. Chaining many low-order instances on consecutive intervals with continuity at the shared endpoints gives an h method. Chaining instances of different orders gives an hp method.
+
+Intuitively p methods should suffer from the Runge phenomenon, but they do not. The discretization nodes are not equispaced, they are clustered toward the endpoints, which suppresses the oscillations. Methods based on roots of Chebyshev polynomials suppress the Runge phenomenon better than Legendre methods\cite{trefethenApproximationTheoryApproximation}.
 \section{Mesh refinement methods}
-
+Mesh refinement works by changing polynomial order and number and place of segements. In mesh refinemnt it is also important to remove segments that are unecessary. Mesh refinemnt methods are divided into three categories.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -307,24 +323,23 @@ polynomial.
 
 \node[method]              (p)   {$p$-refinement\\(raise polynomial degree)};
 \node[method, right=of p]  (h)   {$h$-refinement\\(subdivide segments)};
-\node[method, right=of h]  (hp)  {$hp$-refinement\\(p first, then h)};
-\node[method, right=of hp] (ph)  {$ph$-refinement\\(h first, then p)};
+\node[method, right=of h]  (hp)  {$hp$-refinement\\(combination of h and p)};
 
-\node[layer, above=1cm of $(p.north)!0.5!(ph.north)$] (mesh)
+\node[layer, above=1cm of $(p.north)!0.5!(hp.north)$] (mesh)
   {Mesh refinement strategy};
 
-\foreach \n in {p,h,hp,ph}
+\foreach \n in {p,h,hp}
   \draw[->] (mesh.south) -- (\n.north);
 
 \end{tikzpicture}
-\caption{Mesh refinement~\cite{darbyHpAdaptivePseudospectral2011,pattersonPhMeshRefinement2015}.}
+\caption{Mesh refinement categories~\cite{darbyHpAdaptivePseudospectral2011,pattersonPhMeshRefinement2015}.}
 \label{fig:mesh_refinement_layer}
 \end{figure}
 
-%\section{Mesh refinment}
 
-\subsection{p adaptive methods}
-p adaptive methods work by increasing the order of polynomial, until the error
+
+\subsection{P adaptive methods}
+The p adaptive methods work by increasing the order of polynomial, until the error
 is below user defined threshold. Figure \ref{fig:power_node_controls} shows that
 error along track is not distributed equaly. Error is localised around areas
 with large jump in controls. These areas need finer sampling. P methods cannot
@@ -342,7 +357,7 @@ approximation see Figure \ref{fig:power_node_controls}. Time optimal control of 
 \end{figure}
 
 \subsection{h adaptive methods}
-h methods are used when solution of optimal control problem is approximated by
+The h methods are used when solution of optimal control problem is approximated by
 many intervals with low degree polynomial. These methods can decide to split
 segment into two smaller segments, they use different techniques to do this.
 Method described in \cite{betts} calculates error using Romberg quadrature with machine precision. Another
@@ -365,9 +380,9 @@ techniques from essentially non oscillatory (ENO) interpolation
 
 \cite{Harten1997} to decide where to split and remove nodes.
 \subsection{hp adaptive methods}
-hp adaptive methods are state of the art in mesh refinment. They are
-combination of increasing/decreasing mesh segments and incresing/decreasing
-order of aproximating polynomial insede segments. One of the first hp-method
+The hp adaptive methods are state of the art in mesh refinement. They are
+combination of increasing/decreasing mesh segments and increasing/decreasing
+order of approximating polynomial inside segments. One of the first hp-method
 and commonly cited is decribed in
 article~\cite{darbyHpAdaptivePseudospectral2011} from University of Florida.
 They have produces numerous papers on hp- adaptive mesh
