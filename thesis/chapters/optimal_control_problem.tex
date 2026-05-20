@@ -1,8 +1,8 @@
 \chapter{The Optimal Control Problem}
 In previous chapter I have described how to build differential equations that
-govern movement of a vehicle. This chapter describes two approaches of driving that vehicle, by reformulating it to Initial Value Problem or Boundary Value Problem.
+govern movement of a vehicle. This chapter describes two approaches of driving that vehicle optimally, first by using classical initial value problem/time marching formulation, then reformulating it to boundary value problem.
 
-\section{Minimum manuevering time problem as initial value problem }
+\section{Minimum maneuvering time problem as initial value problem }
 The most common method for solving an ODE is as initial value problem.
 An industry standard high fidelity multi-body time marching solver for vehicles is Car Maker from IPG \cite{ipg_carmaker}.
 It is great for driving simulation, testing and development of advanced driver assistant systems, modeling the vehicles and racetrack modeling, it can be used for lap-time simulation, but with caveats.
@@ -19,6 +19,7 @@ When the vehicles model is simplified to Quasi Steady State model, time marching
 %deals with transcribing the continuos problem into discrete steps
 
 \subsection{Quasi Steady state lap time simulation}
+\label{QSS}
 Following section describes commonly used algorithm which uses only initial value solvers, to compute the minimum maneuvering time.
 For quasi steady state model \ref{QSS_model} it is possible to compute optimal speed profile ked dal som rovanke rovnice do nlp a dostal som rovnaky vysledok ako z toho algoritmu, takze aspon pre tuto trat to asi bude optimum speed profile using an algorithm well known among racing engineers. Figure \ref{fig:mass_point_speed_profile} shows thee speed profile obtained from this algorithm, on track from Figure \ref{fig:mass_point_speed_profile}, start is dot and cross is finish.
 \begin{figure}[H]
@@ -43,58 +44,56 @@ Algorithm works in following manner:
 More complete description of this algorithm is in \cite{casanovaMinimumTimeVehicle2000}
 This is the classic approach to minimum maneuvering time problem, the issue is that the trajectory of vehicle on track is fixed and cannot be optimized, the vehicle model must be heavily simplified, it does not work with any integral constraints like accumulator energy. However, the computation time can be fraction of a second for the entire lap. Tools using this method have proven to be extremely useful and many different analyses can be performed by leveraging its computational speed,for example varying the friction coefficient at on each corner, a corners importance on lap time can be calculated \cite{optimumg_corner_importance}. 
 \section{Transcription methods}
-Previous section described automotive specific methods of solving minimum maneuvering time problem, this section explains methods of transcribing the problem into the language of optimal control problems.
+Previous section described automotive specific methods of solving minimum maneuvering time problem, this section explains methods of transcribing the problem into the language of optimal control problem.
 Transcription methods rewrite continuous (infinite-dimensional) OCP into finite-dimensional NLP.\@ That means representing the continuous trajectory of a state by values sampled at discrete points.
-The terminology of transcription methods can be difficult to understand, as it is complex topic and often articles present conflicting information~\cite{kelly_traj_opt_terminology}. Website~\cite{kelly_traj_opt_terminology} and other work from Matthew Kelly~\cite{kelly_traj_opt_video,kelly_homepage,doi:10.1137/16M1062569} offers a very digestible introduction into the topic. This thesis focuses only on direct methods. Classification of methods in this thesis is based on~\cite{kelly_traj_opt_terminology} Figure~\ref{fig:ocp_methods_taxonomy} contrasts the three axes along which transcription methods are commonly classified.
+The terminology of transcription methods can be difficult to understand, as it is complex topic and often articles present conflicting information~\cite{kelly_traj_opt_terminology}. Website~\cite{kelly_traj_opt_terminology} and other work from Matthew Kelly~\cite{kelly_traj_opt_video,kelly_homepage,doi:10.1137/16M1062569} offers a very digestible introduction into the topic. This thesis focuses only on direct methods. Classification of methods in this thesis is based on~\cite{kelly_traj_opt_terminology} Figure~\ref{fig:ocp_methods_taxonomy} shows how transcription methods are commonly classified.
 
 \begin{figure}[H]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
   >={Latex[length=2mm]},
   every node/.style={align=center},
-  root/.style={draw, font=\bfseries\footnotesize, text width=3.6cm, minimum height=0.7cm, inner sep=3pt},
-  box/.style={draw, font=\bfseries\footnotesize, text width=3.2cm, minimum height=0.7cm, inner sep=3pt},
-  leaf/.style={draw, font=\footnotesize, text width=2.0cm, minimum height=0.6cm, inner sep=2pt}
+  root/.style={draw, font=\footnotesize, text width=3.0cm, minimum height=0.8cm, inner sep=3pt},
+  top/.style={draw, font=\footnotesize, text width=2.8cm, minimum height=1.0cm, inner sep=3pt},
+  mid/.style={draw, font=\scriptsize, text width=2.6cm, minimum height=1.1cm, inner sep=3pt},
+  leaf/.style={draw, font=\scriptsize, text width=2.0cm, minimum height=0.9cm, inner sep=2pt}
 ]
+% --- Root ---
+\node[root] (ocp) at (4.25, 0) {Continuous Time Optimal Control};
 
-\node[root] (ocp) {OCP solution methods};
+% --- Top-level branches: Direct on the left, Indirect center, HJB on the right ---
+\node[top] (direct)   at (-1.0, -2.0) {Direct Methods:\\\textit{Transform into Nonlinear Program (NLP)}};
+\node[top] (indirect) at ( 2.5, -2.0) {Indirect Methods, Pontryagin:\\\textit{Solve Boundary Value Problem}};
+\node[top] (hjb)      at ( 6.0, -2.0) {Hamilton--Jacobi--Bellman Equation:\\\textit{Tabulation in State Space}};
 
-\node[box, below left=1.4cm and 0.1cm of ocp]  (indirect) {Indirect Methods};
-\node[box, below right=1.4cm and 0.1cm of ocp] (direct)   {Direct Methods};
-
-\draw[->] (ocp.south) -- (indirect.north);
 \draw[->] (ocp.south) -- (direct.north);
+\draw[->] (ocp.south) -- (indirect.north);
+\draw[->] (ocp.south) -- (hjb.north);
 
-\node[box, below=1.6cm of indirect, xshift=-0.3cm] (shoot) {Shooting Methods};
-\node[box, below=1.6cm of direct,   xshift=0.3cm]  (rkt)   {Nonlinear programming};
+% --- Direct children: shooting methods adjacent on the left, collocation on the right ---
+\node[mid] (dss)  at (-4.0, -4.5) {Direct Single Shooting:\\\textit{Only discretized controls in NLP}\textit{}};
+\node[mid] (dms)  at (-1.0, -4.5) {Direct Multiple Shooting:\\\textit{Controls and node start values in NLP}\textit{}};
+\node[mid] (dcol) at ( 2.5, -4.5) {Direct Collocation:\\\textit{Discretized controls and states in NLP}\textit{}};
 
-\draw[->] (indirect.south) -- (shoot.north);
-\draw[->] (indirect.south) -- (rkt.north);
-\draw[->] (direct.south)   -- (shoot.north);
-\draw[->] (direct.south)   -- (rkt.north);
+\draw[->] (direct.south) -- (dss.north);
+\draw[->] (direct.south) -- (dms.north);
+\draw[->] (direct.south) -- (dcol.north);
 
-\node[leaf, below=1.4cm of shoot, xshift=-1.2cm] (ss) {Single shooting};
-\node[leaf, below=1.4cm of shoot, xshift=1.2cm]  (ms) {Multiple shooting};
+% --- Bottom leaves ---
+\node[leaf] (erk1) at (-4.0, -6.7) {Explicit RK\\\textit{(integrator)}};
+\node[leaf] (erk2) at (-1.0, -6.7) {Explicit RK\\\textit{(integrator)}};
+\node[leaf] (hm)   at ( 1.4, -6.7) {$h$-methods\\\textit{low order,}\\\textit{many segments}};
+\node[leaf] (pm)   at ( 3.6, -6.7) {$p$-methods\\\textit{high order,}\\\textit{few segments}};
 
-\draw[->] (shoot.south) -- (ss.north);
-\draw[->] (shoot.south) -- (ms.north);
+\draw[->] (dss.south)  -- (erk1.north);
+\draw[->] (dms.south)  -- (erk2.north);
+\draw[->] (dcol.south) -- (hm.north);
+\draw[->] (dcol.south) -- (pm.north);
 
-\node[leaf, below=1.4cm of rkt, xshift=-1.2cm] (erk) {Explicit RK};
-\node[leaf, below=1.4cm of rkt, xshift=1.2cm]  (irk) {Implicit RK\\(Collocation)};
-
-\draw[->] (rkt.south) -- (erk.north);
-\draw[->] (rkt.south) -- (irk.north);
-
-\node[leaf, below=2.6cm of rkt, xshift=-1.4cm] (hm) {``$h$-methods''};
-\node[leaf, below=2.6cm of rkt, xshift=1.4cm]  (pm) {``$p$-methods''};
-
-\draw[->] (erk.south) -- (hm.north);
-\draw[->] (erk.south) -- (pm.north);
-\draw[->] (irk.south) -- (hm.north);
-\draw[->] (irk.south) -- (pm.north);
-
-\end{tikzpicture}
-\caption{Flowchart of transcription method classification, adapted from~\cite{kelly_traj_opt_terminology}}
+\end{tikzpicture}%
+}
+\caption{Tree of approaches to continuous-time optimal control, adapted from~\cite{grosNumericalOptimalControla}, with the direct-methods branch expanded.}
 \label{fig:ocp_methods_taxonomy}
 \end{figure}
 
@@ -136,11 +135,11 @@ only these.
     The concept of collocation is old and universal in numerical analysis \ldots For ordinary differential equations it consists in searching for a polynomial of de-gree s whose derivative coincides ("co-locates") at s given points with the vectorfield of the differential equation \ldots
     \cite[p.~224]{hairer}
 \end{quote}
+The article \cite{kelly_traj_opt_video} is an in depth explanation of inner working and implementation  of direct collocation methods, theory here is based on it and on \cite{garg_overview_nodate}.
+Collocation methods are a subset of implicit Runge-Kutta methods. The distinguishing property is that the solution of a boundary value problem is approximated by a piecewise polynomial in the independent variable (distance along the centerline). On each interval the polynomial is fixed by requiring it to satisfy the ODE exactly at $N$ chosen points the collocation nodes. 
 
 
-Collocation methods approximate the solution of a boundary value problem by a piecewise polynomial in the independent variable (distance along the centerline). On each interval the polynomial is fixed by requiring it to satisfy the ODE exactly at $N$ chosen points the collocation nodes.
-
-There are numerous ways to construct a collocation method, in optimal control the classic methods are those based on Legendre polynomial basis and Chebyshev I basis. Figure\ref{fig:transcription_layer} depics multiple ways of constructing collocation methods.
+There are numerous ways to construct a collocation method, in optimal control the classic methods are those based on roots Legendre or Chebyshev type I polynomials, Lagrange  polynomials \cite{ELGINDY199535, gargUnifiedFrameworkNumerical2010} and Gauss quadrature rule. In this thesis only Legendre and Gauss quadrature based collocation methods are covered. Figure \ref{fig:transcription_layer} depicts multiple ways of constructing collocation methods.
 
 \begin{figure}[H]
 \centering
@@ -162,7 +161,7 @@ There are numerous ways to construct a collocation method, in optimal control th
 \node[basis, right=of geg]      (jac)  {Jacobi};
 
 \node[layer, above=1cm of $(cheb.north)!0.5!(jac.north)$] (trans)
-  {Transcription:\\orthogonal polynomial basis};
+  {Orthogonal polynomials};
 
 \foreach \n in {cheb,her,leg,lag,alag,geg,jac}
   \draw[->] (trans.south) -- (\n.north);
@@ -190,62 +189,98 @@ There are numerous ways to construct a collocation method, in optimal control th
 \label{fig:transcription_layer}
 \end{figure}
 
-Collocation is a subset of implicit Runge-Kutta methods. The distinguishing property is that the result is a polynomial of known degree on every interval. A general RK method only yields state values at the stage points.
-Node choice is not arbitrary. To keep the integration error small the nodes are taken as roots of orthogonal polynomials. In optimal control Legendre polynomials are standard. Let $P_N(\tau)$ denote the Legendre polynomial of degree $N$. Three node families are commonly used~\cite{garg_overview_nodate}:
-\begin{itemize}
-    \item Legendre-Gauss: roots of $P_N(\tau)$ no endpoints.
-    \item Legendre-Gauss-Radau: roots of $P_{N-1}(\tau) + P_N(\tau)$ one endpoint.
-    \item Legendre-Gauss-Lobatto: roots of $\dot{P}_{N-1}(\tau)$ both endpoints.
-\end{itemize}
-
-These are the same nodes used by Gauss quadrature, the numerical approximation of a definite integral:
+\subsubsection{Lagrange polynomial}
+First part of creating a collocation method is creating an interpolating polynomial basis,
+\begin{equation}
+    L_i(\tau) = \prod_{\substack{j=0 \\ j \neq i}}^{N} \frac{\tau - \tau_j}{\tau_i - \tau_j}, \qquad i = 0, \ldots, N.
+    \label{legendre}
+\end{equation}
+Where $\tau$ is the point to be interpolated and $\tau_j$ and $\tau_i$ are node positions, in order to get interpolating polynomial $L(\tau)$, values at nodes $x_j$ are multiplied by corresponding Lagrange base and summed
+\begin{equation}
+    L(\tau) = \sum_{i=0}^{N} f_{i} L_i(\tau).
+\end{equation}
+Now it is possible to interpolate a state between the discretized nodes, Note that the node locations for Legendre polynomial are arbitrary. In the actual implementation, calculation of polynomial basis from definition \ref{legendre} is numerically impractical, therefore barycentric form from \cite{berrutBarycentricLagrangeInterpolation2004} has been used as implementation of these methods. The next step is to compute definite integral using values from function values at nodes.
+%This creates a unique polynomial of lowest degree that interpolates a given set of data. The data points or nodes can be chosen arbitrary.
+%A general RK method only yields state values at the stage points.
+%Node choice is not arbitrary, nodes have to be selected in a special manner in order for second property of collocation to work. that is quadrature rule.
+\subsubsection{Gaussian Quadrature rule}
+Quadrature rule is the approximation of definite integral of a function by a sum of function values at given nodes. In optimal control context Gaussian quadrature is commonly used
 \begin{equation}
     \int_{-1}^{1} f(\tau)\,\mathrm{d}\tau \approx \sum_{i=0}^{n} w_i \, f_i,
     \label{eq:gauss_quadrature}
 \end{equation}
-where $w_i$ are the quadrature weights and $f_i = f(\tau_i)$ are samples at the nodes. Because collocation and quadrature share nodes, quadrature of the collocation polynomial is exact up to the appropriate polynomial degree.
+where $w$ are Gaussian quadrature weights.
+A useful property of Gaussian quadrature of order $n$ is that it approximates the integral to machine precision whenever the integrated function is a polynomial of degree at most $2n-1$. Node selection for Gauss quadrature is \emph{not arbitrary}, in collocation methods the node positions are based on roots of Legendre polynomial. Node positions specify the type of collocation method and are creating in following manner.
+%Pairing Gauss quadrature with Legendre polynomials creates a collocation method. Commonly used collocation methods constructed using Legendre polynomials and Gauss quadrature are constructed in following manner.
+Let $P_N(\tau)$ denote the Legendre polynomial of degree $N$. Three node families are commonly used~\cite{garg_overview_nodate}:
+\begin{itemize}
+    \item Legendre-Gauss: roots of $P_N(\tau)$, includes no endpoints.
+    \item Legendre-Gauss-Radau: roots of $P_{N-1}(\tau) + P_N(\tau)$, includes one endpoint.
+    \item Legendre-Gauss-Lobatto: roots of $\dot{P}_{N-1}(\tau)$, includes both endpoints.
+\end{itemize}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{../sync/image.png}
+    \caption{Schematic Showing the Differences Between LGL, LGR, and LG Collocation Points, taken from \cite{garg_overview_nodate}}
+    \label{fig:placeholder}
+\end{figure}
+
+\section{Collocation at Legendre-Gauss points}
+%Legendre polynomials are paired with Gauss quadrature to create a collocation method.
+%where $w_i$ are the quadrature weights and $f_i = f(\tau_i)$ are samples at the nodes. Because collocation and quadrature share nodes, quadrature of the collocation polynomial is exact up to the appropriate polynomial degree.
 %https://en.wikipedia.org/wiki/Classical_orthogonal_polynomials#Table_of_classical_orthogonal_polynomials
+%Collocation methods are the core of this thesis, I have implemented  Gauss radau, gauss, gauss lobatto. Collocation methods differ in points at which the derivative of polynomial coincides ("co-locates) with the vector field of differential equation. Commonly used methods in optimal control are radau, lobatto, legendre. They can be written in integral and differential form\cite{garg_overview_nodate}. Collocatiom methods in this thesis are based on Framework described in\cite{gargUnifiedFrameworkNumerical2010}
 
-
-Collocation methods are the core of this thesis, I have implemented  Gauss radau, gauss, gauss lobatto. Collocation methods differ in points at which the derivative of polynomial coincides ("co-locates) with the vector field of differential equation. Commonly used methods in optimal control are radau, lobatto, legendre. They can be written in integral and differential form\cite{garg_overview_nodate}. Collocatiom methods in this thesis are based on Framework described in\cite{gargUnifiedFrameworkNumerical2010}
-
-Polynomial that aproximates the solution of ODE is based on Legendre
-polynomials. Important note that in actual implementation this calulation of
-polynomial basis is inpractical, therefore barycentric form from
-\cite{berrutBarycentricLagrangeInterpolation2004} has been used as
-implementation of these methods.
-
+%Polynomial that aproximates the solution of ODE is based on Legendre polynomials.
+Legendre-Gauss collocation methods uses nodes strictly inside the interval for approximation using polynomial.
+With $n$ nodes, it is possible to approximate functions up to degree $2n-1$ with machine precision.
+States are approximated by series
 \begin{equation}
-    L_i(\tau) = \prod_{\substack{j=0 \\ j \neq i}}^{N} \frac{\tau - \tau_j}{\tau_i - \tau_j}, \qquad i = 0, \ldots, N
+    x^N_j(\tau) = \sum_{i=0}^{N} x_{ij}\, L_i(\tau),
 \end{equation}
-
+where $j$ is the number of the state.
+Then the series is differentiated using barycentric form from~\cite[p.513]{berrutBarycentricLagrangeInterpolation2004} and evaluated at $k$-th collocation point $\tau_k$
 \begin{equation}
-    x^N_j(\tau) = \sum_{i=0}^{N} x_{ij}\, L_i(\tau)
+    \dot{x}^N_j(\tau_k) = \sum_{i=0}^{N} x_{ij}\, \dot{L}_i(\tau_k) = \sum_{i=0}^{N} D_{ki}\, x_{ij}, \qquad D_{ki} = \dot{L}_i(\tau_k).
 \end{equation}
-
-the differentiation matrix is made also using barycentric form
-from~\cite[p.513]{berrutBarycentricLagrangeInterpolation2004} Many articles
-omit, that this barycentric form is crucical for fast code.
-
+Matrix $\mathbf{D} $is called \emph{Gauss Pseudospectral differentiation matrix}. In matrix notation can be written
 \begin{equation}
-    \dot{x}^N_j(\tau_k) = \sum_{i=0}^{N} x_{ij}\, \dot{L}_i(\tau_k) = \sum_{i=0}^{N} D_{ki}\, x_{ij}, \qquad D_{ki} = \dot{L}_i(\tau_k)
+\mathbf{DX} = \mathbf{F(X_{\mathrm{LG}}, U_{\mathrm{LG}})    }
 \end{equation}
+where $\mathbf{X_{LG}}$ is matrix of states at Legendre-Gauss node points, $\mathbf{U_{LG}}$ is matrix of controls at Legendre-Gauss node points, $\mathbf{X}$ is matrix of states at Legendre-Gauss node points and at initial point $x_0$
 
-then the output?? of differential equation can be aproximated using the
-differentiation matrix.
-\begin{equation}
-    \dot{x}^N_j(\tau_i) = (D\mathbf{X})_{ij}
-\end{equation}
-This is then used as constraints and voila nonlinear optimal control problem is born. \emoji{baby}
+%then the output?? of differential equation can be aproximated using the
+%differentiation matrix.
+%\begin{equation}
+%    \dot{x}^N_j(\tau_i) = (D\mathbf{X})_{ij}
+%\end{equation}
+This is then used as constraints to formulate a transcription method
 \begin{equation}
     \begin{aligned}
-        \min \quad        & \Phi(\mathbf{X}_{N+1})                                                                         \\
-        \text{s.t.} \quad & D\mathbf{X} = F(\mathbf{X}_\text{LG},\, \mathbf{U}_\text{LG})                                  \\
-                          & \mathbf{X}_{N+1} = \mathbf{X}_0 + \mathbf{w}^T F(\mathbf{X}_\text{LG},\, \mathbf{U}_\text{LG}) \\
-                          & \mathbf{X}_0 = \mathbf{x}_0
+        \min \quad        & \Phi(\mathbf{X}_{N+1})                         ,                                                \\
+        \text{s.t.} \quad & \mathbf{DX} = \mathbf{F}(\mathbf{X}_\text{LG},\, \mathbf{U}_\text{LG})      ,                            \\
+                          & \mathbf{X}_{N+1} = \mathbf{X}_0 + \mathbf{w^T} \mathbf{F}(\mathbf{X}_\text{LG},\, \mathbf{U}_\text{LG}), \\
+                          & \mathbf{X}_0 = \mathbf{x}_0.
     \end{aligned}
 \end{equation}
+Where $w$ are the Gauss quadrate weights.
+This is the differential form of Legendre-Gauss collocation method, integral from is described in \cite{gargUnifiedFrameworkNumerical2010}.
+\section{Collocation at Legendre-Gauss-Radau points}
+This method is constructed in similar manner to previous, with difference that one endpoint is a collocation node. This is an advantage, as the resulting nonlinear programming formulation does not require the gauss quadrature rule for endpoint and it is smaller.
+This method approximates functions up degree $2n-2$ with machine precision, this is lower precision than Legendre-Gauss.
+\begin{equation}
+\begin{aligned}
+\min \quad & \Phi(\mathbf{X}_N) \\
+\text{subject to} \quad & \mathbf{D}\mathbf{X} = \mathbf{F}(\mathbf{X}^{\mathrm{LGR}}, \mathbf{U}^{\mathrm{LGR}}), \\
+& \mathbf{X}_0 = \mathbf{x}_0.
+\end{aligned}
+\end{equation}
+This is also a differential formulation.
+\section{Collocation at Legendre-Gauss-Lobatto points}
+The Gauss-Lobatto family includes both endpoints as collocation points, achieving a quadrature degree of exactness of $2N - 3$. It encompasses widely used schemes such as the trapezoidal and Hermite–Simpson methods. Legendre-Gauss-Lobatto method is formulated using Bucher table of LobattoIIIA methods developed in \cite{ehlePadeApproximationsExponential}.
+Then constraints are formulated in classical RK way
+
 
 \section{Gauss methods as pseudospectral collocation}
 I have implemented Gauss-Legendre, Gauss-Lobatto, Gauss-Radau as global
