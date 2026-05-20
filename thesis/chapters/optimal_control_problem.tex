@@ -311,7 +311,7 @@ A function can be approximated in three ways. The first uses a single high-order
 
 Intuitively p methods should suffer from the Runge phenomenon, but they do not. The discretization nodes are not equispaced, they are clustered toward the endpoints, which suppresses the oscillations. Methods based on roots of Chebyshev polynomials suppress the Runge phenomenon better than Legendre methods\cite{trefethenApproximationTheoryApproximation}.
 \section{Mesh refinement methods}
-Mesh refinement works by changing polynomial order and number and place of segements. In mesh refinemnt it is also important to remove segments that are unecessary. Mesh refinemnt methods are divided into three categories.
+Mesh refinement is required to asses the accuracy of transcription, as optimization result without a guarantee on accuracy is useless. Mesh refinement works by changing polynomial order and number and place of segments. In mesh refinement it is also important to remove segments that are unnecessary. Mesh refinement methods are divided into three categories.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[

@@ -121,46 +121,6 @@ Ipopt has built in Hessian aproximation strategy, in benchmark it proved to be i
 \label{fig:nlp_flowchart_chosen}
 \end{figure}
 \section{Implementation of mesh refinement}
-I have implemented p and h method for mesh refinement. Error calculation is implemented using comparing the result of interpolated value at the and of segment and the result of simulation using Rodas4() solver.
-
-To calculate the error at the end of each segment, the interpolated controls and intial states are plugged into Rodas4 IVP solver. Then this result is compared to the states from transcription method. If error between states in absolute vlaue is larger than user defined threshold, the segment is halved. This one of the simpler estimators of discretization error.
-
-
-Figure \ref{fig:power_node_controls} shows that
-error along track is not distributed equaly. Error is localised around areas
-with large jump in controls. These areas need finer sampling. P methods cannot
-focus these specific points directly, they focus entire trajectory.
-
-The errors are concentrated around the discontinuity of controls, where the
-behaviour of the vehicle is more complex/ requiring high order or finer
-approximation see Figure \ref{fig:power_node_controls}. Time optimal control of car around track has many discontinuities and therefore p methods are not a good fit for this use.
-
-
-\begin{figure}[H]
-    \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_error_iter0.pdf}}
-    \caption{Node-interval ODE error for power-test case.}
-    \label{fig:power_node_controls}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_density_iter10.png}}
-    \caption{Node-interval ODE error for power-test case.}
-    \label{fig:power_node_controls}
-\end{figure}
-
-
-
-\begin{figure}[H]
-    \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/p_methodplots/power_summary2x2.png}}
-    \caption{Node-interval ODE error for power-test case.}
-    \label{fig:power_node_controls}
-\end{figure}
-
-
-
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -189,7 +149,44 @@ approximation see Figure \ref{fig:power_node_controls}. Time optimal control of 
 \label{fig:mesh_refinement_chosen}
 \end{figure}
 
+I have implemented p and h method for mesh refinement. Error calculation is implemented using comparing the result of interpolated value at the and of segment and the result of simulation using Rodas4() solver. To calculate the error at the end of each segment, the interpolated controls and intial states are plugged into Rodas4 IVP solver. Then this result is compared to the states from transcription method. If error between states in absolute vlaue is larger than user defined threshold, the segment is halved. This one of the simpler estimators of discretization error.
+
+Figure \ref{fig:power_node_controls} shows that
+error along track is not distributed equally. Error is localized around areas
+with large jump in controls. These areas need finer sampling. P methods cannot
+focus these specific points directly, they focus entire trajectory.
+
+The errors are concentrated around the discontinuity of controls, where the
+behaviour of the vehicle is more complex/ requiring high order or finer
+approximation see Figure \ref{fig:power_node_controls}. Time optimal control of car around track has many discontinuities and therefore p methods are not a good fit for this use.
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/p_methodplots/power_summary2x2.png}}
+    \caption{Node-interval ODE error for power-test case.}
+    \label{fig:power_node_controls}
+\end{figure}
+The h methods handle this better by increasing sampling density around segments with large errors. Error before refinement is on figure~\ref{fig:power_error}.
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_error_iter0.pdf}}
+    \caption{Discretization error before mesh refinement }
+    \label{fig:power_error}
+\end{figure}
+Mesh density after refinement is on figure~\ref{fig:power_refined}
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_density_iter10.png}}
+    \caption{Sampling density after mesh refinement}
+    \label{fig:power_refined}
+\end{figure}
+
+
 \section{Implementation of collocation methods}
+I have implemented Legendre-Gauss(LG), Legendre-Gauss-Radau(LGR) and Legendre-Gauss-Lobatto(LGL) methods. LG and LGR are implemented in differential formulation and LGL in integral formulation. Implementation supports an arbitrary number of collocation nodes.  The integral formulation is chosen for LGL because, with two and three nodes, it is reduced to the trapezoidal and Hermite-Simpson methods. A significant speed-up of evaluation of automatic differentiation was obtained by creating more decision variables, thus the nonlinear constraints were less dense~\cite{julia_discourse_ipopt_hessian}. 
+
+These methods are quite similar in their implementation in julia, I have attempted to create a unified implementation using a single function, but I was unsuccessful. In the future, having such implementation would be beneficial to test a wider variety of collocation methods. Figure \ref{fig:transcription_chosen} shows methods that were implemented.
+
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -249,18 +246,70 @@ approximation see Figure \ref{fig:power_node_controls}. Time optimal control of 
 \end{figure}
 
 
-\section{My collocation}
-my mesh refinbment error calc + my methods implemented
-
-\section{my mesh refinment}
-ode error
 
 \section{My car models}
-PUT CAR MODELS HERE
+
+\begin{table}[H]
+    \centering
+    \caption{Vehicle parameters used in this thesis }
+    \label{tab:vehicle_params}
+    \small
+    \begin{tabular}{lrrrr}
+        \toprule
+        Parameter & Singletrack & FS Twintrack & Formula~E & Bus \\
+        \midrule
+        Mass $m$ [kg]                 & 280   & 280   & 1200   & 12000  \\
+        Inertia $I_z$ [kg\,m$^2$]     & 100   & 100   & 1260   & 30000  \\
+        Wheelbase $L$ [m]             & 1.525 & 1.525 & 2.9    & 6.0    \\
+        Track $w$ [m]                 & 1.2   & 1.2   & 1.5    & 2.1    \\
+        CoG ratio front [--]          & 0.50  & 0.50  & 0.482  & 0.45   \\
+        Lift coefficient $C_L$ [--]   & 5.0   & 5.0   & $-2.7$ & $-0.2$ \\
+        Drag coefficient $C_D$ [--]   & 2.0   & 2.0   & 1.4    & 6.0    \\
+        Power limit $P_{\max}$ [kW]   & 80    & 80    & 270    & 300    \\
+        Brake bias front [--]         & 0.60  & 0.60  & 0.70   & 0.60   \\
+        Max brake force [kN]          & 20    & 20    & 20     & 500    \\
+        Velocity range [m/s]          & [3,60]& [3,60]& [2,60] & [2,30] \\
+        \midrule
+        Wheels                        & 2     & 4     & 4      & 6      \\
+        Driven motors                 & 2     & 4     & 1 (shared) & 6  \\
+        Tire model                    & linear R20 & Pacejka R20 & Pacejka FE & Pacejka (scaled) \\
+        Suspension                    & dummy & simple    & quasi-steady & bus 6-wheel \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
 \subsection{singletrack}
+\begin{figure}[H]
+    \centering
+    \includegraphics{../sync/vehicles/singletrack.png}
+    \caption{Singletrack vehicle model.}
+    \label{fig:vehicle_singletrack}
+\end{figure}
+
 \subsection{Formula Student twintrack}
+\begin{figure}[H]
+    \centering
+    \includegraphics{../sync/vehicles/twintrack.png}
+    \caption{Formula Student twintrack vehicle model.}
+    \label{fig:vehicle_twintrack}
+\end{figure}
+
 \subsection{FormulaE}
+This model is implemented according to~\cite{2026ClassProject}.
+\begin{figure}[H]
+    \centering
+    \includegraphics{../sync/vehicles/formula.png}
+    \caption{Formula~E vehicle model.}
+    \label{fig:vehicle_formula}
+\end{figure}
+
 \subsection{Bus}
+\begin{figure}[H]
+    \centering
+    \includegraphics{../sync/vehicles/bus.png}
+    \caption{Bus vehicle model.}
+    \label{fig:vehicle_bus}
+\end{figure}
 %\subsection{my tires}
 
 %\subsection{my suspensions}
