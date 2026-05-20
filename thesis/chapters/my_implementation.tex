@@ -1,30 +1,11 @@
-\chapter{My implementation, julia + JuMP}
-I have decided to use julia +JuMP, because I wanted to use free and open source
-software. All code is available on github https://github.com/ceserik/SLapSim.jl.
+\chapter{My implementation, Julia + JuMP}
+\label{ch:implementation}
 
-I have already done a lot in Python and julia seemed like new interesting thing
-to learn. Julia is supposed to be fast and high level language, bridging the
-gap between C++ and python. Julia packages offer a lot of ready to use
-mathematical tools developed by community. Julia has
+I chose Julia with JuMP as the modelling environment. The toolchain had to be free and open source, fast and ergonomic. Julia targets the gap between C++ performance and Python ergonomics, and its community packages provide ready-to-use numerical tools. I also had prior experience in Python and wanted to learn Julia. My implementation is available on github \url{https://github.com/ceserik/SLapSim.jl}.
 
-JuMP~\cite{Lubin2023} (Julia for Mathematical Programming) is a modelling
-language and collection of optimization packages in Julia. JuMP makes it
-possible to create decision variables and constraints symbolically and uses
-automatic differentiation, to supply first and second derivative to solvers.
-Solver used in this thesis is IPOPT~\cite{wachter_implementation_2006} and
-MadNLP\cite{shin2021graph}\cite{shin2024accelerating}. MadNLP also allows
-utilising GPU for solver computation.
+JuMP~\cite{Lubin2023} lets the user declare decision variables and constraints symbolically and uses automatic differentiation to supply first- and second-order derivatives to the solver. Through JuMP I use two NLP solvers: IPOPT~\cite{wachter_implementation_2006} for the CPU path and MadNLP~\cite{shin2021graph,shin2024accelerating} for both CPU and GPU paths. The full optimisation stack is shown in Figure~\ref{fig:opt_stack}.
 
-
-
-
-
-Although package InfiteOpt.jl already contains implementation of various collocation methods, I chose not to use it. This decision was motivated by two considerations. Implementing the transcription methods myself provides deeper understanding of the topic. InfiteOpt abstracts away some of the low lever control that JuMP offers, which may prevent mesh refinement implementation, usage of parametric vehicle model or sensitivity analysis.
-
-I chose julia + jump,
-
-
-
+The package InfiniteOpt.jl already implements several collocation schemes, but I chose to implement transcription myself. First, doing so gave a deeper understanding of the underlying methods. Second, InfiniteOpt abstracts away the low-level JuMP access, which may make custom mesh refinement, parametric vehicle models, and sensitivity analysis more difficult.
 
 %\section{My optimization stack}
 
@@ -74,8 +55,8 @@ I chose julia + jump,
 
 \section{sensitivity Analysis}
 I have used DiffOpt.jl~\cite{besancon2023diffopt} for the sensitivity analysis. By adding vehicle
-parameters susch as, mass, lift coeffcient, CoG position etc. into
-optimization as decisions variables fixed to a value by constraints. This added them to the algebraic model, then the solution of minimum laptime can be differentiated by these parameters. AKO POMENOVAT TEN STROM CO JUMP VYTCORI TEN GRAF? algebraic model. Result of this is on figure \ref{fig:sensitivity}
+parameters such as, mass, lift coefficient, CoG position etc. into
+optimization as decisions variables fixed to a value by constraints. This added them to the algebraic model. Then the solution of minimum laptime can be differentiated by these parameters. Result of sensitivity analysis are on figure \ref{fig:sensitivity}.
 
 \begin{figure}[H]
 	\centering
@@ -84,6 +65,10 @@ optimization as decisions variables fixed to a value by constraints. This added 
 	\label{fig:sensitivity}
 \end{figure}
 
+\section{Implemented nonlinear programming solvers}
+Julia with JuMP offer high level interface which allows switching NLP solvers on single line. I have used Ipopt, MadNLP and Uno solver with preset filtersqp. Unfortunately the Uno solver was getting stuck, therefore it is not cosidered in this thesis.
+
+Ipopt has built in Hessian aproximation strategy, in benchmark it proved to be inferior to automatic differentiation. Figure \ref{fig:nlp_flowchart_chosen} shows which solving methods were implemented and tested.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -135,6 +120,46 @@ optimization as decisions variables fixed to a value by constraints. This added 
 \caption{NLP solution flow with the methods used in this thesis highlighted in green}
 \label{fig:nlp_flowchart_chosen}
 \end{figure}
+\section{Implementation of mesh refinement}
+I have implemented p and h method for mesh refinement. Error calculation is implemented using comparing the result of interpolated value at the and of segment and the result of simulation using Rodas4() solver.
+
+To calculate the error at the end of each segment, the interpolated controls and intial states are plugged into Rodas4 IVP solver. Then this result is compared to the states from transcription method. If error between states in absolute vlaue is larger than user defined threshold, the segment is halved. This one of the simpler estimators of discretization error.
+
+
+Figure \ref{fig:power_node_controls} shows that
+error along track is not distributed equaly. Error is localised around areas
+with large jump in controls. These areas need finer sampling. P methods cannot
+focus these specific points directly, they focus entire trajectory.
+
+The errors are concentrated around the discontinuity of controls, where the
+behaviour of the vehicle is more complex/ requiring high order or finer
+approximation see Figure \ref{fig:power_node_controls}. Time optimal control of car around track has many discontinuities and therefore p methods are not a good fit for this use.
+
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_error_iter0.pdf}}
+    \caption{Node-interval ODE error for power-test case.}
+    \label{fig:power_node_controls}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_density_iter10.png}}
+    \caption{Node-interval ODE error for power-test case.}
+    \label{fig:power_node_controls}
+\end{figure}
+
+
+
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/p_methodplots/power_summary2x2.png}}
+    \caption{Node-interval ODE error for power-test case.}
+    \label{fig:power_node_controls}
+\end{figure}
+
+
 
 \begin{figure}[H]
 \centering
@@ -164,6 +189,7 @@ optimization as decisions variables fixed to a value by constraints. This added 
 \label{fig:mesh_refinement_chosen}
 \end{figure}
 
+\section{Implementation of collocation methods}
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -223,16 +249,21 @@ optimization as decisions variables fixed to a value by constraints. This added 
 \end{figure}
 
 
-\section{My trancription}
+\section{My collocation}
 my mesh refinbment error calc + my methods implemented
 
+\section{my mesh refinment}
+ode error
 
-\section{My models}
+\section{My car models}
 PUT CAR MODELS HERE
+\subsection{singletrack}
+\subsection{Formula Student twintrack}
+\subsection{FormulaE}
+\subsection{Bus}
+%\subsection{my tires}
 
-\subsection{my tires}
-
-\subsection{my suspensions}
+%\subsection{my suspensions}
 
 \section{Benchmark tracks}
 The following tracks are used in the benchmark in

@@ -340,21 +340,7 @@ Mesh refinement works by changing polynomial order and number and place of segem
 
 \subsection{P adaptive methods}
 The p adaptive methods work by increasing the order of polynomial, until the error
-is below user defined threshold. Figure \ref{fig:power_node_controls} shows that
-error along track is not distributed equaly. Error is localised around areas
-with large jump in controls. These areas need finer sampling. P methods cannot
-focus these specific points directly, they focus entire trajectory.
-
-The errors are concentrated around the discontinuity of controls, where the
-behaviour of the vehicle is more complex/ requiring high order or finer
-approximation see Figure \ref{fig:power_node_controls}. Time optimal control of car around track has many discontinuities and therefore p methods are not a good fit for this use.
-
-\begin{figure}[H]
-    \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/p_methodplots/power_summary2x2.png}}
-    \caption{Node-interval ODE error for power-test case.}
-    \label{fig:power_node_controls}
-\end{figure}
+is below user defined threshold. 
 
 \subsection{h adaptive methods}
 The h methods are used when solution of optimal control problem is approximated by
@@ -364,19 +350,6 @@ Method described in \cite{betts} calculates error using Romberg quadrature with 
 method described in \cite{jisongzhaoshuangliAdaptiveMeshRefinement} uses
 techniques from essentially non oscillatory (ENO) interpolation
 
-\begin{figure}[H]
-    \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_error_iter0.pdf}}
-    \caption{Node-interval ODE error for power-test case.}
-    \label{fig:power_node_controls}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_density_iter10.png}}
-    \caption{Node-interval ODE error for power-test case.}
-    \label{fig:power_node_controls}
-\end{figure}
 
 \cite{Harten1997} to decide where to split and remove nodes.
 \subsection{hp adaptive methods}
