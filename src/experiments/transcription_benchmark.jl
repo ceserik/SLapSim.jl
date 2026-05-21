@@ -13,11 +13,12 @@ function _default_ipopt_attrs()
         "linear_solver" => "mumps",
         "print_timing_statistics" => "yes",
         "alpha_for_y" => "safer-min-dual-infeas",
+        "nlp_scaling_method" => "gradient-based",
     )
 end
 
 function _default_segments(track)
-    return max(1, Int(round(track.sampleDistances[end] / 10)))
+    return max(1, Int(round(track.sampleDistances[end] / 5)))
 end
 
 function _build_experiment(track, car; variant::String, tol::Real, method::Symbol,

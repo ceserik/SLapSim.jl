@@ -23,7 +23,7 @@ function _build_animation_experiment(track, car; tol::Real, method::Symbol,
     return Experiment(
         car = car,
         track = track,
-        discipline = Open(v_start=5.0),
+        discipline = Open(v_start=10.0),
         solver = solver,
         mesh_refinement = MeshRefinementConfig(
             tol = tol,
@@ -46,7 +46,7 @@ end
 Solve every (track, car) combination from `_default_cases()` and write one
 animation per combo into `output_dir` as `<track>_<car>.mp4`. Returns a list of
 named tuples `(track, car, success, status, solve_time, animation_path)`.
-
+LobattoIIIA_integral
 Filter with `tracks=["FSCZ", ...]` and/or `cars=["singletrack", ...]`.
 """
 function run_animation_matrix(; output_dir::String="sync/animations",

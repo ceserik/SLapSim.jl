@@ -344,7 +344,8 @@ function csv2track(path::String;
 end
 
 
-function kml2track(path::String,closeTrack::Bool,flip; vis::Bool=false)
+function kml2track(path::String,closeTrack::Bool,flip; vis::Bool=false,
+                   widthL::Float64=1.5, widthR::Float64=1.5)
     A = kml2cart(path)
 
     if flip == true
@@ -356,20 +357,20 @@ function kml2track(path::String,closeTrack::Bool,flip; vis::Bool=false)
         A = [A[1:end,:]; A[1,:]']
     end
     track = Track(
-        [0.0],
-        [1.225],
-        [1.0],
-        [1.0],
-        trackMapping,
-        A[:,1],
-        A[:,2],
-        [0.0],
-        [1.0],
-        [1.0],
-        [0.0],
-        [0.0],
-        (s) -> 0.0,
-        [0.0]
+        [0.0],         # curvature
+        [1.225],       # rho
+        [1.0],         # μ (friction coefficient)
+        [1.0],         # sampleDistances (placeholder; smooth_by_OCP overwrites)
+        trackMapping,  # mapping
+        A[:,1],        # x
+        A[:,2],        # y
+        [0.0],         # theta
+        [widthR],      # widthR
+        [widthL],      # widthL
+        [0.0],         # inclination
+        [0.0],         # slope
+        (s) -> 0.0,    # fcurve
+        [0.0]          # s
         )
 
     smooth_by_OCP(track,1.0,0.4,closeTrack)
