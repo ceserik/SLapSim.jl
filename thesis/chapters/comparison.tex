@@ -4,70 +4,46 @@ As written on Ipopt website: Ipopt has many (probably too many) options \cite{ip
 5070.
 
 This benchmark was performed with vehicles :singletrack, twintrack, formula, bus on all tracks with h mesh refinement. Legendre and Lobatto methods failed in one of 14 tests Radau did not fail, but took little longer than lobatto method.
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/summary.tex}
-\caption{Benchmark summary statistics by transcription variant.}
+\captionof{table}{Benchmark summary statistics by transcription variant.}
 \label{tab:benchmark-summary}
-\end{table}
 
 
 
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/results.tex}
-\caption{Benchmark results by track, vehicle model, and transcription variant.}
+\captionof{table}{Benchmark results by track, vehicle model, and transcription variant.}
 \label{tab:benchmark-results}
-\end{table}
 
 
 
 Surprisingly free MUMPS solver performed better than proprietary source Harwell Subroutine Library, In this test I did not include PARDISO  as my license was limited only to two cores.
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/linearSolvers/summary.tex}
-\caption{Linear solver benchmark summary statistics.}
+\captionof{table}{Linear solver benchmark summary statistics.}
 \label{tab:linsolver-summary}
-\end{table}
 
 
 
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/linearSolvers/results.tex}
-\caption{Linear solver benchmark results by track, vehicle model, and transcription variant.}
+\captionof{table}{Linear solver benchmark results by track, vehicle model, and transcription variant.}
 \label{tab:linsolver-results}
-\end{table}
 
 
 
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/backends/summary.tex}
-\caption{NLP solver / backend benchmark summary statistics (IPOPT-MUMPS, MadNLP-CPU, MadNLP-GPU).}
+\captionof{table}{NLP solver / backend benchmark summary statistics (IPOPT-MUMPS, MadNLP-CPU, MadNLP-GPU).}
 \label{tab:backend-summary}
-\end{table}
 
 
 
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/backends/results.tex}
-\caption{NLP solver / backend benchmark results by track, vehicle model, and transcription variant.}
+\captionof{table}{NLP solver / backend benchmark results by track, vehicle model, and transcription variant.}
 \label{tab:backend-results}
-\end{table}
 
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/hessian/summary.tex}
-\caption{Hessian approximation benchmark summary statistics (exact vs.\ limited-memory quasi-Newton).}
+\captionof{table}{Hessian approximation benchmark summary statistics (exact vs.\ limited-memory quasi-Newton).}
 \label{tab:hessian-summary}
-\end{table}
 
-\begin{table}[H]
-\centering
 \input{../sync/thesisTables/hessian/results.tex}
-\caption{Hessian approximation benchmark results by track, vehicle model, and transcription variant.}\label{tab:hessian-results}
-\end{table}
+\captionof{table}{Hessian approximation benchmark results by track, vehicle model, and transcription variant.}\label{tab:hessian-results}
 
 

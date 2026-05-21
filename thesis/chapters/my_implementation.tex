@@ -247,13 +247,78 @@ These methods are quite similar in their implementation in julia, I have attempt
 
 
 
-\section{My car models}
+\section{Implementation of  models}
+\subsection{Tire model implementation}
+Three tire models were implemented according to section \ref{tiremodel}. Extra decision variables were created that are equal to tire lateral and longitudinal forces, this creates less dense nonlinear expressions. Tires have these parametrizations
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \caption{Tire model parameters.}
+    \label{tab:tires}
+    \begin{minipage}[t]{0.46\textwidth}
+        \centering
+        \textbf{Linear R20}\\[2pt]
+        \begin{tabular}{lc}
+            \toprule
+            Parameter & Value \\
+            \midrule
+            Radius $R$ [m]                       & 0.205 \\
+            Width [m]                            & 0.30 \\
+            Max slip angle $\alpha_{\max}$ [deg] & 5 \\
+            Friction coefficient $\mu$ [--]      & 1.0 \\
+            Rolling resistance $c_r$ [--]        & 0.010 \\
+            \bottomrule
+        \end{tabular}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.46\textwidth}
+        \centering
+        \textbf{Pacejka R20}\\[2pt]
+        \begin{tabular}{lc}
+            \toprule
+            Parameter & Value \\
+            \midrule
+            Radius $R$ [m]                  & 0.205 \\
+            Width [m]                       & 0.30 \\
+            Friction coefficient $\mu$ [--] & 1.0 \\
+            Rolling resistance $c_r$ [--]   & 0.010 \\
+            Stiffness factor $B$            & 9.62 \\
+            Shape factor $C$                & 2.59 \\
+            Curvature factor $E$            & 1.0 \\
+            Peak factor $D$                 & $\mu F_z$ \\
+            \bottomrule
+        \end{tabular}
+    \end{minipage}
 
+    \vspace{1em}
+
+    \begin{minipage}[t]{0.6\textwidth}
+        \centering
+        \textbf{Pacejka Formula~E}\\[2pt]
+        \begin{tabular}{lc}
+            \toprule
+            Parameter & Value \\
+            \midrule
+            Radius $R$ [m]                  & 0.33 \\
+            Width [m]                       & 0.30 \\
+            Friction coefficient $\mu$ [--] & 1.0 \\
+            Rolling resistance $c_r$ [--]   & 0.010 \\
+            Stiffness factor $B$            & 9.62 \\
+            Shape factor $C$                & 2.59 \\
+            Curvature factor $E$            & 1.0 \\
+            Peak factor $D$                 & $\mu F_z \left(1 - \dfrac{0.0813\,F_z}{3000}\right)$ \\
+            \bottomrule
+        \end{tabular}
+    \end{minipage}
+\end{table}
+
+
+\subsection{Implementation of vehicles}
 \begin{table}[H]
     \centering
     \caption{Vehicle parameters used in this thesis }
     \label{tab:vehicle_params}
-    \small
+    \footnotesize
+    \setlength{\tabcolsep}{4pt}
     \begin{tabular}{lrrrr}
         \toprule
         Parameter & Singletrack & FS Twintrack & Formula~E & Bus \\
@@ -278,37 +343,44 @@ These methods are quite similar in their implementation in julia, I have attempt
     \end{tabular}
 \end{table}
 
-\subsection{singletrack}
-\begin{figure}[H]
+
+
+The Formula~E model is implemented according to~\cite{2026ClassProject}.
+
+\begin{figure}[htbp]
     \centering
-    \includegraphics{../sync/vehicles/singletrack.png}
-    \caption{Singletrack vehicle model.}
-    \label{fig:vehicle_singletrack}
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includesvg[width=\linewidth]{../sync/vehicles/singletrack.svg}
+        \caption{Singletrack}
+        \label{fig:vehicle_singletrack}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includesvg[width=\linewidth]{../sync/vehicles/twintrack.svg}
+        \caption{Formula Student twintrack}
+        \label{fig:vehicle_twintrack}
+    \end{subfigure}
+    \caption{Single-track and Formula Student twintrack vehicle models.}
+    \label{fig:vehicle_fs}
 \end{figure}
 
-\subsection{Formula Student twintrack}
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
-    \includegraphics{../sync/vehicles/twintrack.png}
-    \caption{Formula Student twintrack vehicle model.}
-    \label{fig:vehicle_twintrack}
-\end{figure}
-
-\subsection{FormulaE}
-This model is implemented according to~\cite{2026ClassProject}.
-\begin{figure}[H]
-    \centering
-    \includegraphics{../sync/vehicles/formula.png}
-    \caption{Formula~E vehicle model.}
-    \label{fig:vehicle_formula}
-\end{figure}
-
-\subsection{Bus}
-\begin{figure}[H]
-    \centering
-    \includegraphics{../sync/vehicles/bus.png}
-    \caption{Bus vehicle model.}
-    \label{fig:vehicle_bus}
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includesvg[width=\linewidth]{../sync/vehicles/formula.svg}
+        \caption{Formula~E}
+        \label{fig:vehicle_formula}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includesvg[width=\linewidth]{../sync/vehicles/bus.svg}
+        \caption{Bus}
+        \label{fig:vehicle_bus}
+    \end{subfigure}
+    \caption{Formula~E and Bus vehicle models.}
+    \label{fig:vehicle_other}
 \end{figure}
 %\subsection{my tires}
 

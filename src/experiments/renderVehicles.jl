@@ -20,8 +20,8 @@ end
 
 Render a static top-down image for every unique vehicle in `_default_cases()`.
 Each car factory is invoked once with a placeholder track (default: figureEight),
-then `drawCar!` is called at origin with ψ=0. PNGs are saved as
-`<output_dir>/<car_name>.png`.
+then `drawCar!` is called at origin with ψ=0. SVGs are saved as
+`<output_dir>/<car_name>.svg`.
 
 Returns a list of named tuples `(car, path, success, [error])`.
 """
@@ -35,7 +35,7 @@ function render_vehicle_matrix(; output_dir::String="sync/vehicles",
 
     results = []
     for (name, car_fn) in factories
-        path = joinpath(output_dir, "$(name).png")
+        path = joinpath(output_dir, "$(name).svg")
         entry = try
             car = car_fn(track)
             wb = car.chassis.wheelbase.value

@@ -50,7 +50,7 @@ motor and accumulator.
 \section{Tire - road interface modelling}
 Job of the tire model in this thesis is to calculate forces acting on tire from
 the relative velocity and angle between tire and road. Input of general tire
-model is 3 speeds and 3 angles, output is 3 forces.
+model is 3 speeds and 3 angles, output is 3 forces.\label{tiremodel}
 
 
 \begin{figure}[H]
@@ -501,14 +501,15 @@ Another possible formulation is using smooth max approximation using $\arctan$ o
 \section{Car models}
 These models must work when used in NLP transcription for solving boundary value problem, but they also must work for initial value problem, when the model is initialized or verified for transcription error. Some toolboxes can automatically create constraints from ODE models \cite{wilhelm2022eago}. In my implementation I have an if statement that switches between IVP and BVP variant of models equations, major disadvantage of this approach is that the equations for both variants must be effectively the same and finding bugs is difficult with this approach.
 \subsection{Generic car model structure}
-Leveraging the full potential of algorithmic differential methods, any car Parameter can be assigned as
+Leveraging the full potential of automatic differentiation methods, any car Parameter can be assigned as
 state, control, static parameter, decision variable or sensitivity analysis
 variable. This allows for changing a fixed parameter into a degree of freedom allowing to
 decide which parameters should be controlled. This also
 allows for finding the optimal parameters of vehicle, such as brake bias,
 aerodynamics balance, gear ratio during lap time optimization. This is shown on figure \ref{fig:generic_car}. When parameter is chosen to be sensitivity
 analysis variable, impact of changing this variable is cheaply computed after
-the optimisation is finished, see Section~\ref{sec:adjoint}.
+the optimization is finished, see Section~\ref{sec:adjoint}. Each parameter holds three values: lower bound, upper bound, and nominal value. The bounds are passed directly to the NLP as variable limits and are reused to scale the variable
+
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
