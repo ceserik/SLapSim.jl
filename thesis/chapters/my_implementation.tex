@@ -117,7 +117,7 @@ Ipopt has built-in Hessian approximation strategy, in benchmark it proved to be 
 \draw[->, very thick, green!60!black] (qn)   -- (newton);
 
 \end{tikzpicture}
-\caption{NLP solution flow with the methods used in this thesis highlighted in green}
+\caption{NLP solution flow with the methods implemented}
 \label{fig:nlp_flowchart_chosen}
 \end{figure}
 \section{Implementation of mesh refinement}
@@ -145,7 +145,7 @@ Ipopt has built-in Hessian approximation strategy, in benchmark it proved to be 
 \draw[->] (mesh.south) -- (ph.north);
 
 \end{tikzpicture}
-\caption{Mesh refinement layer with the strategies implemented in this thesis highlighted in green}
+\caption{Mesh refinement layer with the strategies implemented}
 \label{fig:mesh_refinement_chosen}
 \end{figure}
 
@@ -241,7 +241,7 @@ These methods are quite similar in their implementation in Julia, I have attempt
 \draw[->] (lgl.south) -- (lgl-diff.north);
 
 \end{tikzpicture}
-\caption{Transcription layer with the methods used in this thesis highlighted in green}
+\caption{Transcription layer with the implemented methods}
 \label{fig:transcription_chosen}
 \end{figure}
 
@@ -253,7 +253,7 @@ Three tire models were implemented according to section \ref{tiremodel}. Extra d
 \begin{table}[H]
     \centering
     \footnotesize
-    \caption{Tire model parameters.}
+    \caption{Tire model parameters}
     \label{tab:tires}
     \begin{minipage}[t]{0.46\textwidth}
         \centering
@@ -322,7 +322,7 @@ The twin-track Formula~E model has a Magic Formula tire model~\ref{pacejka} with
 The bus model has a scaled-up Magic Formula tire model and a dummy suspension that splits the normal load equally. The controls are the torque on the middle axle, the independent steering of the front and rear wheels, and the braking force.
 \begin{table}[H]
     \centering
-    \caption{Vehicle parameters used in this thesis }
+    \caption{Vehicle parameters used in this thesis}
     \label{tab:vehicle_params}
     \footnotesize
     \setlength{\tabcolsep}{4pt}
