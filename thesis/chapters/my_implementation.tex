@@ -1,7 +1,7 @@
 \chapter{My implementation, Julia + JuMP}
 \label{ch:implementation}
 
-I chose Julia with JuMP as the modelling environment. The toolchain had to be free and open source, fast and ergonomic. Julia targets the gap between C++ performance and Python ergonomics, and its community packages provide ready-to-use numerical tools. I also had prior experience in Python and wanted to learn Julia. My implementation is available on github \url{https://github.com/ceserik/SLapSim.jl}.
+I chose Julia with JuMP as the modeling environment. The toolchain had to be free and open source, fast and ergonomic. Julia targets the gap between C++ performance and Python ergonomics, and its community packages provide ready-to-use numerical tools. I also had prior experience in Python and wanted to learn Julia. My implementation is available on github \url{https://github.com/ceserik/SLapSim.jl}.
 
 JuMP~\cite{Lubin2023} lets the user declare decision variables and constraints symbolically and uses automatic differentiation to supply first- and second-order derivatives to the solver. Through JuMP I use two NLP solvers: IPOPT~\cite{wachter_implementation_2006} for the CPU path and MadNLP~\cite{shin2021graph,shin2024accelerating} for both CPU and GPU paths. The full optimisation stack is shown in Figure~\ref{fig:opt_stack}.
 

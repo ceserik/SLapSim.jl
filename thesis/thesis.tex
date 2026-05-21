@@ -13,9 +13,9 @@
 %	titlelanguage = czech,
 	mainlanguage = english,
 	otherlanguages = {english},
-	title-czech = {Metody numerického optimálního řízení pro minimalizaci času na kolo },
-	title-english = {Numerical Optimal Control \\ for Minimum Lap Time },
-	subtitle-czech = {Cesta do tajů kdovíčeho},
+	title-czech = {Metody numerického optimálního řízení pro minimalizaci času na kolo},
+	title-english = {Numerical Optimal Control \\ for Minimum Lap Time},
+	%subtitle-czech = {Cesta do tajů kdovíčeho},
 	%subtitle-english = {Journey to the who-knows-what wondeland},
 	doctype = M,
 	faculty = F3,
@@ -29,13 +29,13 @@
 	%subfieldofstudy-english = {Mathematical Modelling},
 	%fieldofstudy-czech = {Matematcké inženýrství},
 	%subfieldofstudy-czech = {Matematické modelování},
-	keywords-czech = {NLP, simulace času na kolo, optimální řízení, IPOPT, vozidlová dynamika, kolokační metody, Julia, citlivostní analýza},
-	keywords-english = {NLP,optimization, automatic differentiation, twin-track model, pacejka, julia, scalability, Ipopt, MadNLP, MUMPS, ma97, CuDSS, sensitivty analysis},
+	keywords-czech = {NLP, simulace času na kolo, optimální řízení, Ipopt, vozidlová dynamika, kolokační metody, Julia, citlivostní analýza},
+	keywords-english = {NLP, optimization, automatic differentiation, twin-track model, Pacejka, Julia, scalability, Ipopt, MadNLP, MUMPS, MA97, CuDSS, sensitivity analysis},
 	day = 22,
 	month = 5,
 	year = 2026,
-%	specification-file = {ctutest-zadani.pdf},
-%	front-specification = true,
+	specification-file = {../sync/document_24_filename.pdf},
+	front-specification = true,
 %	front-list-of-figures = false,
 %	front-list-of-tables = false,
 %	monochrome = true,
@@ -49,10 +49,8 @@
 	\def\subfieldofstudyname{Studijní program}%
 }
 
-\ctutemplateset{maketitle twocolumn default}{
+\ctutemplateset{maketitle.twocolumn.default}{
 	\begin{twocolumnfrontmatterpage}
-		%\ctutemplate{twocolumn.thanks}
-		%\ctutemplate{twocolumn.declaration}
 		\ctutemplate{twocolumn.abstract.in.titlelanguage}
 		\ctutemplate{twocolumn.abstract.in.secondlanguage}
 		\ctutemplate{twocolumn.tableofcontents}
@@ -79,29 +77,15 @@
 
 % Abstract in Czech
 \begin{abstract-czech}
-Táto práca skúma a implementuje metódy riešenia problému minimálneho času manévrovania (simulácia času na kolo) pre cestné vozidlá. Problém je rozdelený na menšie podproblémy, pre ktoré už existujú vyspelé softvérové nástroje. Týmito podproblémami sú: modelovanie pretekárskeho vozidla, transkripcia úlohy optimálneho riadenia na úlohu nelineárneho programovania (NLP), riešenie NLP, riešenie sústav lineárnych rovníc a citlivostná analýza. Každý podproblém je skúmaný v kontexte dynamiky vozidla a je predstavená implementácia v jazyku Julia postavená na knižnici JuMP . Implementácia podporuje viacero kolokačných schém Gauss Legendre, Radau a Lobatto spolu s adaptívnym zjemňovaním siete. Rôzne modely vozidiel rastúcej zložitosti, stratégie transkripcie a backendy lineárnych riešičov (MUMPS, HSL MA57/MA97) sú porovnané na reprezentatívnych okruhoch a je analyzovaná parametrická citlivosť optimálneho času na kolo.
+Táto práca skúma a implementuje metódy riešenia problému minimálneho času manévrovania (simulácia času na kolo) pre cestné vozidlá. Problém je rozdelený na menšie podproblémy, pre ktoré už existujú vyspelé softvérové nástroje. Týmito podproblémami sú: modelovanie pretekárskeho vozidla, transkripcia úlohy optimálneho riadenia na úlohu nelineárneho programovania (NLP), riešenie NLP, riešenie sústav lineárnych rovníc a citlivostná analýza. Každý podproblém je skúmaný v kontexte dynamiky vozidla a je predstavená implementácia v jazyku Julia postavená na knižnici JuMP. Implementácia podporuje viacero kolokačných schém (Gauss-Legendre, Radau a Lobatto) spolu s adaptívnym zjemňovaním siete. Rôzne modely vozidiel rastúcej zložitosti, stratégie transkripcie a backendy lineárnych riešičov (MUMPS, HSL MA57/MA97) sú porovnané na reprezentatívnych okruhoch a je analyzovaná parametrická citlivosť optimálneho času na kolo.
 
 \end{abstract-czech}
 
 % Abstract in English
 \begin{abstract-english}
-The thesis researches and implements ways of solving the minimum-time maneuvering problem (lap-time simulation) for road vehicles. It divides the problem into smaller subproblems for which mature software methods already exist. The subproblems are: race-car modeling, transcription of the optimal control problem into an NLP, solving the NLP, solving sets of linear equations, and sensitivity analysis. Each subproblem is examined in the context of vehicle dynamics, and a Julia-based implementation built on JuMP and Ipopt is presented. The framework supports several collocation schemes (Gauss-Legendre, Radau, and Lobatto) together with adaptive mesh refinement. Various vehicle models of increasing complexity, transcription strategies, and linear solver backends (MUMPS, HSL MA57/MA97) are benchmarked on representative circuits, and the parametric sensitivity of the optimal lap time is analyzed.
+The thesis investigates and implements ways of solving the minimum-time maneuvering problem (lap-time simulation) for road vehicles. It divides the problem into smaller subproblems for which mature software methods already exist. The subproblems are: race-car modeling, transcription of the optimal control problem into an NLP, solving the NLP, solving sets of linear equations, and sensitivity analysis. A Julia-based implementation built on JuMP and Ipopt is presented. The framework supports several collocation schemes (Gauss-Legendre, Radau, and Lobatto) together with adaptive mesh refinement. Various vehicle models of increasing complexity, transcription strategies, and linear solver backends (MUMPS, HSL MA57/MA97) are benchmarked on representative circuits, and the parametric sensitivity of the optimal lap time is analyzed.
 
 \end{abstract-english}
-
-% Acknowledgements / Podekovani
-\begin{thanks}
-Děkuji ČVUT, že mi je tak dobrou \emph{alma mater}.
-\end{thanks}
-
-% Declaration / Prohlaseni
-\begin{declaration}
-Prohlašuji, že jsem předloženou práci vypracoval samostatně, a že jsem uvedl veškerou použitou literaturu.
-V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
-%\includepdf[pages=-]{../sync/document_24_filename.pdf}
-
-
-\end{declaration}
 
 % Only for testing purposes
 \listfiles
@@ -121,8 +105,6 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 
 \maketitle
 
-\includepdf[pages=-]{../sync/document_24_filename.pdf}
-
 \input{chapters/introduction.tex}
 
 \part{Theory}
@@ -130,17 +112,17 @@ V Praze, \ctufield{day}.~\monthinlanguage{title}~\ctufield{year}
 \input{chapters/optimal_control_problem.tex}
 \input{chapters/nlp_solvers.tex}
 
-\part{Implementation of Optimal Control problem}
+\part{Implementation}
 \input{chapters/frameworks_ocp.tex}
 \input{chapters/my_implementation.tex}
 
-\part{results}
+\part{Results}
 \input{chapters/comparison.tex}
 \input{chapters/conclusion.tex}
 
 \appendix
 
-\printindex
+%\printindex
 
 \bibliographystyle{plain}
 \bibliography{ctutest/ctutest}
