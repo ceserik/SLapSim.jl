@@ -439,27 +439,28 @@ geometries (DoubleTurn, FigureEight).
 
 %\section{Actual constriants, exampleconstraints like cannot leave road}
 
-%\section{Example optimization problem}
+\section{Example optimization problem}
 
-%After transcription the OCP becomes a nonlinear program over the state and
-%control samples at the collocation nodes,
-%`\begin{equation}
-%`    \begin{aligned}
-%`        \min_{\mathbf{X},\,\mathbf{U}}\quad
-%`            & t_f \\
-%`        \text{s.t.}\quad
-%`            & \mathbf{D}\mathbf{X} = \mathbf{F}(\mathbf{X}, \mathbf{U}),
-%`              && \text{collocated dynamics} \\
-%`            & \mathbf{G}(\mathbf{X}, \mathbf{U}) \le 0,
-%`              && \text{path constraints at nodes} \\
-%`            & \mathbf{X}_0 = \mathbf{x}_0,\quad \mathbf{X}_N = \mathbf{x}_f,
-%`              && \text{boundary conditions} \\
-%`            & \mathbf{X}_\mathrm{lb} \le \mathbf{X} \le \mathbf{X}_\mathrm{ub},
-%`              && \text{state bounds} \\
-%`            & \mathbf{U}_\mathrm{lb} \le \mathbf{U} \le \mathbf{U}_\mathrm{ub}.
-%`              && \text{control bounds}
-%`    \end{aligned}
-%`\end{equation}
+After transcription the OCP becomes a nonlinear program over the state and
+control samples at the collocation nodes,
+\begin{equation}
+    \begin{aligned}
+        \min_{\mathbf{X},\,\mathbf{U}}\quad
+            & t_f \\
+        \text{s.t.}\quad
+            & \mathbf{D}\mathbf{X} = \mathbf{F}(\mathbf{X}, \mathbf{U}),
+              && \text{collocated dynamics} \\
+            & \mathbf{G}(\mathbf{X}, \mathbf{U}) \le 0,
+              && \text{path constraints at nodes} \\
+            & \mathbf{X}_0 = \mathbf{x}_0,\quad \mathbf{X}_N = \mathbf{x}_f,
+              && \text{boundary conditions} \\
+            & \mathbf{X}_\mathrm{lb} \le \mathbf{X} \le \mathbf{X}_\mathrm{ub},
+              && \text{state bounds} \\
+            & \mathbf{U}_\mathrm{lb} \le \mathbf{U} \le \mathbf{U}_\mathrm{ub}.
+              && \text{control bounds}
+    \end{aligned}
+\end{equation}
+the objective is to minimize the final time.
 %`$\mathbf{X}$ and $\mathbf{U}$ are the matrices of state and control samples
 %`at the collocation nodes, $\mathbf{D}$ is the pseudospectral differentiation
 %`matrix and $\mathbf{F}$ evaluates the vehicle dynamics at every node. The
