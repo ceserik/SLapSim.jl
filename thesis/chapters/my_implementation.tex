@@ -1,7 +1,7 @@
 \chapter{My implementation, Julia + JuMP}
 \label{ch:implementation}
 
-I chose Julia with JuMP as the modeling environment. The toolchain had to be free and open source, fast and ergonomic. Julia targets the gap between C++ performance and Python ergonomics, and its community packages provide ready-to-use numerical tools. I also had prior experience in Python and wanted to learn Julia. My implementation is available on github \url{https://github.com/ceserik/SLapSim.jl}.
+I chose Julia with JuMP as the modeling environment. The toolchain had to be free and open source, fast and ergonomic. Julia targets the gap between C++ performance and Python ergonomics, and its community packages provide ready-to-use numerical tools. I also had prior experience in Python and wanted to learn Julia. My implementation is available on GitHub \url{https://github.com/ceserik/SLapSim.jl}.
 
 JuMP~\cite{Lubin2023} lets the user declare decision variables and constraints symbolically and uses automatic differentiation to supply first- and second-order derivatives to the solver. Through JuMP I use two NLP solvers: IPOPT~\cite{wachter_implementation_2006} for the CPU path and MadNLP~\cite{shin2021graph,shin2024accelerating} for both CPU and GPU paths. The full optimisation stack is shown in Figure~\ref{fig:opt_stack}.
 
@@ -9,7 +9,7 @@ The package InfiniteOpt.jl already implements several collocation schemes, but I
 
 %\section{My optimization stack}
 
-\begin{figure}[H]
+\begin{figure}[h]
 	\centering
 	\begin{tikzpicture}[
 			box/.style={rectangle, draw, thick, minimum width=2.5cm, minimum height=0.9cm, align=center, font=\small},
@@ -53,10 +53,10 @@ The package InfiniteOpt.jl already implements several collocation schemes, but I
 	\label{fig:opt_stack}
 \end{figure}
 
-\section{sensitivity Analysis}
+\section{Sensitivity analysis}
 I have used DiffOpt.jl~\cite{besancon2023diffopt} for the sensitivity analysis. By adding vehicle
 parameters such as, mass, lift coefficient, CoG position etc. into
-optimization as decisions variables fixed to a value by constraints. This added them to the algebraic model. Then the solution of minimum laptime can be differentiated by these parameters. Result of sensitivity analysis are on figure \ref{fig:sensitivity}.
+optimization as decision variables fixed to a value by constraints. This added them to the algebraic model. Then the solution of minimum lap time can be differentiated by these parameters. Results of sensitivity analysis are in Figure \ref{fig:sensitivity}.
 
 \begin{figure}[H]
 	\centering
@@ -66,9 +66,9 @@ optimization as decisions variables fixed to a value by constraints. This added 
 \end{figure}
 
 \section{Implemented nonlinear programming solvers}
-Julia with JuMP offer high level interface which allows switching NLP solvers on single line. I have used Ipopt, MadNLP and Uno solver with preset filtersqp. Unfortunately the Uno solver was getting stuck, therefore it is not cosidered in this thesis.
+Julia with JuMP offers high-level interface which allows switching NLP solvers on a single line. I have used Ipopt, MadNLP and Uno solver with preset filtersqp. Unfortunately the Uno solver was getting stuck, therefore it is not considered in this thesis.
 
-Ipopt has built in Hessian aproximation strategy, in benchmark it proved to be inferior to automatic differentiation. Figure \ref{fig:nlp_flowchart_chosen} shows which solving methods were implemented and tested.
+Ipopt has built-in Hessian approximation strategy, in benchmark it proved to be inferior to automatic differentiation. Figure \ref{fig:nlp_flowchart_chosen} shows which solving methods were implemented and tested.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -149,7 +149,7 @@ Ipopt has built in Hessian aproximation strategy, in benchmark it proved to be i
 \label{fig:mesh_refinement_chosen}
 \end{figure}
 
-I have implemented p and h method for mesh refinement. Error calculation is implemented using comparing the result of interpolated value at the and of segment and the result of simulation using Rodas4() solver. To calculate the error at the end of each segment, the interpolated controls and intial states are plugged into Rodas4 IVP solver. Then this result is compared to the states from transcription method. If error between states in absolute vlaue is larger than user defined threshold, the segment is halved. This one of the simpler estimators of discretization error.
+I have implemented p and h methods for mesh refinement. Error calculation is implemented by comparing the result of interpolated value at the end of segment and the result of simulation using Rodas4() solver. To calculate the error at the end of each segment, the interpolated controls and initial states are plugged into Rodas4 IVP solver. Then this result is compared to the states from transcription method. If error between states in absolute value is larger than user-defined threshold, the segment is halved. This is one of the simpler estimators of discretization error.
 
 Figure \ref{fig:power_node_controls} shows that
 error along track is not distributed equally. Error is localized around areas
@@ -157,8 +157,8 @@ with large jump in controls. These areas need finer sampling. P methods cannot
 focus these specific points directly, they focus entire trajectory.
 
 The errors are concentrated around the discontinuity of controls, where the
-behaviour of the vehicle is more complex/ requiring high order or finer
-approximation see Figure \ref{fig:power_node_controls}. Time optimal control of car around track has many discontinuities and therefore p methods are not a good fit for this use.
+behaviour of the vehicle is more complex, requiring high-order or finer
+approximation see Figure \ref{fig:power_node_controls}. Time-optimal control of car around track has many discontinuities and therefore p methods are not a good fit for this use.
 
 \begin{figure}[H]
     \centering
@@ -185,7 +185,7 @@ Mesh density after refinement is on figure~\ref{fig:power_refined}
 \section{Implementation of collocation methods}
 I have implemented Legendre-Gauss(LG), Legendre-Gauss-Radau(LGR) and Legendre-Gauss-Lobatto(LGL) methods. LG and LGR are implemented in differential formulation and LGL in integral formulation. Implementation supports an arbitrary number of collocation nodes.  The integral formulation is chosen for LGL because, with two and three nodes, it is reduced to the trapezoidal and Hermite-Simpson methods. A significant speed-up of evaluation of automatic differentiation was obtained by creating more decision variables, thus the nonlinear constraints were less dense~\cite{julia_discourse_ipopt_hessian}. 
 
-These methods are quite similar in their implementation in julia, I have attempted to create a unified implementation using a single function, but I was unsuccessful. In the future, having such implementation would be beneficial to test a wider variety of collocation methods. Figure \ref{fig:transcription_chosen} shows methods that were implemented.
+These methods are quite similar in their implementation in Julia, I have attempted to create a unified implementation using a single function, but I was unsuccessful. In the future, having such implementation would be beneficial to test a wider variety of collocation methods. Figure \ref{fig:transcription_chosen} shows methods that were implemented.
 
 \begin{figure}[H]
 \centering
@@ -247,7 +247,7 @@ These methods are quite similar in their implementation in julia, I have attempt
 
 
 
-\section{Implementation of  models}
+\section{Implementation of models}
 \subsection{Tire model implementation}
 Three tire models were implemented according to section \ref{tiremodel}. Extra decision variables were created that are equal to tire lateral and longitudinal forces, this creates less dense nonlinear expressions. Tires have these parametrizations:
 \begin{table}[H]
@@ -437,7 +437,7 @@ geometries (DoubleTurn, FigureEight).
     \label{fig:track_figureeight}
 \end{figure}
 
-%\section{Actual constriants, exampleconstraints like cannot leave road}
+%\section{Actual constraints, example constraints like cannot leave road}
 
 \section{Example optimization problem}
 

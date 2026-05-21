@@ -1,11 +1,11 @@
 \chapter{Comparison of methods}
-The performance of NLP solvers and frameworks is often tested on benchmark problems. like CUTEst \cite{gouldCUTEstConstrainedUnconstrained2014} dataset. I have created my own dataset for this purpose.
-As written on Ipopt website: Ipopt has many (probably too many) options \cite{ipopt_options} that can be adjusted, and that is true for all solvers. Some of differences in this benchmark may be due to sub optimal setup of the solver. Mesh refinemnt method in these tests is the h method with error threshold $10^-1$ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
+The performance of NLP solvers and frameworks is often tested on benchmark problems, like the CUTEst \cite{gouldCUTEstConstrainedUnconstrained2014} dataset. I have created my own dataset for this purpose.
+As written on Ipopt website: Ipopt has many (probably too many) options \cite{ipopt_options} that can be adjusted, and that is true for all solvers. Some of differences in this benchmark may be due to suboptimal setup of the solver. Mesh refinement method in these tests is the h method with error threshold $10^-1$ Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 5070. This benchmark tests the time to solve and solve failure rate for all implemented vehicle variants on benchmarking tracks. Videos of some of the benchmarks are available on the YouTube playlist~\cite{slapsim_benchmark_playlist}.
 \label{sec:benchmark}
 
 \section{Benchmark of collocation methods}
-This benchmark tests Collocation methods. Legendre and Lobatto methods failed in one of 14 tests Radau did not fail, but took little longer than Lobatto method. Interestingly the lap-time seems to vary in some cases by around 0.3 second on same track and same vehicle with different transcription method.
+This benchmark tests collocation methods. Legendre and Lobatto methods failed in one of 14 tests Radau did not fail, but took little longer than Lobatto method. Interestingly the lap-time seems to vary in some cases by around 0.3 second on same track and same vehicle with different transcription method.
 \input{../sync/thesisTables/summary.tex}
 \captionof{table}{Benchmark summary statistics by transcription variant.}
 \label{tab:benchmark-summary}
@@ -13,7 +13,7 @@ This benchmark tests Collocation methods. Legendre and Lobatto methods failed in
 \captionof{table}{Benchmark results by track, vehicle model, and transcription variant.}
 \label{tab:benchmark-results}
 
-\section{Benchmark of Linear solvers}
+\section{Benchmark of linear solvers}
 Surprisingly free MUMPS solver performed better than solvers from proprietary Harwell Subroutine Library. In this test I did not include PARDISO  as my license was limited only to two cores.
 \input{../sync/thesisTables/linearSolvers/summary.tex}
 \captionof{table}{Linear solver benchmark summary statistics.}
@@ -23,7 +23,7 @@ Surprisingly free MUMPS solver performed better than solvers from proprietary Ha
 \label{tab:linsolver-results}
 
 \section{Benchmark of NLP solvers}
-I have tested Ipopt with MUMPS and madnlp with MUMPS and with CuDSS solver. These solvers were suspiciously similar in computation time on CPU and  GPU was slower. with madnlp-gpu variant the automatic differentiation was calculated on CPU using JuMP and the solver ran on GPU~\cite{madnlp_gpu_tutorial}, so it was not a 100\% GPU solution.
+I have tested Ipopt with MUMPS and MadNLP with MUMPS and with CuDSS solver. These solvers were suspiciously similar in computation time on CPU and GPU was slower. with madnlp-gpu variant the automatic differentiation was calculated on CPU using JuMP and the solver ran on GPU~\cite{madnlp_gpu_tutorial}, so it was not a 100\% GPU solution.
 \input{../sync/thesisTables/backends/summary.tex}
 \captionof{table}{NLP solver / backend benchmark summary statistics (IPOPT-MUMPS, MadNLP-CPU, MadNLP-GPU).}
 \label{tab:backend-summary}

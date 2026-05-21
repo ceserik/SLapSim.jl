@@ -77,8 +77,8 @@ General NLP problems can be written as:
 Here $\mathbf{x} \in \mathbb{R}^n$ is the decision-variable vector, $f : \mathbb{R}^n \to \mathbb{R}$ is the scalar objective, $\mathbf{h} : \mathbb{R}^n \to \mathbb{R}^m$ stacks the $m$ equality constraints, and $\mathbf{g} : \mathbb{R}^n \to \mathbb{R}^p$ stacks the $p$ inequality constraints. In the lap-time setting $\mathbf{x}$ holds the discretised states and controls, $f$ is total lap time, $\mathbf{h}$ enforces vehicle dynamics and boundary conditions, and $\mathbf{g}$ enforces track limits, tire friction circle and actuator bounds.
 
 \subsection{KKT conditions}
-KKT condiitons are the conditions of optimality, if satisfied the point is local optimum.
-alpha and omega of nolinear programming, lord praise the KKT conditions.
+KKT conditions are the conditions of optimality, if satisfied the point is local optimum.
+alpha and omega of nonlinear programming, lord praise the KKT conditions. TODO odstranit celu sekciu?
 
 \begin{equation}
     \begin{aligned}
@@ -116,9 +116,9 @@ barrier parameter. Solver used in this thesis is IPOPT \cite{wachter_implementat
 
 \subsection{Barrier problem formulation}
 \label{subsec:barrier_problem_formulation}
-There are multiple ways to transform NLP in to barrier problem, this section
+There are multiple ways to transform NLP into barrier problem, this section
 will briefly describe how IPOPT does it.
-IPOPT article~\cite{wachter_implementation_2006} Describes how to transform generic
+IPOPT article~\cite{wachter_implementation_2006} describes how to transform generic
 NLP into form~\ref{eq:barrier_problem} 
 
 \begin{equation}
@@ -157,14 +157,14 @@ computes the Newton step:
 \end{equation}
 Here $W_k = \nabla^2 \mathcal{L}(x_k, \lambda_k, z_k)$ is the Hessian of the Lagrangian, $A_k$ is the Jacobian of the equality constraints $c(x)$ and $\nabla f(x_k)$ is the gradient of the objective. The unknowns $d_x^k$, $d_\lambda^k$ and $d_z^k$ are the Newton steps in the primal variables, equality multipliers and bound multipliers; $\mu_j$ is the barrier parameter, which is driven to zero across outer iterations.
 
-There are numerous commercial and free algorithms to solve this system of linear equation. For smaller
+There are numerous commercial and free algorithms to solve this system of linear equations. For smaller
 systems it is LU decomposition, but for larger sparse problems a dedicated
 solver is a must. IPOPT is most commonly used with MUMPS \cite{MUMPS:1} solver
 which is free. There are several linear commercial solvers, Harwell Subroutine
-Library(HSL) offers ma27 ma87 ma97 \cite{hsl2011collection}.Panua technologies offers PARDISO solver
+Library (HSL) offers ma27 ma87 ma97 \cite{hsl2011collection}. Panua Technologies offers PARDISO solver
 \cite{pardiso}. Harwell Subroutine Library solvers and PARDISO solver limited to 2 cores are available free for
 academic usage. These solvers run on CPU, Nvidia has linear solver CuDSS\cite{nvidia_cudss} which runs on GPU.
-Linear solvers are capable of multi threading on CPU, which needs to be explicitly
+Linear solvers are capable of multithreading on CPU, which needs to be explicitly
 turned on. 
 
 \section{Sequential quadratic programming}
@@ -177,7 +177,7 @@ A significant computational burden of Lagrange-Newton methods is that they requi
 \section{Scaling and matrix conditioning}
 Common pitfall of nonlinear programming is poor scaling. This happens when the
 solver encounters variables, that are orders of magnitude apart, for example
-motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.~\cite[p.~21]{wachter_implementation_2006}. With improper scaling, Lagrange multiplers in \ref{eq:Newton-Step} may become large when active contraints are nearly linearly dependant and this causes numerical difficulties. TOTO SOM CELKOM OPSIAL Z IPOPT PAPERU ALE NEVIEM AKO TO INAK NAPISAT VLSTNYIM SLOVAMI.
+motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.~\cite[p.~21]{wachter_implementation_2006}. With improper scaling, Lagrange multipliers in \ref{eq:Newton-Step} may become large when active constraints are nearly linearly dependent and this causes numerical difficulties. TOTO SOM CELKOM OPSIAL Z IPOPT PAPERU ALE NEVIEM AKO TO INAK NAPISAT VLSTNYIM SLOVAMI. TODO
 
 Similar problems happen when nonsmooth function is used in the model, like abs(), max(), branching. These have to be replaced by smooth approximation or completely reformulated.
 %(MUMPS,MA97,PARDISO,...), that has to do matrix factorization every iteration,
@@ -197,11 +197,11 @@ contain a large fraction of zero entries, which interior-point solvers
 exploit through specialized linear algebra. Sparsity in the constraints
 themselves is also important: individual constraints should involve only
 a small subset of the decision variables, rather than being formulated as
-deeply nested nonlinear expressions. Example of this is that state derivatives of vehicle at each point, can be fully determied from only 7 variables:  accelerator pedal, brake pedal, steering angle, forward speed, lateral speed, yaw rate and heading. Using only these variables results in a deeply nested nonlinear expression in the constraints. Adding redundant decision variables like forces on all wheels can reduce the iterations needed and calculation time of derivatives. Counter intuitively this larger problem was faster to solve, this is elaborated on in~\cite{julia_discourse_ipopt_hessian,jump_issue_4024}
+deeply nested nonlinear expressions. Example of this is that state derivatives of vehicle at each point, can be fully determined from only 7 variables:  accelerator pedal, brake pedal, steering angle, forward speed, lateral speed, yaw rate and heading. Using only these variables results in a deeply nested nonlinear expression in the constraints. Adding redundant decision variables like forces on all wheels can reduce the iterations needed and calculation time of derivatives. Counterintuitively this larger problem was faster to solve, this is elaborated on in~\cite{julia_discourse_ipopt_hessian,jump_issue_4024}
 Certain solvers can heavily exploit the sparsity structure, such as FATROP\cite{vanroyeFATROPFastConstrained2023}.
 In source~\cite{jorisgillisIPOPTSteroidsFatrop2024} Joris Gillis a CasADi
 developer compares IPOPT to FATROP, with \textbf{FATROP being 33 times faster
-    on a trajecotry optimisation problem.}
+    on a trajectory optimisation problem.}
 Also,~\cite{betts} describes how sparsity structure helps with faster derivatives approximation with finite difference and Quasi-Newton methods.
 
 \section{Initialization}
