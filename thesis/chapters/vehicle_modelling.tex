@@ -1,25 +1,12 @@
 \chapter{Vehicle and Track modeling framework}
-Goal of the thesis is to select a sufficiently accurate yet computationally tractable model of the vehicle 
-There is not one model of vehicle that would fit all requirements of race
-engineers. For each problem, a different complexity of the vehicle model is
-sufficient, e.g.for analysis of power limit algorithm, the lateral dynamics of
-the vehicle can be heavily simplified and simple transcription and solving
-methods yield sufficient accuracy within a fraction of a second, this is described in \ref{QSS}. Whereas
-analysis of torque allocation problem requires the full complex twintrack model and more
-computational expensive transcription and solving methods. Therefore, a vehicle
-modeling framework is needed to satisfy he needs of different types of
-analyses.
-\section{Graph centered approach for vehicle modeling}
-The structure of the vehicle model has to allow extending/changing components,
-so that different vehicle concepts can be simulated, with minimal coding. Book
-in \cite{brown_engineering_2006} describes modeling framework that allows
-creating car components as modules with flow and effort interface. This common
-interface then heavily simplifies process of creating a car model, as modules
-can be reused and chained together easily.
-Vehicle components are chassis, wheel pivot, tire, aerodynamics, suspension,
-motor and accumulator.
+The goal of the thesis is to select a sufficiently accurate yet computationally tractable model of the vehicle.
+There is no single vehicle model that fits all requirements of race engineers. For each problem, a different complexity of the vehicle model is sufficient, e.g.\ for analysis of a power-limit algorithm, the lateral dynamics of the vehicle can be heavily simplified, and simple transcription and solving methods yield sufficient accuracy within a fraction of a second. This is described in Section~\ref{QSS}. Whereas analysis of the torque allocation problem requires the full twin-track model and more computationally expensive transcription and solving methods. Therefore, a vehicle modeling framework is needed to satisfy the needs of different types of analyses.
 
-\begin{figure}[h]
+\section{Graph-centered approach for vehicle modeling}
+The structure of the vehicle model has to allow extending or changing components, so that different vehicle concepts can be simulated with minimal coding. The book~\cite{brown_engineering_2006} describes a modeling framework that allows creating car components as modules with a flow and effort interface. This common interface heavily simplifies the process of creating a car model, as modules can be reused and chained together easily.
+The vehicle components are: chassis, wheel pivot, tire, aerodynamics, suspension, motor, and accumulator.
+
+\begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
 			box/.style={rectangle, draw, thick, minimum width=3cm, minimum height=2.5cm, align=center},
@@ -47,10 +34,8 @@ motor and accumulator.
 
 
 
-\section{Tire - road interface modeling}
-Job of the tire model in this thesis is to calculate forces acting on tire from
-the relative velocity and angle between tire and road. Input of general tire
-model is 3 speeds and 3 angles, output is 3 forces.\label{tiremodel}
+\section{Tire-road interface modeling}
+The role of the tire model in this thesis is to calculate forces acting on the tire from the relative velocity and angle between tire and road. The input of a general tire model is 3 velocities and 3 angles, and the output is 3 forces.\label{tiremodel}
 
 
 \begin{figure}[H]
@@ -79,14 +64,8 @@ model is 3 speeds and 3 angles, output is 3 forces.\label{tiremodel}
 \end{figure}
 
 
-Most forces that govern vehicle movement are transferred by the tires. The tire
-is considered to be the most important system of a vehicle and it is
-notoriously difficult to model \cite{Yuki-2019}. Thus tires need to be modeled
-with great caution in mind. Not only are there many parameters, such as tire
-wear, tire temperature, road roughness, road wetness, tire pressure, etc., that
-affect the resultant forces, they are also constantly changing during the lap.
-Therefore they are difficult to measure and model precisely TOTO SOM SKOPIROVAL Z BAKALRKY, V CLANKOCH SOM VIDEL DOSLOVNE KOPIROVANIE SEBA, MOZEM TO ROBIT JA?
-Implementation of specific models is conver in part III Implementation. \cite{ciglanskyAnalysisVehicleComponents}.
+Most forces that govern vehicle movement are transferred by the tires. The tire is considered to be the most important system of a vehicle and it is notoriously difficult to model~\cite{Yuki-2019}. Thus tires need to be modeled carefully. Not only are there many parameters, such as tire wear, tire temperature, road roughness, road wetness, tire pressure, etc., that affect the resultant forces, but they are also constantly changing during the lap. Therefore they are difficult to measure and model precisely. This paragraph is adapted from my bachelor thesis~\cite{ciglanskyAnalysisVehicleComponents}.
+Implementation of specific models is covered in Part~III, Implementation.
 
 
 \subsection{Linear tire}
@@ -101,7 +80,7 @@ into lateral force
     F_y = \frac{\alpha}{\alpha_\text{max}}\,\mu\,F_z.
     \label{eq:linear_tire_lat}
 \end{equation}
-Tire model does not consider spinning of the wheels, therefore there is no longitudinal slip and motor force acts directly on the wheel pivot point 
+The tire model does not consider spinning of the wheels. Therefore, there is no longitudinal slip, and the motor force acts directly on the wheel pivot point.
 \begin{equation}
     F_x = \frac{T_\text{wheel}}{R} + F_\text{brake}.
     \label{eq:linear_tire_lon}
@@ -112,26 +91,26 @@ Forces are constrained by friction ellipse
     \label{eq:friction_circle}
 \end{equation}
 
-Implication of neglecting tire spinning is that, energy from motor is not used to spin up the wheels and all of it is used to accelerate the car, creating large discrepancy from how a real vehicle operates. In this and following models this effect is not accounted for.
-\subsection{Magic formula tire}
-Magic formula tire developed by Hans B. Pacejka \cite{pacejka} is an empirically derived formula, that describes tire forces. Full magic formula model has around 80 parameters and many variants. Variant described here was taken from \cite{2026ClassProject} and has only 6 parameters. \label{pacejka}
+The implication of neglecting tire spinning is that energy from the motor is not used to spin up the wheels and goes entirely into accelerating the car, creating a large discrepancy from how a real vehicle operates. In this and the following models this effect is not accounted for.
+\subsection{Magic Formula tire}
+The Magic Formula tire model, developed by Hans B. Pacejka~\cite{pacejka}, is an empirically derived formula that describes tire forces. The full Magic Formula model has around 80 parameters and many variants. The variant described here was taken from~\cite{2026ClassProject} and has only 6 parameters.\label{pacejka}
 \begin{equation}
     \alpha = -\arctan\!\left(\frac{v_y}{v_x}\right).
     \label{eq:pac_slip}
 \end{equation}
-Parameter D is peak factor
+Parameter $D$ is the peak factor
 \begin{equation}
     D = \mu\, F_z \left(1 - \epsilon\, \frac{F_z}{F_{z,\text{ref}}}\right),
     %\qquad \beta = 0.0813,\ F_{z,\text{ref}} = 3000~\text{N}
     \label{eq:pac_peak}
 \end{equation}
-$\epsilon$ models degressive behavior, the peak lateral force of real tire does not grow linearly with normal force. $F_{z,\text{ref}}$ is nominal normal tire load \cite{2026ClassProject}. Lateral force is then computed ccording to magic formula from \cite{pacejka},
+$\epsilon$ models degressive behavior, the peak lateral force of a real tire does not grow linearly with normal force. $F_{z,\text{ref}}$ is the nominal normal tire load~\cite{2026ClassProject}. The lateral force is then computed according to the Magic Formula from~\cite{pacejka},
 \begin{equation}
     F_y = D \sin\!\Big( C \arctan\!\big( B\alpha - E\,(B\alpha - \arctan(B\alpha)) \big) \Big),
     \label{eq:pac_fy}
 \end{equation}
-Where parameters C is shape factor, B is stiffness factor, E is curvature factor. These parameters are fitted to represent real tire measurement data.
-Then tire rolling resistance is added $C_r$ and the friction ellipse is the same as linear tire,
+where $C$ is the shape factor, $B$ is the stiffness factor and $E$ is the curvature factor. These parameters are fitted to real tire measurement data.
+Then tire rolling resistance $C_r$ is added and the friction ellipse is the same as for the linear tire,
 \begin{equation}
     F_x = \frac{T_\text{wheel}}{R} + F_\text{brake} + C_r\, F_z,
     \label{eq:pac_fx}
@@ -149,7 +128,7 @@ Then tire rolling resistance is added $C_r$ and the friction ellipse is the same
 %Pacejka tire uses
 %\subsection{Extended Pacejka}
 \section{Chassis model}
-The chassis is modeled as a point mass located at the center of gravity (CoG), carrying the full vehicle mass and yaw inertia, with the wheel pivot points defined relative to it. The chassis model is responsible for computing the state-derivative vector from all forces and moments acting on the CoG. Equations \ref{cogeq1}-\ref{coeq2} describe the computation.
+The chassis is modeled as a point mass located at the center of gravity (CoG), carrying the full vehicle mass and yaw inertia, with the wheel pivot points defined relative to it. The chassis model is responsible for computing the state-derivative vector from all forces and moments acting on the CoG. Equations~\ref{cogeq1}--\ref{coeq2} describe the computation.
 \begin{table}[!ht]
 	\centering
 	\begin{tabular}{lll}
@@ -158,12 +137,11 @@ The chassis is modeled as a point mass located at the center of gravity (CoG), c
 		\hline
 		$m$             & kg          & Mass       \\
 		$I_z$           & $kg \cdot m^2$               & Yaw Inertia                               \\
-		%$w$             &$m$ & wheelbase \\
-        $w$             &m &width of vehicle  \\
+		$w$             & m & Width of vehicle \\
 		\hline
 	\end{tabular}
 	\caption{Parameters of the chassis model.}
-	\label{tab:aero-params}
+	\label{tab:chassis-params}
 \end{table}
 
 \begin{equation}
@@ -184,15 +162,11 @@ The chassis is modeled as a point mass located at the center of gravity (CoG), c
     \dot{\symbf{x}} = \begin{bmatrix} \dot{v}_x \\ \dot{v}_y \\ \dot{\psi} \\ \ddot{\psi} \end{bmatrix}.
     \label{coeq2}
 \end{equation}
-Chassis also imposes constraint on location on track to prevent the vehicle leaving the track.
+The chassis also imposes a constraint on the location on the track to prevent the vehicle from leaving it.
 
 
 \section{Wheel Pivot model}
-Wheel pivot point is modeled as transformer. It defines the transformation of
-CoG velocities into tire frame and then transforms tire forces and torque into
-pivot frame. Angular velocity and position vectors are formed from yaw rate
-$\dot{\psi}$ and the longitudinal distance $l_i$ of the axle from the center of
-gravity:
+The wheel pivot point is modeled as a transformer. It defines the transformation of CoG velocities into the tire frame and then transforms tire forces and torque into the pivot frame. The angular velocity and position vectors are formed from the yaw rate $\dot{\psi}$, the longitudinal distance $l_i$ of the axle from the center of gravity, and the lateral distance $\pm b/2$ of the wheel from the vehicle centerline:
 \begin{equation}
     \symbf{\omega} = \begin{bmatrix} 0 \\ 0 \\ \dot{\psi} \end{bmatrix}, \qquad
     \symbf{r}_i    = \begin{bmatrix} l_i \\ b/2 \\ 0 \end{bmatrix},
@@ -252,8 +226,7 @@ model. Forces are then rotated back to the pivot frame:
 \end{figure}
 
 \section{Aerodynamics model}
-Aerodynamic model is modeled as nonlinear resistance element, mapping velocity
-into forces. Drag and down-force scale with the square of longitudinal velocity:
+The aerodynamic model is treated as a nonlinear resistance element, mapping velocity into forces. Drag and down-force scale with the square of longitudinal velocity:
 \begin{equation}
 	F_\text{drag} = \tfrac{1}{2}\,\rho\,C_D\,v_x^2, \qquad
 	F_\text{lift} = \tfrac{1}{2}\,\rho\,C_L\,v_x^2.
@@ -302,22 +275,10 @@ listed in Table~\ref{tab:aero-params}.
     \caption{Aerodynamics component}\label{fig:aero}
 \end{figure}
 
-This model is sufficient when vehicle is driving relatively straight, that
-means lateral acceleration is roughly zero. With high lateral acceleration this
-model is no longer valid, because air speeds are different on left and right
-part of car and also the car starts rolling- one side of vehicle is closer than
-the other, creating imbalance of lift forces.
+This model is sufficient when the vehicle is driving relatively straight, i.e.\ when lateral acceleration is roughly zero. With high lateral acceleration this model is no longer valid, because air speeds differ on the left and right side of the car and the car also starts rolling, one side of the vehicle is closer to the ground than the other, creating an imbalance of lift forces.
 
 \section{Suspension model}
-Purpose of suspension in car is to maintain tire contact, distribute the load from
-lateral load transfer to better utilize tires and use kinematics to make use of
-camber thrust. Commonly suspension of car consists of spring, damper and the
-mounting with tie rods. In this thesis Suspension model had to be significantly
-simplified. Modeling each wheel with a damper, spring and its own kinematics
-is beyond the scope of this thesis. However, the model structure allows for it, I
-didn't have enough time to implement it. This quarter car model would be very
-beneficial toward the goal of scalability. Without it, the model scalability
-is limited, as dividing force between more than two wheels on an axis is a statically indeterminate problem.
+The purpose of the suspension in a car is to maintain tire contact, distribute the load from lateral load transfer to better utilize the tires, and use kinematics to make use of camber thrust. Commonly the suspension of a car consists of springs, dampers and the mounting with tie rods. In this thesis, the suspension model had to be significantly simplified. Modeling each wheel with a damper, spring and its own kinematics is beyond the scope of this thesis. However, the model structure allows for it, but I did not have enough time to implement it. Such a model would be very beneficial toward the goal of scalability. Without it, the model scalability is limited, as dividing force between more than two wheels on an axle is a statically indeterminate problem.
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
@@ -345,10 +306,11 @@ is limited, as dividing force between more than two wheels on an axis is a stati
     \end{tikzpicture}
     \caption{Suspension component}\label{fig:suspension}
 \end{figure}
-Two suspension variants are used in this thesis, static distribution and dynamic distribution
+Two suspension variants are used in this thesis: static distribution and dynamic distribution.
+
 \subsection{Static suspension}
 \label{staticsusp}
-Static suspensions distributes the vehicle's mass and force from aerodynamics according to position of center of gravity and center of pressure. This trivial implementation is possible only for 2 axles, having 3 and more axles would make this a statically indeterminate system.
+The static suspension distributes the vehicle's mass and the force from aerodynamics according to the position of the center of gravity and the center of pressure. This trivial implementation is possible only for two axles, three or more axles would make this a statically indeterminate system.
 \begin{equation}
     \begin{aligned}
         F_{z,FL} &= \bigl(m g\, x_\text{CoG} + F_\text{lift}\,\text{CoP}\bigr)(1 - y_\text{CoG}) \\
@@ -358,7 +320,7 @@ Static suspensions distributes the vehicle's mass and force from aerodynamics ac
     \end{aligned}
 \end{equation}
 \subsection{Dynamic suspension}
-This suspension variant takes into account the load transfer caused by longitudinal and lateral accelerations. It is taken from \cite{2026ClassProject}.
+This suspension variant takes into account the load transfer caused by longitudinal and lateral accelerations. It is adapted from~\cite{2026ClassProject}.
 \begin{equation}
     \begin{aligned}
         F_{z,FL} &= \!\left(m g\, x_\text{CoG} - \frac{m\, a_x h_\text{CoG}}{L}\right)\!(1-y_\text{CoG})
@@ -371,19 +333,19 @@ This suspension variant takes into account the load transfer caused by longitudi
                   + \tfrac{1}{2} F_\text{down}\,(1-\text{CoP}) + \tfrac{1}{2}\Delta F_y
     \end{aligned}
 \end{equation}
-$m a_x$ is the estimate of longitudinal acceleration taken from the sum of driving, braking and rolling resistance forces.
+$m a_x$ is the longitudinal force, estimated as the sum of driving, braking, drag and rolling-resistance forces:
 \begin{equation}
-m a_x \approx F_\text{drive} + F_\text{brake} - F_\text{drag} - C_r m g    .
+m a_x \approx F_\text{drive} + F_\text{brake} - F_\text{drag} - C_r m g.
 \end{equation}
-$\Delta F_y$ is a new decision variable hat descries lateral load transfer. It is subject to constraint
+$\Delta F_y$ is a new decision variable that describes lateral load transfer. It is subject to the constraint
 
 \begin{equation}
-    \Delta F_y = \frac{h_\text{CoG}}{t}\sum_{4} F_{y,i},
+    \Delta F_y = \frac{h_\text{CoG}}{t}\sum_{i=1}^{4} F_{y,i},
     \label{eq:lateral_transfer_tires}
 \end{equation}
-where $F_{y,i}$ are lateral forces at pivot points of wheels. This is a Quasi steady state model of suspension, as the load transfer is considered to be instant, in real vehicle a system of spring and damper on each wheel introduces more complex dynamics.
+where $F_{y,i}$ are the lateral forces at the pivot points of the wheels. This is a quasi-steady-state model of suspension, as the load transfer is considered to be instant. In a real vehicle, a system of spring and damper on each wheel introduces more complex dynamics.
 \section{Gearbox model}
-Gearbox is the textbook example of transformer and resistive element.
+The gearbox is a textbook example of a transformer and a resistive element.
 \begin{equation}
     T_\text{out} = \eta\, i\, T_\text{in}, \qquad
     \omega_\text{out} = \frac{\omega_\text{in}}{i}.
@@ -428,38 +390,38 @@ Gearbox is the textbook example of transformer and resistive element.
 \end{figure}
 
 \section{Accumulator model}
-Accumulator modele sums power from motors
+The accumulator model sums power from the motors
 \begin{equation}
 P_{\mathrm{acc}}(t) = \sum_{i=1}^{N_m} P_{\mathrm{el},i}(t),
 \end{equation}
-then constraints the power according  to accumulator limits
+and then constrains the power according to the accumulator limits
 \begin{equation}
 P_{\mathrm{acc}}^{\min} \le P_{\mathrm{acc}}(t) \le P_{\mathrm{acc}}^{\max}.
 \end{equation}
-What is missing in this thesis, is a total energy constraint for a lap.
+What is missing in this thesis is a total energy constraint for a lap.
 \section{Motor model}
-Motor is modeled as an effort source with efficiency. The efficiency is traditionally modeled using \emph{max} function in \ref{motoreq}, this function is not differentiable. 
+The motor is modeled as an effort source with efficiency. The efficiency is traditionally modeled using a \emph{max} function (Equation~\ref{motoreq}), but this function is not differentiable.
 \begin{equation}
     P_\text{mech} = T\,\omega, \qquad
     P_\text{elec} = \max\!\left(\frac{P_\text{mech}}{\eta},\; P_\text{mech}\,\eta\right).
     \label{motoreq}
 \end{equation}
-Max function cannot be used in nonlinear programming, different formulation has to be used.
-This thesis uses constraints
+The max function cannot be used in nonlinear programming, so a different formulation has to be used.
+This thesis uses the constraints
 \begin{equation}
     \begin{aligned}
         P_\text{elec} &\geq \frac{P_\text{mech}}{\eta}, \\
         P_\text{elec} &\geq {P_\text{mech}\, \eta}. \\
         %P_\text{elec} &= P\, s_f
-        \label{motoreq}
     \end{aligned}
+    \label{motoreq2}
 \end{equation}
-Problem with this formulation is that, when full power is not required, that is $ P_{\mathrm{acc}}$ is strictly inside constraints
+A problem with this formulation is that when full power is not required, i.e.\ when $P_{\mathrm{acc}}$ is strictly inside the constraints
 \begin{equation}
 P_{\mathrm{acc}}^{\min} \le P_{\mathrm{acc}}(t) \le P_{\mathrm{acc}}^{\max},
 \end{equation}
-the power draw from accumulator may be higher compared to the classical formulation with \emph{max} function.
-Another possible formulation is using smooth max approximation using $\arctan$ or $\sqrt{}$ or softmax function, I have covered this approach in bachelor thesis \cite{ciglanskyAnalysisVehicleComponents}.
+the power draw from the accumulator may be higher compared to the classical formulation with the \emph{max} function.
+Another possible formulation is a smooth max approximation using $\arctan$, $\sqrt{\,\cdot\,}$, or the softmax function. I have covered this approach in my bachelor thesis~\cite{ciglanskyAnalysisVehicleComponents}.
 \begin{table}[!ht]
     \centering
     \begin{tabular}{lll}
@@ -501,25 +463,17 @@ Another possible formulation is using smooth max approximation using $\arctan$ o
 \end{figure}
 
 \section{Brake model}
-Braking force is distributed among wheels by brake bias ratio, to exclude simulatenous braking and accelerating a complemetarity constraint is used,
+Braking force is distributed among the wheels by the brake bias ratio. To exclude simultaneous braking and accelerating, a complementarity constraint is used:
 \begin{equation}
-	T_\mathrm{m} \cdot F_\mathrm{b} \le \varepsilon, \quad T_\mathrm{m} \ge 0,\ F_\mathrm{b} \ge 0	,
+	T_\mathrm{m} \cdot F_\mathrm{b} \le \varepsilon, \quad T_\mathrm{m} \ge 0,\ F_\mathrm{b} \ge 0,
 \end{equation}
-
-Where $T_m$ is driving torque or sum of driving torques, $F_B$ is braking torque. A cleaner alternative is to penalize energy consumption in the objective, then the explicit complementarity constraint is not required.
+where $T_\mathrm{m}$ is the driving torque (or the sum of driving torques) and $F_\mathrm{b}$ is the braking force. A cleaner alternative is to penalize energy consumption in the objective, then the explicit complementarity constraint is not required.
 
 
 \section{Car models}
-These models must work when used in NLP transcription for solving boundary value problem, but they also must work for initial value problem, when the model is initialized or verified for transcription error. Some toolboxes can automatically create constraints from ODE models \cite{wilhelm2022eago}. In my implementation I have an if statement that switches between IVP and BVP variant of models equations, major disadvantage of this approach is that the equations for both variants must be effectively the same and finding bugs is difficult with this approach.
+These models must work when used in NLP transcription for solving the boundary value problem, but they also must work for the initial value problem, when the model is initialized or verified against transcription error. Some toolboxes can automatically create constraints from ODE models~\cite{wilhelm2022eago}. In my implementation I have an if statement that switches between the IVP and BVP variants of the model equations. A major disadvantage of this approach is that the equations for both variants must be effectively the same, and finding bugs is difficult.
 \subsection{Generic car model structure}
-Leveraging the full potential of automatic differentiation methods, any car Parameter can be assigned as
-state, control, static parameter, decision variable or sensitivity analysis
-variable. This allows for changing a fixed parameter into a degree of freedom allowing to
-decide which parameters should be controlled. This also
-allows for finding the optimal parameters of vehicle, such as brake bias,
-aerodynamics balance, gear ratio during lap time optimization. This is shown on figure \ref{fig:generic_car}. When parameter is chosen to be sensitivity
-analysis variable, impact of changing this variable is cheaply computed after
-the optimization is finished, see Section~\ref{sec:adjoint}. Each parameter holds three values: lower bound, upper bound, and nominal value. The bounds are passed directly to the NLP as variable limits and are reused to scale the variable. Constraint that wheels cannot leave the track is created using upper and lower bound distance from centerline, which is a state of the car.
+Leveraging the full potential of automatic differentiation, any car parameter can be assigned as a state, control, static parameter, decision variable, or sensitivity-analysis variable. This allows changing a fixed parameter into a degree of freedom and deciding which parameters should be controlled. It also allows finding the optimal vehicle parameters, such as brake bias, aerodynamic balance, and gear ratio, during lap-time optimization. This is shown in Figure~\ref{fig:generic_car}. When a parameter is chosen as a sensitivity-analysis variable, the impact of changing it is cheaply computed after the optimization is finished, see Section~\ref{sec:adjoint}. Each parameter holds three values: lower bound, upper bound, and nominal value. The bounds are passed directly to the NLP as variable limits and are reused to scale the variable. The constraint that wheels cannot leave the track is implemented using upper and lower bounds on the distance from the centerline, which is a state of the car.
 
 All vehicles must have at least these states:
 \begin{itemize}
@@ -563,8 +517,8 @@ All vehicles must have at least these states:
 \end{figure}
 
 
-\subsection{Mass Point Quasi Steady State model}
-Simple and useful car model can be made using these equations
+\subsection{Mass-point quasi-steady-state model}
+A simple and useful car model can be built using these equations
 \begin{align}
     F_z &= \tfrac{1}{2}\, \rho\, C_L\, v_x^2, \\
     F_y &= m\, v_x^2\, c, \\
@@ -575,9 +529,9 @@ Simple and useful car model can be made using these equations
     \dot{v}_x &= \frac{F_x - \tfrac{1}{2}\, \rho\, C_D\, v_x^2}{m}.
     \label{QSS_model}
 \end{align}
-Where $\rho$ is air density $C_L$ is lift coefficient $v_x$ is longitudinal speed, $m$ is mass, $c$ is curvature of track in current point, $P_{max}$ is maximum power of motor, $\mu$ is friction coefficient, $C_D$ is drag coefficient. This model has only one state $v_x$ which makes it possible to use specialized lap time simulation solvers. Variations of this model, where for example $P_{max}$ is a lookup table, the grip does not scale linearly with down-force etc. are commonly used in motor-sport.
+Here $\rho$ is the air density, $C_L$ is the lift coefficient, $v_x$ is the longitudinal speed, $m$ is the mass, $c$ is the curvature of the track at the current point, $P_{\max}$ is the maximum power of the motor, $\mu$ is the friction coefficient, and $C_D$ is the drag coefficient. This model has only one state, $v_x$, which makes it possible to use specialized lap-time simulation solvers. Variations of this model, where for example $P_{\max}$ is a lookup table or the grip does not scale linearly with down-force, are commonly used in motorsport.
 \subsection{Single-track}
-A more complex and useful model is single-track. In this model the suspension effects are neglected. Single-track is still considered to be simplified model and is used most commonly when more complex models are too computationally expensive. A computational graph of how this model is assembled from the defined components is shown in Figure~\ref{fig:singletrack}.
+A more complex and useful model is the single-track model. In this model, suspension effects are neglected. The single-track model is still considered a simplified model and is used most commonly when more complex models are too computationally expensive. A computational graph of how this model is assembled from the defined components is shown in Figure~\ref{fig:singletrack}.
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
@@ -664,7 +618,7 @@ A more complex and useful model is single-track. In this model the suspension ef
 \end{figure}
 
 \subsection{Twin-track model}
-Twin-track model has all four tires modeled separately. This captures left-right load transfer. Computational graph of it is shown in figure~\ref{fig:twintrack}
+The twin-track model treats all four tires separately. This captures the left-right load transfer. The computational graph is shown in Figure~\ref{fig:twintrack}.
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
@@ -744,7 +698,7 @@ Twin-track model has all four tires modeled separately. This captures left-right
 
 		% State vector — straight down from CoG
 		\node[below=2.2cm of cog, font=\scriptsize, align=center] (statevec)
-			{$\symbf{x} = [v_x,\, v_y,\, \dot\psi,\, \psi,\,]^T$};
+			{$\symbf{x} = [v_x,\, v_y,\, \dot\psi,\, \psi]^T$};
 		\draw[arr] (cog.south) -- (statevec.north);
 
 	\end{tikzpicture}
@@ -754,7 +708,7 @@ Twin-track model has all four tires modeled separately. This captures left-right
 
 
 \section{Track modeling}
-Track is sampled at discrete arc length nodes $s_i$ and stored as a set of
+The track is sampled at discrete arc length nodes $s_i$ and stored as a set of
 fields evaluated at each node:
 \begin{itemize}
 	\item centerline coordinates $x(s)$, $y(s)$,
@@ -765,30 +719,30 @@ fields evaluated at each node:
 	\item friction coefficient $\mu(s)$,
 	\item inclination $\phi(s)$.
 \end{itemize}
-Each field is linearly interpolated between the segments. Obtaining suitable track for optimization from GPS is non-trivial, simple methods lead to noisy data, which then corrupts the optimization result. Therefore, smoothing method described in \cite{perantoniOptimalControlFormula2014} has been used.
+Each field is linearly interpolated between the segments. Obtaining a suitable track for optimization from GPS is non-trivial. Simple methods lead to noisy data, which then corrupts the optimization result. Therefore, the smoothing method described in \cite{perantoniOptimalControlFormula2014} has been used.
 
 \section{Change of independent variable, time to path}
-When differential equations for vehicle movement are stated. For use in lap
-time simulation it is beneficial to describe the car states not in time but in
-distance traveled. This introduces connection with location on track and
-reduces number of state variables by one. This transformation is taken from
-\cite{perantoniOptimalControlFormula2014}.
+When the differential equations for vehicle movement are stated, it is
+beneficial in lap time simulation to describe the car states not in time but in
+distance travelled. This introduces a connection with the location on the
+track and reduces the number of state variables by one. This transformation is
+taken from \cite{perantoniOptimalControlFormula2014}.
 
 \begin{equation}
 	\varepsilon = \psi - \theta(s)
 \end{equation}
-where $\psi$ is car heading, $\theta(s)$ is heading of track at distance s,
+where $\psi$ is the car heading, and $\theta(s)$ is the heading of the track at distance $s$.
 
 \begin{equation}
 	S_f = \frac{\mathrm{d}t}{\mathrm{d}s} = \frac{1 - n\, C(s)}{v_x \cos\varepsilon - v_y \sin\varepsilon},
 	\label{time2path}
 \end{equation}
 
- $n$ is vehicles distance from centerline , $C(s)$ is curvature of track at distance~s. The change in $n$ is defined as:
+$n$ is the vehicle's distance from the centerline, and $C(s)$ is the curvature of the track at distance~$s$. The change in $n$ is defined as:
 \begin{equation}
 	\frac{\mathrm{d}n}{\mathrm{d}t} = v_x \sin\varepsilon + v_y \cos\varepsilon.
 \end{equation}
-Then the model can be transformed from time as independed variable to distance travelled along centerline$s$ as independent variable by equation:
+Then the model can be transformed from time as the independent variable to distance travelled along the centerline $s$ as the new independent variable using the equation:
 \begin{equation}
 	\frac{\mathrm{d}}{\mathrm{d}s}
 	\begin{pmatrix} v_x \\ v_y \\ \psi \\ \dot{\psi} \\ n \\ t \end{pmatrix}
@@ -839,4 +793,4 @@ Then the model can be transformed from time as independed variable to distance t
 	\label{fig:generic_car_t2p}
 \end{figure}
 
-Now the vehicle is modeled and placed on the track. Next step is to drive it as fast as possible.
+Now the vehicle is modeled and placed on the track. The next step is to drive it as fast as possible.

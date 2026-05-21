@@ -52,8 +52,12 @@
 \ctutemplateset{maketitle.twocolumn.default}{
 	\begin{twocolumnfrontmatterpage}
 		\ctutemplate{twocolumn.abstract.in.titlelanguage}
+		\newpage
 		\ctutemplate{twocolumn.abstract.in.secondlanguage}
+		\newpage
 		\ctutemplate{twocolumn.tableofcontents}
+	\end{twocolumnfrontmatterpage}
+	\begin{twocolumnfrontmatterpage}
 		\ctutemplate{twocolumn.listoffigures}
 	\end{twocolumnfrontmatterpage}
 }
