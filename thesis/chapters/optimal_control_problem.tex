@@ -335,14 +335,21 @@ Mesh refinement is required to assess the accuracy of transcription, as an optim
 \caption{Mesh refinement categories~\cite{darbyHpAdaptivePseudospectral2011,pattersonPhMeshRefinement2015}.}
 \label{fig:mesh_refinement_layer}
 \end{figure}
+By creating mesh with proper length, density and polynomial order of segments, the NLP becomes easier to solve. Sampling too dense leads to the ratio between smallest singular value and largest singular value of the constraint jacobian to decrease \cite[p.~19]{pietzPseudospectralCollocationMethods}. This causes numerical issues with larger number of segments. Figure \ref{fig:pietzRank} depicts this ratio. Article \cite[p.~7]{schlegelDynamicOptimizationUsing2005} also examines this issue of ill conditioning. A mesh too dense leads to ill conditioning and mesh too sparse leads to incorrect result. Mesh refinement has to balance these factors.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{../sync/thesisImages/pietzRankpng.png}
+    \caption{Ratio Between Minimum Singular Value and Maximum  Singular Value of the Constraint Jacobian at the Solution for Various N . - Left: Linear-Quadratic OCP in Mayer Form Right: Orbit Transfer OCP. Adapted from\cite[p.~19]{pietzPseudospectralCollocationMethods}}
+    \label{fig:pietzRank}
+\end{figure}
 
 
 
-\subsection{P adaptive methods}
+\subsection{p-adaptive methods and h-adaptive methods}
 The p-adaptive methods work by increasing the order of the polynomial until the error
 is below a user-defined threshold.
 
-\subsection{h adaptive methods}
 The h methods are used when the solution to the optimal control problem is approximated by
 many intervals with a low-degree polynomial. These methods can decide to split
 segments into two smaller segments. They use different techniques to do this.
@@ -365,12 +372,29 @@ functions with kinks~\cite{wilkaAdaptiveHpPolynomialBased2025}. They are the
 most complex for implementation and unfortunately I did not have the time to
 implement them.
 
-\section{Adjoint methods}
+\section{Sensitivity analysis}
 \label{sec:adjoint}
+Sensitivity analysis can be extremely useful tool when designing a race car. Knowing the sensitivity of lap-time on each of the vehicle parameters is certainly advantageous. There are two ways to perform sensitivity analysis
+\begin{itemize}
+  \item Finite difference
+  \item Differentiation methods
+\end{itemize}
+Finite difference is the classical approach of perturbing the parameter by  couple percent and running the simulation multiple times. This is slow.
 
-Adjoint methods allow for differentiating the solution of the optimization problem.
-In this case it is a function of time, the states and controls along the trajectory, and the car parameters. This is very useful because it greatly simplifies sensitivity
-analysis. The traditional way of sensitivity analysis is to compute several runs with
-different vehicle parameters, but this allows the sensitivity of all
-parameters to be computed in one shot. I am using DiffOpt.jl \cite{besancon2023diffopt}. It is
-not exactly an adjoint method, and I do not fully understand how it works. PREFOMRULOVAT TODO TODO TODO
+Differentiating the solution of NLP is more promising than finite difference. When the NLP problem is created with parameters $\theta$
+\begin{equation}
+\begin{split}
+\begin{array} {lll}
+x^*(\theta)=& {\underset {x}{\operatorname {argmin} }}& f(x; \theta)\\
+            &  \operatorname {subject\;to} & g_{i}(x; \theta)\leq 0,\quad i=1,\dots ,m\\
+            &                              & A(\theta) x = b(\theta)
+\end{array}
+\end{split}  
+\end{equation}
+differentiation methods allow differentiating the optimal solution $x^*$ by parameters $\theta$
+\begin{equation}
+  \frac{\partial f(x^*(\theta))}{\partial \theta} = \frac{\partial f(x^*(\theta))}{\partial x^*(\theta)}  \frac{\partial x^*(\theta)}{\partial \theta}
+\end{equation}
+This is much faster than finite differences, a single backward pass yields the sensitivities of all parameters simultaneously. The explanation and implementation follow the DiffOpt.jl package \cite{besancon2023diffopt}. However, with this approach there is no guarantee on the area where this derivative is good representation of sensitivity. With finite differences the step size can be increased to capture behavior over a larger area.
+
+

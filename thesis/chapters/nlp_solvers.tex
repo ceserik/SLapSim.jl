@@ -76,19 +76,22 @@ General NLP problems can be written as:
 
 Here $\mathbf{x} \in \mathbb{R}^n$ is the decision-variable vector, $f : \mathbb{R}^n \to \mathbb{R}$ is the scalar objective, $\mathbf{h} : \mathbb{R}^n \to \mathbb{R}^m$ stacks the $m$ equality constraints, and $\mathbf{g} : \mathbb{R}^n \to \mathbb{R}^p$ stacks the $p$ inequality constraints. In the lap-time setting $\mathbf{x}$ holds the discretised states and controls, $f$ is total lap time, $\mathbf{h}$ enforces vehicle dynamics and boundary conditions, and $\mathbf{g}$ enforces track limits, tire friction circle and actuator bounds.
 
-\subsection{KKT conditions}
-KKT conditions are the conditions of optimality, if satisfied the point is local optimum.
-alpha and omega of nonlinear programming, lord praise the KKT conditions. TODO odstranit celu sekciu?
 
+
+\subsection{KKT conditions}
+\label{subsec:kkt}
+The Karush-Kuhn-Tucker (KKT) conditions are the first-order necessary conditions of optimality for the NLP \eqref{eq:general_nlp}. A point $\mathbf{x}^*$ together with vectors of multipliers $\lambda$, $\mu$ is a candidate local optimum if it satisfies
 \begin{equation}
     \begin{aligned}
-        \nabla f(\mathbf{x}) + \sum_{i=1}^{m} \lambda_i \nabla h_i(\mathbf{x}) + \sum_{i=1}^{p} \mu_i \nabla g_i(\mathbf{x}) & = 0                            \\
-        \mathbf{h}(\mathbf{x})                                                                                               & = \mathbf{0}                   \\
-        \mathbf{g}(\mathbf{x})                                                                                               & \leq \mathbf{0}                \\
-        \mu_i                                                                                                                & \geq 0, \quad i = 1, \ldots, p \\
-        \mu_i g_i(\mathbf{x})                                                                                                & = 0, \quad i = 1, \ldots, p
+        \nabla f(\mathbf{x}) + \sum_{i=1}^{m} \lambda_i \nabla h_i(\mathbf{x}) + \sum_{i=1}^{p} \mu_i \nabla g_i(\mathbf{x}) & = 0                           , \\
+        \mathbf{h}(\mathbf{x})                                                                                               & = \mathbf{0}                  , \\
+        \mathbf{g}(\mathbf{x})                                                                                               & \leq \mathbf{0}                ,\\
+        \mu_i                                                                                                                & \geq 0, \quad i = 1, \ldots, p ,\\
+        \mu_i g_i(\mathbf{x})                                                                                                & = 0, \quad i = 1, \ldots, p.
     \end{aligned}
+    \label{eq:kkt}
 \end{equation}
+The interior point Newton step in Section~\ref{sec:interior_point} solves a linearisation of these conditions, and the sensitivity analysis in Section~\ref{sec:adjoint} differentiates them with respect to model parameters.
 
 
 %\begin{equation}
@@ -123,12 +126,12 @@ NLP into form~\ref{eq:barrier_problem}
 
 \begin{equation}
     \begin{aligned}
-        \min_{\mathbf{x} \in \mathbb{R}^n} \quad & \phi_\mu(\mathbf{x}) := f(\mathbf{x}) - \mu \sum_{i=1}^{n} \ln(x_i^{(i)}) \\
-        \text{s.t.} \quad                        & c(\mathbf{x}) = 0
+        \min_{\mathbf{x} \in \mathbb{R}^n} \quad & \phi_\mu(\mathbf{x}) := f(\mathbf{x}) - \mu \sum_{i=1}^{n} \ln(x_i^{(i)}) ,\\
+        \text{s.t.} \quad                        & c(\mathbf{x}) = 0,
     \end{aligned}
     \label{eq:barrier_problem}
 \end{equation}
-
+inequality multipliers $\mu$ become bound multipliers $z$.
  The Lagrangian of the barrier problem is defined as
 \begin{equation}
     \mathcal{L}(\mathbf{x}, \lambda, z) := f(\mathbf{x}) + c(\mathbf{x})^\top \lambda - z.
@@ -177,7 +180,7 @@ A significant computational burden of Lagrange-Newton methods is that they requi
 \section{Scaling and matrix conditioning}
 Common pitfall of nonlinear programming is poor scaling. This happens when the
 solver encounters variables, that are orders of magnitude apart, for example
-motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.~\cite[p.~21]{wachter_implementation_2006}. With improper scaling, Lagrange multipliers in \ref{eq:Newton-Step} may become large when active constraints are nearly linearly dependent and this causes numerical difficulties. TOTO SOM CELKOM OPSIAL Z IPOPT PAPERU ALE NEVIEM AKO TO INAK NAPISAT VLSTNYIM SLOVAMI. TODO
+motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.. Even when the problem is well scaled, multipliers $\lambda$ and $z$ in \eqref{eq:Newton-Step} can grow very large if active-constraint gradients are nearly linearly dependent, which causes numerical difficulties in the Newton step~\cite[p.~21]{wachter_implementation_2006}.
 
 Similar problems happen when nonsmooth function is used in the model, like abs(), max(), branching. These have to be replaced by smooth approximation or completely reformulated.
 %(MUMPS,MA97,PARDISO,...), that has to do matrix factorization every iteration,
