@@ -90,6 +90,7 @@ Implementation of specific models is conver in part III Implementation. \cite{ci
 
 
 \subsection{Linear tire}
+\label{linearTire}
 This tire model maps lateral slip angle
 \begin{equation}
     \alpha = -\arctan\!\left(\frac{v_y}{v_x}\right),
@@ -113,7 +114,7 @@ Forces are constrained by friction ellipse
 
 Implication of neglecting tire spinning is that, energy from motor is not used to spin up the wheels and all of it is used to accelerate the car, creating large discrepancy from how a real vehicle operates. In this and following models this effect is not accounted for.
 \subsection{Magic formula tire}
-Magic formula tire developed by Hans B. Pacejka \cite{pacejka} is an empirically derived formula, that describes tire forces. Full magic formula model has around 80 parameters and many variants. Variant described here was taken from \cite{2026ClassProject} and has only 6 parameters.
+Magic formula tire developed by Hans B. Pacejka \cite{pacejka} is an empirically derived formula, that describes tire forces. Full magic formula model has around 80 parameters and many variants. Variant described here was taken from \cite{2026ClassProject} and has only 6 parameters. \label{pacejka}
 \begin{equation}
     \alpha = -\arctan\!\left(\frac{v_y}{v_x}\right).
     \label{eq:pac_slip}
@@ -179,8 +180,8 @@ The chassis is modeled as a point mass located at the center of gravity (CoG), c
     \dot{\symbf{\omega}} = \frac{\symbf{M}_{\!CoG}}{I}.
 \end{equation}
 \begin{equation}
-    \symbf{x} = \begin{bmatrix} v_x \\ v_y \\ \psi \\ \omega_z \end{bmatrix}, \qquad
-    \dot{\symbf{x}} = \begin{bmatrix} \dot{v}_x \\ \dot{v}_y \\ \omega_z \\ \dot{\omega}_z \end{bmatrix}.
+    \symbf{x} = \begin{bmatrix} v_x \\ v_y \\ \psi \\ \dot{\psi} \end{bmatrix}, \qquad
+    \dot{\symbf{x}} = \begin{bmatrix} \dot{v}_x \\ \dot{v}_y \\ \dot{\psi} \\ \ddot{\psi} \end{bmatrix}.
     \label{coeq2}
 \end{equation}
 Chassis also imposes constraint on location on track to prevent the vehicle leaving the track.
@@ -346,6 +347,7 @@ is limited, as dividing force between more than two wheels on an axis is a stati
 \end{figure}
 Two suspension variants are used in this thesis, static distribution and dynamic distribution
 \subsection{Static suspension}
+\label{staticsusp}
 Static suspensions distributes the vehicle's mass and force from aerodynamics according to position of center of gravity and center of pressure. This trivial implementation is possible only for 2 axles, having 3 and more axles would make this a statically indeterminate system.
 \begin{equation}
     \begin{aligned}
@@ -498,6 +500,15 @@ Another possible formulation is using smooth max approximation using $\arctan$ o
     \caption{Motor component: electrical power $P_\text{elec}$ enters from the battery side, shaft angular velocity $\omega$ is imposed by the drivetrain, output is shaft torque $T$.}\label{fig:motor}
 \end{figure}
 
+\section{Brake model}
+Braking force is distributed among wheels by brake bias ratio, to exclude simulatenous braking and accelerating a complemetarity constraint is used,
+\begin{equation}
+	T_\mathrm{m} \cdot F_\mathrm{b} \le \varepsilon, \quad T_\mathrm{m} \ge 0,\ F_\mathrm{b} \ge 0	,
+\end{equation}
+
+Where $T_m$ is driving torque or sum of driving torques, $F_B$ is braking torque. A cleaner alternative is to penalize energy consumption in the objective, then the explicit complementarity constraint is not required.
+
+
 \section{Car models}
 These models must work when used in NLP transcription for solving boundary value problem, but they also must work for initial value problem, when the model is initialized or verified for transcription error. Some toolboxes can automatically create constraints from ODE models \cite{wilhelm2022eago}. In my implementation I have an if statement that switches between IVP and BVP variant of models equations, major disadvantage of this approach is that the equations for both variants must be effectively the same and finding bugs is difficult with this approach.
 \subsection{Generic car model structure}
@@ -508,7 +519,18 @@ decide which parameters should be controlled. This also
 allows for finding the optimal parameters of vehicle, such as brake bias,
 aerodynamics balance, gear ratio during lap time optimization. This is shown on figure \ref{fig:generic_car}. When parameter is chosen to be sensitivity
 analysis variable, impact of changing this variable is cheaply computed after
-the optimization is finished, see Section~\ref{sec:adjoint}. Each parameter holds three values: lower bound, upper bound, and nominal value. The bounds are passed directly to the NLP as variable limits and are reused to scale the variable
+the optimization is finished, see Section~\ref{sec:adjoint}. Each parameter holds three values: lower bound, upper bound, and nominal value. The bounds are passed directly to the NLP as variable limits and are reused to scale the variable. Constraint that wheels cannot leave the track is created using upper and lower bound distance from centerline, which is a state of the car.
+
+All vehicles must have at least these states:
+\begin{itemize}
+    \item $v_x$ — longitudinal velocity in the body frame [m/s],
+    \item $v_y$ — lateral velocity in the body frame [m/s],
+    \item $\psi$ — heading angle relative to the track tangent [rad],
+    \item $\dot{\psi}$ — yaw rate [rad/s],
+    \item $n$ — signed lateral distance from the centerline [m],
+    \item $t$ — elapsed lap time [s].
+\end{itemize}
+
 
 \begin{figure}[H]
 	\centering
@@ -642,7 +664,7 @@ A more complex and useful model is single-track. In this model the suspension ef
 \end{figure}
 
 \subsection{Twin-track model}
-Twin-track model is considered to be a full model. Computational graph of it is shown in figure \ref{fig:twintrack}
+Twin-track model has all four tires modelled separately. This captures left-right load transfer. Computational graph of it is shown in figure~\ref{fig:twintrack}
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[
@@ -769,19 +791,18 @@ where $\psi$ is car heading, $\theta(s)$ is heading of track at distance s,
 Then the model can be transformed from time as independed variable to distance travelled along centerline$s$ as independent variable by equation:
 \begin{equation}
 	\frac{\mathrm{d}}{\mathrm{d}s}
-	\begin{pmatrix} v_x \\ v_y \\ \psi \\ \omega \\ n \\ t \end{pmatrix}
+	\begin{pmatrix} v_x \\ v_y \\ \psi \\ \dot{\psi} \\ n \\ t \end{pmatrix}
 	=
 	S_f
 	\begin{pmatrix}
 		\dot{v}_x    \\
 		\dot{v}_y    \\
 		\dot{\psi}   \\
-		\dot{\omega} \\
+		\ddot{\psi} \\
 		\dot{n}      \\
 		1
 	\end{pmatrix}.
 \end{equation}
-
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}[

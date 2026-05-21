@@ -249,7 +249,7 @@ These methods are quite similar in their implementation in julia, I have attempt
 
 \section{Implementation of  models}
 \subsection{Tire model implementation}
-Three tire models were implemented according to section \ref{tiremodel}. Extra decision variables were created that are equal to tire lateral and longitudinal forces, this creates less dense nonlinear expressions. Tires have these parametrizations
+Three tire models were implemented according to section \ref{tiremodel}. Extra decision variables were created that are equal to tire lateral and longitudinal forces, this creates less dense nonlinear expressions. Tires have these parametrizations:
 \begin{table}[H]
     \centering
     \footnotesize
@@ -313,6 +313,13 @@ Three tire models were implemented according to section \ref{tiremodel}. Extra d
 
 
 \subsection{Implementation of vehicles}
+Four vehicles were implemented. The simplest is the single-track Formula Student vehicle, with a static suspension~\ref{staticsusp} and a linear tire~\ref{linearTire}. The controls are the braking force, the rear motor torque, and the steering of the front wheels.
+
+The twin-track Formula Student vehicle has a simplified Magic Formula tire model~\ref{pacejka} without the degressive behavior and a static suspension~\ref{staticsusp}. The controls are the torque on the front motors, the torque on the rear motors, the braking force, and the steering of the front wheels. It is implemented according to~\cite{2026ClassProject}.
+
+The twin-track Formula~E model has a Magic Formula tire model~\ref{pacejka} with degressive behavior and a dynamic suspension. The controls are the torque on the rear wheels, the braking force, and the steering of the front wheels.
+
+The bus model has a scaled-up Magic Formula tire model and a dummy suspension that splits the normal load equally. The controls are the torque on the middle axle, the independent steering of the front and rear wheels, and the braking force.
 \begin{table}[H]
     \centering
     \caption{Vehicle parameters used in this thesis }
@@ -338,44 +345,39 @@ Three tire models were implemented according to section \ref{tiremodel}. Extra d
         Wheels                        & 2     & 4     & 4      & 6      \\
         Driven motors                 & 2     & 4     & 1 (shared) & 6  \\
         Tire model                    & linear R20 & Pacejka R20 & Pacejka FE & Pacejka (scaled) \\
-        Suspension                    & dummy & simple    & quasi-steady & bus 6-wheel \\
+        Suspension                    & Static & Static    & Dynamic & dummy 6-wheel \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-
-
-The Formula~E model is implemented according to~\cite{2026ClassProject}.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{0.45\textwidth}
         \centering
-        \includesvg[width=\linewidth]{../sync/vehicles/singletrack.svg}
+        \includegraphics[width=\linewidth]{../sync/vehicles/singletrack.pdf}
         \caption{Singletrack}
         \label{fig:vehicle_singletrack}
     \end{subfigure}\hfill
     \begin{subfigure}[t]{0.45\textwidth}
         \centering
-        \includesvg[width=\linewidth]{../sync/vehicles/twintrack.svg}
+        \includegraphics[width=\linewidth]{../sync/vehicles/twintrack.pdf}
         \caption{Formula Student twintrack}
         \label{fig:vehicle_twintrack}
     \end{subfigure}
     \caption{Single-track and Formula Student twintrack vehicle models.}
     \label{fig:vehicle_fs}
 \end{figure}
-
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{0.45\textwidth}
         \centering
-        \includesvg[width=\linewidth]{../sync/vehicles/formula.svg}
+        \includegraphics[width=\linewidth]{../sync/vehicles/formula.pdf}
         \caption{Formula~E}
         \label{fig:vehicle_formula}
     \end{subfigure}\hfill
     \begin{subfigure}[t]{0.45\textwidth}
         \centering
-        \includesvg[width=\linewidth]{../sync/vehicles/bus.svg}
+        \includegraphics[width=\linewidth]{../sync/vehicles/bus.pdf}
         \caption{Bus}
         \label{fig:vehicle_bus}
     \end{subfigure}
@@ -406,8 +408,12 @@ geometries (DoubleTurn, FigureEight).
         \caption{Formula Student Germany track}
         \label{fig:track_fsg}
     \end{subfigure}
+    \caption{Formula Student benchmark tracks.}
+    \label{fig:benchmark_tracks_fs}
+\end{figure}
 
-    \vspace{0.5em}
+\begin{figure}[H]
+    \centering
     \begin{subfigure}[t]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{../sync/thesisImages/benchmark_track_Berlin.png}
@@ -420,16 +426,48 @@ geometries (DoubleTurn, FigureEight).
         \caption{DoubleTurn}
         \label{fig:track_doubleturn}
     \end{subfigure}
-
-    \vspace{0.5em}
-    \begin{subfigure}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{../sync/thesisImages/benchmark_track_FigureEight.png}
-        \caption{FigureEight}
-        \label{fig:track_figureeight}
-    \end{subfigure}
-    \caption{Tracks used in the solver/transcription benchmark.}
-    \label{fig:benchmark_tracks}
+    \caption{Berlin Formula~E circuit and the DoubleTurn synthetic track.}
+    \label{fig:benchmark_tracks_other}
 \end{figure}
 
-\section{Actual constriants, exampleconstraints like cannot leave road}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\linewidth]{../sync/thesisImages/benchmark_track_FigureEight.png}
+    \caption{FigureEight synthetic track.}
+    \label{fig:track_figureeight}
+\end{figure}
+
+%\section{Actual constriants, exampleconstraints like cannot leave road}
+
+%\section{Example optimization problem}
+
+%After transcription the OCP becomes a nonlinear program over the state and
+%control samples at the collocation nodes,
+%`\begin{equation}
+%`    \begin{aligned}
+%`        \min_{\mathbf{X},\,\mathbf{U}}\quad
+%`            & t_f \\
+%`        \text{s.t.}\quad
+%`            & \mathbf{D}\mathbf{X} = \mathbf{F}(\mathbf{X}, \mathbf{U}),
+%`              && \text{collocated dynamics} \\
+%`            & \mathbf{G}(\mathbf{X}, \mathbf{U}) \le 0,
+%`              && \text{path constraints at nodes} \\
+%`            & \mathbf{X}_0 = \mathbf{x}_0,\quad \mathbf{X}_N = \mathbf{x}_f,
+%`              && \text{boundary conditions} \\
+%`            & \mathbf{X}_\mathrm{lb} \le \mathbf{X} \le \mathbf{X}_\mathrm{ub},
+%`              && \text{state bounds} \\
+%`            & \mathbf{U}_\mathrm{lb} \le \mathbf{U} \le \mathbf{U}_\mathrm{ub}.
+%`              && \text{control bounds}
+%`    \end{aligned}
+%`\end{equation}
+%`$\mathbf{X}$ and $\mathbf{U}$ are the matrices of state and control samples
+%`at the collocation nodes, $\mathbf{D}$ is the pseudospectral differentiation
+%`matrix and $\mathbf{F}$ evaluates the vehicle dynamics at every node. The
+%`state vector collects body velocities, heading, yaw rate, lateral track
+%`offset and elapsed time. The control vector contains motor torques,
+%`steering angle and brake force. The independent variable is the arc length
+%`$s$ along the track, which turns the minimum-time objective into the free
+%`final value $t_f = t(s_f)$. The path constraints $\mathbf{G}$ group the
+%`tire friction ellipse, track containment, drivetrain power limit and the
+%`throttle-brake complementarity, all evaluated at the collocation nodes.
+

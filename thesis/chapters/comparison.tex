@@ -2,7 +2,7 @@
 Performance of NLP solvers and frameworks is often tested on benchmark problems. like CUTEst \cite{gouldCUTEstConstrainedUnconstrained2014} dataset. I have created my own dataset for this purpose.
 As written on Ipopt website: Ipopt has many (probably too many) options \cite{ipopt_options} that can be adjusted, and that is true for all solvers. Some of differences in this benchmark may be due to sub optimal setup of the solver. Tests were performed on Ryzen 9 9950X and MadNLP ran on Nvidia RTX
 5070.
-
+\label{sec:benchmark}
 This benchmark was performed with vehicles :singletrack, twintrack, formula, bus on all tracks with h mesh refinement. Legendre and Lobatto methods failed in one of 14 tests Radau did not fail, but took little longer than lobatto method.
 \input{../sync/thesisTables/summary.tex}
 \captionof{table}{Benchmark summary statistics by transcription variant.}
