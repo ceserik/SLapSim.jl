@@ -26,7 +26,7 @@ The package InfiniteOpt.jl already implements several collocation schemes, but I
 
 		% IPOPT linear solvers
 		\node[leafbox] (mumps)   at (-5.5, -7.2) {MUMPS};
-		\node[leafbox] (hsl)     at (-3.0, -7.2) {MA97 MA57 MA86};
+		\node[leafbox] (hsl)     at (-3.0, -7.2) {ma27 ma57 ma97};
 		\node[leafbox] (pardiso) at (-0.5, -7.2) {PARDISO};
 
 		% MadNLP backends
@@ -61,7 +61,7 @@ optimization as decision variables fixed to a value by constraints. This added t
 \begin{figure}[H]
 	\centering
 	\makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/sensitivity.png}}
-	\caption{Node-interval ODE error for power-test case.}
+	\caption{Sensitivity of lap time to vehicle parameters.}
 	\label{fig:sensitivity}
 \end{figure}
 
@@ -335,7 +335,7 @@ The bus model has a scaled-up Magic Formula tire model and a dummy suspension th
         Wheelbase $L$ [m]             & 1.525 & 1.525 & 2.9    & 6.0    \\
         Track $w$ [m]                 & 1.2   & 1.2   & 1.5    & 2.1    \\
         CoG ratio front [--]          & 0.50  & 0.50  & 0.482  & 0.45   \\
-        Lift coefficient $C_L$ [--]   & 5.0   & 5.0   & $-2.7$ & $-0.2$ \\
+        Lift coefficient $C_L$ [--]   & $-5.0$ & $-5.0$ & $-2.7$ & $-0.2$ \\
         Drag coefficient $C_D$ [--]   & 2.0   & 2.0   & 1.4    & 6.0    \\
         Power limit $P_{\max}$ [kW]   & 80    & 80    & 270    & 300    \\
         Brake bias front [--]         & 0.60  & 0.60  & 0.70   & 0.60   \\

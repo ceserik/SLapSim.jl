@@ -126,12 +126,12 @@ NLP into form~\ref{eq:barrier_problem}
 
 \begin{equation}
     \begin{aligned}
-        \min_{\mathbf{x} \in \mathbb{R}^n} \quad & \phi_\mu(\mathbf{x}) := f(\mathbf{x}) - \mu \sum_{i=1}^{n} \ln(x_i^{(i)}) ,\\
+        \min_{\mathbf{x} \in \mathbb{R}^n} \quad & \phi_\mu(\mathbf{x}) := f(\mathbf{x}) - \mu \sum_{i=1}^{n} \ln(x_i) ,\\
         \text{s.t.} \quad                        & c(\mathbf{x}) = 0,
     \end{aligned}
     \label{eq:barrier_problem}
 \end{equation}
-inequality multipliers $\mu$ become bound multipliers $z$.
+inequality multipliers $\mu$ become bound multipliers $z$. Note that $\mu$ here denotes the barrier parameter, reusing the symbol from the KKT inequality multipliers above with a different meaning.
  The Lagrangian of the barrier problem is defined as
 \begin{equation}
     \mathcal{L}(\mathbf{x}, \lambda, z) := f(\mathbf{x}) + c(\mathbf{x})^\top \lambda - z.
@@ -164,14 +164,14 @@ There are numerous commercial and free algorithms to solve this system of linear
 systems it is LU decomposition, but for larger sparse problems a dedicated
 solver is a must. IPOPT is most commonly used with MUMPS \cite{MUMPS:1} solver
 which is free. There are several linear commercial solvers, Harwell Subroutine
-Library (HSL) offers ma27 ma87 ma97 \cite{hsl2011collection}. Panua Technologies offers PARDISO solver
+Library (HSL) offers ma27, ma57 and ma97 \cite{hsl2011collection}. Panua Technologies offers PARDISO solver
 \cite{pardiso}. Harwell Subroutine Library solvers and PARDISO solver limited to 2 cores are available free for
 academic usage. These solvers run on CPU, Nvidia has linear solver CuDSS\cite{nvidia_cudss} which runs on GPU.
 Linear solvers are capable of multithreading on CPU, which needs to be explicitly
 turned on. 
 
-\section{Sequential quadratic programming}
-Sequential quadratic programming is less commonly used for offline trajectory optimisation, usage of IPOPT prevails. celu sekciu prec
+%\section{Sequential quadratic programming}
+%Sequential quadratic programming is less commonly used for offline trajectory optimisation, usage of IPOPT prevails. celu sekciu prec
 
 \section{Calculation of derivatives}
 A significant computational burden of Lagrange-Newton methods is that they require gradient of the objective function, Jacobian of the constraints and Hessian of the Lagrangian to compute every Newton step. Computing these derivatives can be time intensive. The most universal method is finite differences, which means evaluating the function around the current point and estimating the derivative, this works even for a black box model, but the derivatives are not exact. When the model is available, symbolic differentiation can be used, however, the full symbolic expression is often too large to be evaluated effectively due to repeated chain and product rules. Automatic differentiation aims to solve the problems of previous methods, by applying the chain rule to the elementary operations of a function. A comprehensive review of automatic differentiation is given in~\cite{cortildBriefReviewAutomatic2023}.
