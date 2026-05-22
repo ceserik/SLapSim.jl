@@ -15,9 +15,13 @@ src/playground/*
 TODO
 results/*.mp4
 results/*
-sync/*
-!sync/.gitkeep
+sync2/*
+sync1.5/*
+#sync/*
+#!sync/.gitkeep
 CLAUDE.md
 thesis/ctutest/ctutest.log
 thesis/ctuman/ctuman-notation.log
 thesis/ctutest/Exported Items.bib
+sync/.stfolder/*
+sync/Prohlášení.pdf

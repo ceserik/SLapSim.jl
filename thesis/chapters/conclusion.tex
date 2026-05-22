@@ -1,23 +1,26 @@
 \chapter{Conclusion}
 
-All goals were achieved. More investigation would be nice into differentiate orthogonal polynomials, Chebyshev type I. polynomials are often used with high order due to their good suppression of Runge phenomena. One thing which was not a goal but, would be super useful if i managed to do a validation on real world data. Validation of sensitivity analysys. I wanted to do it for a long time but there was not enough of it.
+Goal of investigation of available numerical methods was accomplished, the topic is very deep with all of the subproblems: dynamic system modeling, transcription, algebraic modeling, mesh refinement, NLP solving, sparse linear solving, sensitivity analysis and frameworks that encompass them being infinitely deep I CAN SPEND INFITE TIME LEARNING THEM. It was difficult to understand these topics in meaning ful way without spend too much time on a single topic.  
 
-Julia was interesting language to learn, it offers blazing fast execution, but that comes with caveats. Debugging is way more cmplicated. When working on a smaller project, the debugging is not such a pain, but when the project is bigger debugging is not user friendly. Debugging in python and MATLAB is way easier. Julias selling point is that it is just in time cmpiled language, rivalling C. That is true BUT you have to know what you are doing, if you dont declare types in functions it is as slow as python.
+More investigation would be nice into differentiate orthogonal polynomials, Chebyshev type I. polynomials are often used with high order due to their good suppression of Runge phenomena. 
 
+As for NLP solvers a better set of options can be found for Ipopt by investigating why the solver fails in some cases, also it may make sense to try Uno solver~\cite{vanaret_implementing_2025} and construct a new specialized solver for this problem, but that would take enormous amount of time.
 
-At the begging of this project I wanted a more complex model, I wanted to go deeper with complexity than my bachelor thesis. That is add pitch, roll and add suspension with damper and spring for each wheel. Also this simulation does not account for gearboxes with discrete stages, and no combustion engine.
+Building a model for optimization was difficult, as debugging it is difficult, when the grid is sampled too densely or different thins are not good, Ipopt fails to converge. I wasn't using any tool to find which constraint is causing this, debugging could be improved by writing/using a tool which would tell which constraint is causing issues. This would significantly decrease the development time.
 
-Believing 100\% this tool and designing car according to it would most likely lead to undriveable vehicle, as there is no force pushing for stability driveability in NLP \cite{perantoniOptimalControlFormula2014} deals also with this. The optimal driving created by NLP is unachievable by real driver, as the vehicle is on its limit and one mistake woul overload tires and cause failure. 
-
-Track model is also heavily simplified, neglecting slope and bank of the track.
-
-Accumulator energy constraints I have modeled them but not verified that they work, this is also needed.
-Motor constraints for softmax
-
-EXAMDELS MAY HAVE BETTER SUPPORT FOR DENSE NONLINEAR EXPRESSIONS< JUMP DOESNT HAVE IT< CASADI HAS IT
-
-valdiation of sensitivity analysis would be good.
 h method implemeted is not good very bad better needs to be implementd the rror estimation is only placeholder
+
+As for implementation, Julia was interesting language to learn, it offers blazing fast execution, but that comes with caveats. Debugging is way more complicated. When working on a smaller project, the debugging is not such a pain, but when the project is bigger debugging is not user friendly. Debugging in python and MATLAB is way easier. Julia's main selling point is that it is just in time compiled language, rivalling C after compilation. That is true BUT you have to know what you are doing, if you don't, it can be as slow as python. Also JuMP was taking 90\% of NLP solving time on calculating the derivatives, when constraints had dense expressions~\cite{julia_discourse_ipopt_hessian,julia}, so only 10\% by the actual solver, CasADi seems not to have this issue also implementation using automatic differentiation from ExaModels~\cite{shin2024accelerating} on GPU would be beneficial to experiment with.
+
+One thing which was not a goal but, would be super useful if i managed to do a validation of sensitivity analysis on real world data. That is driving vehicle on track, measuring time, loading sand bags (and/or myself as passenger) as extra weight into the car and driving again. I wanted to do it for a long time but there was not enough of time.
+
+At the begging of this project I wanted a more complex model, I wanted to go deeper with complexity than my bachelor thesis. That is add pitch, roll and add suspension with damper and spring for each wheel, add Equivalent circuit model 1RC for the accumulator, properly implement energy accumulation, add road bank and inclination. Investigate the possible implementations of losses from Section~\ref{motormodel} and using softmax or different approximations. Also this simulation does not account for gearboxes with discrete stages, and no combustion engine.
+
+Believing 100\% this tool and designing car according to it would most likely lead to undriveable vehicle, as objective of time minimization doesn't account for stability and driveability, \cite{perantoniOptimalControlFormula2014} deals also with this. The optimal driving created by NLP is unachievable by real driver, as the vehicle is on its limit and one mistake would overload tires and cause failure.
+
+the comparison is biased towards high number, the total time should not be relative to total time of all solver or timeof longest solve. Also median is not telling much with so few samples.
+
+
 Automated behncmarking is a must becasue small canges can break many things and you may notice the simulation crashing long after iplementaton
 
 implement softmax and max approximaitons
