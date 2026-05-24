@@ -310,27 +310,27 @@ Two suspension variants are used in this thesis: static distribution and dynamic
 
 \subsection{Static suspension}
 \label{staticsusp}
-The static suspension distributes the vehicle's mass and the force from aerodynamics according to the position of the center of gravity and the center of pressure. This trivial implementation is possible only for two axles, three or more axles would make this a statically indeterminate system.
+The static suspension distributes the vehicle's mass and the force from aerodynamics according to the position of the center of gravity and the center of pressure. The underlying equations are
 \begin{equation}
     \begin{aligned}
-        F_{z,FL} &= \bigl(m g\, x_\text{CoG} + F_\text{lift}\,\text{CoP}\bigr)(1 - y_\text{CoG}) \\
-        F_{z,FR} &= \bigl(m g\, x_\text{CoG} + F_\text{lift}\,\text{CoP}\bigr)\, y_\text{CoG}     \\
-        F_{z,RL} &= \bigl(m g\,(1-x_\text{CoG}) + F_\text{lift}(1-\text{CoP})\bigr)(1 - y_\text{CoG}) \\
-        F_{z,RR} &= \bigl(m g\,(1-x_\text{CoG}) + F_\text{lift}(1-\text{CoP})\bigr)\, y_\text{CoG}
+        F_{z,FL} &= \bigl(m g\, x_\text{CoG} + F_\text{lift}\,\text{CoP}\bigr)(1 - y_\text{CoG}) ,\\
+        F_{z,FR} &= \bigl(m g\, x_\text{CoG} + F_\text{lift}\,\text{CoP}\bigr)\, y_\text{CoG}    , \\
+        F_{z,RL} &= \bigl(m g\,(1-x_\text{CoG}) + F_\text{lift}(1-\text{CoP})\bigr)(1 - y_\text{CoG}) ,\\
+        F_{z,RR} &= \bigl(m g\,(1-x_\text{CoG}) + F_\text{lift}(1-\text{CoP})\bigr)\, y_\text{CoG}.
     \end{aligned}
 \end{equation}
 \subsection{Dynamic suspension}
-This suspension variant takes into account the load transfer caused by longitudinal and lateral accelerations. It is adapted from~\cite{2026ClassProject}.
+This suspension variant takes into account the load transfer caused by longitudinal and lateral accelerations. It is adapted from~\cite{2026ClassProject}, equations are
 \begin{equation}
     \begin{aligned}
         F_{z,FL} &= \!\left(m g\, x_\text{CoG} - \frac{m\, a_x h_\text{CoG}}{L}\right)\!(1-y_\text{CoG})
-                  + \tfrac{1}{2} F_\text{down}\,\text{CoP} - \tfrac{1}{2}\Delta F_y \\[3pt]
+                  + \tfrac{1}{2} F_\text{down}\,\text{CoP} - \tfrac{1}{2}\Delta F_y ,\\[3pt]
         F_{z,FR} &= \!\left(m g\, x_\text{CoG} - \frac{m\, a_x h_\text{CoG}}{L}\right)\! y_\text{CoG}
-                  + \tfrac{1}{2} F_\text{down}\,\text{CoP} + \tfrac{1}{2}\Delta F_y \\[3pt]
+                  + \tfrac{1}{2} F_\text{down}\,\text{CoP} + \tfrac{1}{2}\Delta F_y ,\\[3pt]
         F_{z,RL} &= \!\left(m g\,(1-x_\text{CoG}) + \frac{m\, a_x h_\text{CoG}}{L}\right)\!(1-y_\text{CoG})
-                  + \tfrac{1}{2} F_\text{down}\,(1-\text{CoP}) - \tfrac{1}{2}\Delta F_y \\[3pt]
+                  + \tfrac{1}{2} F_\text{down}\,(1-\text{CoP}) - \tfrac{1}{2}\Delta F_y ,\\[3pt]
         F_{z,RR} &= \!\left(m g\,(1-x_\text{CoG}) + \frac{m\, a_x h_\text{CoG}}{L}\right)\! y_\text{CoG}
-                  + \tfrac{1}{2} F_\text{down}\,(1-\text{CoP}) + \tfrac{1}{2}\Delta F_y
+                  + \tfrac{1}{2} F_\text{down}\,(1-\text{CoP}) + \tfrac{1}{2}\Delta F_y,
     \end{aligned}
 \end{equation}
 $m a_x$ is the longitudinal force, estimated as the sum of driving, braking, drag and rolling-resistance forces:
@@ -533,7 +533,7 @@ A simple and useful car model can be built using these equations
 Here $\rho$ is the air density, $C_L$ is the lift coefficient, $v_x$ is the longitudinal speed, $m$ is the mass, $c$ is the curvature of the track at the current point, $P_{\max}$ is the maximum power of the motor, $\mu$ is the friction coefficient, and $C_D$ is the drag coefficient. This model has only one state, $v_x$, which makes it possible to use specialized lap-time simulation solvers. Variations of this model, where for example $P_{\max}$ is a lookup table or the grip does not scale linearly with down-force, are commonly used in motorsport.
 \subsection{Single-track}
 A more complex and useful model is the single-track model. In this model, suspension effects are neglected. The single-track model is still considered a simplified model and is used most commonly when more complex models are too computationally expensive. A computational graph of how this model is assembled from the defined components is shown in Figure~\ref{fig:singletrack}.
-\begin{figure}[H]
+\begin{figure}[htb]
 	\centering
 	\begin{tikzpicture}[
 			box/.style={rectangle, draw, thick, fill=white, minimum width=2cm, minimum height=1.2cm, align=center, font=\small},
@@ -620,7 +620,7 @@ A more complex and useful model is the single-track model. In this model, suspen
 
 \subsection{Twin-track model}
 The twin-track model treats all four tires separately. This captures the left-right load transfer. The computational graph is shown in Figure~\ref{fig:twintrack}.
-\begin{figure}[H]
+\begin{figure}[htb]
 	\centering
 	\begin{tikzpicture}[
 			box/.style={rectangle, draw, thick, fill=white, minimum width=1.7cm, minimum height=0.9cm, align=center, font=\scriptsize},

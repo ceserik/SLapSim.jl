@@ -55,7 +55,7 @@ The package InfiniteOpt.jl already implements several collocation schemes, but I
 
 \section{Sensitivity analysis}
 I have used DiffOpt.jl~\cite{besancon2023diffopt} for the sensitivity analysis. By adding vehicle
-parameters such as, mass, lift coefficient, CoG position etc. into
+parameters such as mass, lift coefficient, CoG position etc. into
 optimization as decision variables fixed to a value by constraints. This added them to the algebraic model. Then the solution of minimum lap time can be differentiated by these parameters. Results of sensitivity analysis are in Figure \ref{fig:sensitivity}.
 
 \begin{figure}[H]
@@ -68,7 +68,7 @@ optimization as decision variables fixed to a value by constraints. This added t
 \section{Implemented nonlinear programming solvers}
 Julia with JuMP offers high-level interface which allows switching NLP solvers on a single line. I have used Ipopt, MadNLP and Uno solver with preset filtersqp. Unfortunately the Uno solver was getting stuck, therefore it is not considered in this thesis.
 
-Ipopt has built-in Hessian approximation strategy, in benchmark it proved to be inferior to automatic differentiation. Figure \ref{fig:nlp_flowchart_chosen} shows which solving methods were implemented and tested.
+Ipopt has built-in Hessian approximation strategy. Figure \ref{fig:nlp_flowchart_chosen} shows which solving methods were implemented and tested.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -151,13 +151,9 @@ Ipopt has built-in Hessian approximation strategy, in benchmark it proved to be 
 
 I have implemented p and h methods for mesh refinement. Error calculation is implemented by comparing the result of interpolated value at the end of segment and the result of simulation using Rodas4() solver. To calculate the error at the end of each segment, the interpolated controls and initial states are plugged into Rodas4 IVP solver. Then this result is compared to the states from transcription method. If error between states in absolute value is larger than user-defined threshold, the segment is halved. This is one of the simpler estimators of discretization error.
 
-Figure \ref{fig:power_node_controls} shows that
-error along track is not distributed equally. Error is localized around areas
-with large jump in controls. These areas need finer sampling. P methods cannot
-focus these specific points directly, they focus entire trajectory.
 
 The errors are concentrated around the discontinuity of controls, where the
-behaviour of the vehicle is more complex, requiring high-order or finer
+behavior of the vehicle is more complex, requiring high-order or finer
 approximation see Figure \ref{fig:power_node_controls}. Time-optimal control of car around track has many discontinuities and therefore p methods are not a good fit for this use.
 
 \begin{figure}[H]
@@ -166,7 +162,7 @@ approximation see Figure \ref{fig:power_node_controls}. Time-optimal control of 
     \caption{Node-interval ODE error for power-test case.}
     \label{fig:power_node_controls}
 \end{figure}
-The h methods handle this better by increasing sampling density around segments with large errors. Error before refinement is on figure~\ref{fig:power_error}.
+The h methods handle this better, by increasing sampling density around segments with large errors. Error before refinement is on figure~\ref{fig:power_error}.
 \begin{figure}[H]
     \centering
     \makebox[\textwidth][c]{\includegraphics[width=1\textwidth]{../sync/thesisImages/mesh_refinement_fscz_error_iter0.pdf}}
@@ -249,7 +245,7 @@ These methods are quite similar in their implementation in Julia, I have attempt
 
 \section{Implementation of models}
 \subsection{Tire model implementation}
-Three tire models were implemented according to section \ref{tiremodel}. Extra decision variables were created that are equal to tire lateral and longitudinal forces, this creates less dense nonlinear expressions. Tires have these parametrizations:
+Three tire models were implemented according to section \ref{tiremodel}. Tires have these parameterizations:
 \begin{table}[H]
     \centering
     \footnotesize
@@ -313,7 +309,7 @@ Three tire models were implemented according to section \ref{tiremodel}. Extra d
 
 
 \subsection{Implementation of vehicles}
-Four vehicles were implemented. The simplest is the single-track Formula Student vehicle, with a static suspension~\ref{staticsusp} and a linear tire~\ref{linearTire}. The controls are the braking force, the rear motor torque, and the steering of the front wheels.
+Four vehicles were implemented. The simplest is the single-track Formula Student vehicle, with a static suspension~\ref{staticsusp} and a linear tire~\ref{linearTire}. The controls are the braking force, motor torque, and the steering of the front wheels.
 
 The twin-track Formula Student vehicle has a simplified Magic Formula tire model~\ref{pacejka} without the degressive behavior and a static suspension~\ref{staticsusp}. The controls are the torque on the front motors, the torque on the rear motors, the braking force, and the steering of the front wheels. It is implemented according to~\cite{2026ClassProject}.
 
@@ -343,7 +339,7 @@ The bus model has a scaled-up Magic Formula tire model and a dummy suspension th
         Velocity range [m/s]          & [3,60]& [3,60]& [2,60] & [2,30] \\
         \midrule
         Wheels                        & 2     & 4     & 4      & 6      \\
-        Driven motors                 & 2     & 4     & 1 (shared) & 6  \\
+        Driven motors                 & 1     & 2     & 1 (shared) & 1 (shared)  \\
         Tire model                    & linear R20 & Pacejka R20 & Pacejka FE & Pacejka (scaled) \\
         Suspension                    & Static & Static    & Dynamic & dummy 6-wheel \\
         \bottomrule

@@ -1,5 +1,5 @@
 \chapter{Frameworks for Optimal Control Problem Formulation}
-Process of solving optimal control problem has 3 parts. Problem definition,
+Process of solving an optimal control problem has 3 parts. Problem definition,
 solving nonlinear program and optional mesh refinement. This chapter describes frameworks in which the NLP problem can be defined and solved. Framework is: programming language + algebraic modeling tool + automatic differentiation tool + mesh refining algorithm. Solving optimal control problem can be split into 3 steps described in figure \ref{fig:ocp-pipeline}
 
 \begin{figure}[h]
@@ -34,7 +34,7 @@ is that:
 CasADi is an open-source tool for nonlinear optimization and algorithmic
 differentiation.\cite{CasADi}\cite{Andersson2019}.
 It interfaces with C++, Python, MATLAB. It provides a framework to build
-the problem, and calculate the Hessian and Jacobian for NLP solver it does not
+the problem, and calculate the Hessian and Jacobian for the NLP solver. It does not
 have any mesh refinement algorithm. Commonly paired with Ipopt, but is compatible with large variety of solvers.
 
 \section{OpenMDAO + Dymos}
@@ -48,7 +48,7 @@ Acados is a modular open-source framework for fast embedded optimal control, dev
 \section{GPOPS-II}
 GPOPS-II \cite{pattersonGPOPSIIMATLABSoftware2014} is perhaps the most advanced
 tool for optimal control, it was developed at University of Florida by Michael
-Patterson and Anil V. Rao. other tools allow defining the problem, but
+Patterson and Anil V. Rao. Other tools allow defining the problem, but
 GPOPS-II is a level higher. It also includes advanced mesh refinement
 strategies, multi-phase OCP and automatic scaling. For solving the problem
 it uses Ipopt or SNOPT. It interfaces with MATLAB and C++, uses ADigator
@@ -56,9 +56,7 @@ it uses Ipopt or SNOPT. It interfaces with MATLAB and C++, uses ADigator
 commercial and closed source. Implementation in this thesis is heavily based on
 work of community from University of Florida.
 \section{Julia + JuMP + InfiniteOpt / ExaModels}
-ExaModels, JuMP
-
-JuMP is the go-to tool for algebraic modeling in Julia, it is mature,
+JuMP is the go-to tool for algebraic modeling in Julia, it is mature and
 versatile. Supports Linear programming, quadratic programming, mixed linear
 programming, Nonlinear programming. ExaModels \cite{shin2023accelerating} is a
 specialized algebraic modeling tool, it utilizes Single instruction, multiple
@@ -70,8 +68,6 @@ GPU. No Julia package has mesh refinement. Julia offers several framework option
   \item Julia + JuMP + InfiniteOpt
   \item Julia + ExaModels
 \end{enumerate}
-Although package InfiniteOpt.jl already contains implementation of various collocation methods, I chose not to use it. This decision was motivated by two considerations. Implementing the transcription methods myself provides deeper understanding of the topic. InfiniteOpt abstracts away some of the low-level control that JuMP offers, which may prevent mesh refinement implementation, usage of parametric vehicle model or sensitivity analysis.
-
 I chose Julia + JuMP,
 
 

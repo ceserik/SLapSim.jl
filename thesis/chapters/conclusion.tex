@@ -1,30 +1,35 @@
-\chapter{Conclusion}
+\chapter{Conclusion and future work}
+\section{Conclusion}
+\setlength{\parindent}{2em}
+\raggedbottom
+The goal of investigation of available numerical methods for optimal control was accomplished. The topic proved to be remarkably deep with all of the subproblems: dynamic system modeling, transcription, algebraic modeling, mesh refinement, NLP solving, sparse linear solving, sensitivity analysis and frameworks that encompass them being substantial fields in their own right. The main challenge was to understand these topics in a meaningful way without spending a disproportionate amount of time on a single topic.
 
-Goal of investigation of available numerical methods was accomplished, the topic is very deep with all of the subproblems: dynamic system modeling, transcription, algebraic modeling, mesh refinement, NLP solving, sparse linear solving, sensitivity analysis and frameworks that encompass them being infinitely deep I CAN SPEND INFITE TIME LEARNING THEM. It was difficult to understand these topics in meaning ful way without spend too much time on a single topic.  
+As for implementation, Julia was an interesting language to learn. It offers fast execution, but that comes with caveats. Debugging is considerably more complicated. On a smaller project the debugging is manageable, but on a larger project it is not user friendly. Debugging in Python and MATLAB is much easier. Julia's main selling point is that it is a just-in-time compiled language, rivaling C after compilation. This is true, but only if the code is written with performance in mind. Otherwise it can be as slow as Python.
 
-More investigation would be nice into differentiate orthogonal polynomials, Chebyshev type I. polynomials are often used with high order due to their good suppression of Runge phenomena. 
+At the beginning of this project I wanted a more complex model, going further in complexity than my bachelor thesis. This would include adding pitch and roll, modeling the suspension with a spring and damper for each wheel, adding a 1RC equivalent circuit model for the accumulator, properly implementing energy accumulation, and accounting for road bank and inclination. Then try to find the limits of model complexity that can be simulated. Unfortunately, there was not enough time for this. Also due to lack of time I did not manage to investigate collocation methods based on Chebyshev nodes.
 
-As for NLP solvers a better set of options can be found for Ipopt by investigating why the solver fails in some cases, also it may make sense to try Uno solver~\cite{vanaret_implementing_2025} and construct a new specialized solver for this problem, but that would take enormous amount of time.
+Trusting this tool completely, not using common sense and designing a car according to this tool would most likely lead to an undriveable vehicle, as the objective of time minimization does not account for stability or driveability of the vehicle. The work in~\cite{perantoniOptimalControlFormula2014} also addresses this issue. The optimal driving produced by the NLP is unachievable for a real driver, since the vehicle operates at its limit, where a single mistake would overload the tires and cause failure. Also the validation of this tool was only done using ODE solvers through mesh refinement, a proper validation using the data from a real vehicle on a race track was not done due to time constraints.
 
-Building a model for optimization was difficult, as debugging it is difficult, when the grid is sampled too densely or different thins are not good, Ipopt fails to converge. I wasn't using any tool to find which constraint is causing this, debugging could be improved by writing/using a tool which would tell which constraint is causing issues. This would significantly decrease the development time.
+In the thesis I have found that the transcription for fastest solving was Legendre-Gauss-Lobatto in integral formulation, but the accuracy needs to be investigated further as the two other methods had more similar results. The fastest NLP solver was MadNLP on CPU, and the fastest linear solver was ma97, with the one failed problem due to iteration limit. Automatic differentiation is superior to the quasi-Newton derivative estimation. The resulting tool can optimize a lap for the tested vehicle models in seconds to minutes, making it usable for concept evaluation, perform sensitivity analysis and find optimal value of a parameter. The code is open source on GitHub \url{https://github.com/ceserik/SLapSim.jl}, it supports multiple collocation schemes and solver backends with adaptive mesh refinement, and it is built on a modular vehicle framework.
 
-h method implemeted is not good very bad better needs to be implementd the rror estimation is only placeholder TODO
+\section{Future Work}
+For NLP solvers a better set of options can be found for Ipopt and MadNLP by investigating why the solver fails in some cases. It may also make sense to try Uno solver~\cite{vanaret_implementing_2025} and construct a new specialized solver for this problem, but that would take a substantial amount of time.
 
-As for implementation, Julia was interesting language to learn, it offers blazing fast execution, but that comes with caveats. Debugging is way more complicated. When working on a smaller project, the debugging is not such a pain, but when the project is bigger debugging is not user friendly. Debugging in python and MATLAB is way easier. Julia's main selling point is that it is just in time compiled language, rivalling C after compilation. That is true BUT you have to know what you are doing, if you don't, it can be as slow as python. Also JuMP was taking 90\% of NLP solving time on calculating the derivatives, when constraints had dense expressions~\cite{julia_discourse_ipopt_hessian,julia}, so only 10\% by the actual solver, CasADi seems not to have this issue also implementation using automatic differentiation from ExaModels~\cite{shin2024accelerating} on GPU would be beneficial to experiment with.TODO
+Building a model for optimization was difficult because debugging is hard. When the grid is sampled too densely or the problem is otherwise poorly conditioned, Ipopt fails to converge. I was not using any tool to find which constraint is causing this. Debugging could be improved by writing or using a tool which would tell which constraint is causing issues. This would significantly decrease the development time.
 
-One thing which was not a goal but, would be super useful if i managed to do a validation of sensitivity analysis on real world data. That is driving vehicle on track, measuring time, loading sand bags (and/or myself as passenger) as extra weight into the car and driving again. I wanted to do it for a long time but there was not enough of time. TODO
+Automated benchmarking is essential, because small changes can break many things, and a bug may go unnoticed until the simulation crashes with a different track and a different vehicle long after the bug was introduced. In future this should be added to GitHub CI/CD.
 
-At the begging of this project I wanted a more complex model, I wanted to go deeper with complexity than my bachelor thesis. That is add pitch, roll and add suspension with damper and spring for each wheel, add Equivalent circuit model 1RC for the accumulator, properly implement energy accumulation, add road bank and inclination. Investigate the possible implementations of losses from Section~\ref{motormodel} and using softmax or different approximations. Also this simulation does not account for gearboxes with discrete stages, and no combustion engine.TOODO
+The implemented mesh refinement method is the simplest version of mesh refinement, comparison with an ODE solver is not ideal. GPOPS-II uses more advanced methods. I believe the largest gains in solve time and solver success rate can be made by a better mesh refinement method, currently meshes can only be split, not merged, which has caused numerical difficulties after a couple of iterations of refinement.
 
-Believing 100\% this tool and designing car according to it would most likely lead to undriveable vehicle, as objective of time minimization doesn't account for stability and driveability, \cite{perantoniOptimalControlFormula2014} deals also with this. The optimal driving created by NLP is unachievable by real driver, as the vehicle is on its limit and one mistake would overload tires and cause failure.TODO
+It is worth investigating the possible implementations of the losses from Section~\ref{motormodel} and the use of softmax or other approximations. The current simulation vehicle model does not account for gearboxes with discrete stages or for combustion engines either, both of which could be incorporated within the existing modeling framework and which I would like to add.
 
-the comparison is biased towards high number, the total time should not be relative to total time of all solver or timeof longest solve. Also median is not telling much with so few samples.
-TODO
+JuMP spent 90\% of the NLP solving time computing derivatives when the constraints had dense expressions~\cite{julia_discourse_ipopt_hessian}, leaving only 10\% for the actual solver. CasADi does not appear to have this issue. Implementing the automatic differentiation with ExaModels~\cite{shin2024accelerating} on the GPU may solve this.
 
-Automated behncmarking is a must becasue small canges can break many things and you may notice the simulation crashing long after iplementaton also objetive time should be evlauated in similar graph manner. QWERTA
-QWERTA
+One thing that was not a goal, but would have been very useful, is a validation of the sensitivity analysis against real-world data. This would involve driving the vehicle on a track and measuring the lap time, adding extra weight to the car (sandbags, or myself as a passenger), driving again, and comparing the times. I had wanted to do this for a long time, but there was not enough time available.
 
-implement softmax and max approximaitons
+The comparison method using the mean and median is a misleading representation for benchmarking as it is skewed by a few problems with a long solving time. A standard way to compare solvers is in \cite{dolanBenchmarkingOptimizationSoftware2004}. This should be done in the future. Also the errors between different transcription methods should be examined.
+
+
 
 
 
@@ -32,16 +37,16 @@ implement softmax and max approximaitons
 %\section{Conditions of optimality for constrainednoptimization}
 %This chapeter derives conditions which given popint must satisfy if it is optimal, Algorithms for finding these points will be described in next chapter. My goal is to buid the theory in digestable way,for people not fluent in nonlinear optimisation I will start with simple example to explain main ideas clearly
 %and then generalise it to create optimisation framework. Very good intuitive itroduction is given in this youtube video \cite{cite:48}
-%Simplest useful example is: Find $x_1$ and $x_2$ that minimise the objective function $J(\mathbf{x}) = x_1^2+x_2^2$, subject to constraint function $c(\mathbf{x}) = x_1+x_2+3$. 
+%Simplest useful example is: Find $x_1$ and $x_2$ that minimise the objective function $J(\mathbf{x}) = x_1^2+x_2^2$, subject to constraint function $c(\mathbf{x}) = x_1+x_2+3$.
 %\begin{mini}[2]
 %{}{J(\mathbf{x})}{}{}
 %\addConstraint{c(\mathbf{x})=0}
 %\end{mini}
-%with variables $x_1,x_2\in\mathbf{R}$. 
+%with variables $x_1,x_2\in\mathbf{R}$.
 %This is visualised on contour plot of $J(\mathbf{x})$ Figure \ref{eq:constrained_optim}, orange line is constraint function, red arrow are vectors of gradient at each point. The solution must lie somewhere on the orange constraint line.
-%From the figure it can be easily seen that the optimum is on the point where the constraint line 
+%From the figure it can be easily seen that the optimum is on the point where the constraint line
 %of $x_1+x_2+3 =0$ is tangent with contour circle of $x_1^2+x_2^2$.
-%In other words, the constraint line is perpendicular to the gradient at the optimal point, this means that 
+%In other words, the constraint line is perpendicular to the gradient at the optimal point, this means that
 %gradient of $J(\mathbf{x})$ and gradiebnt of  $ c(\mathbf{x})$ differ only in their scale in the optimal point, to symbolize their difference in scale, scalar variable $\lambda$ is introduced.
 %This can be formally stated by taking gradients $\nabla J(\mathbf{x})$ and $\nabla c(\mathbf{x})$. and writing equation
 %erafad
@@ -59,7 +64,7 @@ implement softmax and max approximaitons
 %\label{eq:constrained_optim}
 %\end{figure}
 %
-%By introducing more constraints to $c(\mathbf{x}) =0$, first order necessary conditions of optimality are stated%  \ref{eq:lagrange} 
+%By introducing more constraints to $c(\mathbf{x}) =0$, first order necessary conditions of optimality are stated%  \ref{eq:lagrange}
 %
 %\begin{equation}
 %\nabla J(\mathbf{x}) + \symbf{\lambda} \nabla c(\mathbf{x})= 0  \label{eq:first_order},
@@ -126,7 +131,7 @@ implement softmax and max approximaitons
 %\begin{figure}[!t]
 %\includegraphics[width=0.4\textwidth]{ctu_logo_blue}
 %\caption{Blue logo of the CTU in Pragueueue.}
-%\end{figure}   
+%\end{figure}
 %
 %\chapter{Conclusions}
 %
@@ -137,7 +142,7 @@ implement softmax and max approximaitons
 %\begin{theorem}\begin{enumerate} \item Bla \item Blo \end{enumerate} \end{theorem}
 %
 %
-%Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis interdum facilisis urna, at tincidunt leo consectetur non. Maecenas bibendum mi vitae libero pharetra, ac ullamcorper nulla pellentesque. Sed sit amet massa nunc. Aenean placerat a est sodales sagittis. Quisque purus nibh, auctor ut consectetur at, suscipit non erat. Donec condimentum porttitor risus, vitae fringilla lectus tincidunt nec. Nulla leo quam, commodo eu ornare non, iaculis sed nulla. Duis gravida lacus quis purus sodales, vitae malesuada justo ultricies. Vestibulum nisl nulla, commodo non pellentesque a, fringilla a risus. Ut quis magna nulla. Mauris vitae ultricies ante, in consectetur justo. 
+%Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis interdum facilisis urna, at tincidunt leo consectetur non. Maecenas bibendum mi vitae libero pharetra, ac ullamcorper nulla pellentesque. Sed sit amet massa nunc. Aenean placerat a est sodales sagittis. Quisque purus nibh, auctor ut consectetur at, suscipit non erat. Donec condimentum porttitor risus, vitae fringilla lectus tincidunt nec. Nulla leo quam, commodo eu ornare non, iaculis sed nulla. Duis gravida lacus quis purus sodales, vitae malesuada justo ultricies. Vestibulum nisl nulla, commodo non pellentesque a, fringilla a risus. Ut quis magna nulla. Mauris vitae ultricies ante, in consectetur justo.
 %
 %\medskip
 %

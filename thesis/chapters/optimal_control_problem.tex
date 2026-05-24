@@ -42,11 +42,11 @@ The algorithm works in the following manner:
   \item Take the minimum speeds of the forward and backward pass, which gives the minimum-time speed profile.
 \end{enumerate}
 More complete description of this algorithm is in \cite{casanovaMinimumTimeVehicle2000}.
-This is the classic approach to the minimum maneuvering time problem. The issue is that the trajectory of the vehicle on the track is fixed and cannot be optimized. The vehicle model must be heavily simplified. It does not work with integral constraints like accumulator energy. However, the computation time can be a fraction of a second for the entire lap. Tools using this method have proven to be extremely useful, and many different analyses can be performed by leveraging its computational speed. For example, by varying the friction coefficient at each corner, a corner's importance on lap time can be calculated \cite{optimumg_corner_importance}.
+This is the classic approach to the minimum maneuvering time problem. The issue is that the trajectory of the vehicle on the track is fixed and cannot be optimized. The vehicle model must be heavily simplified. It does not work with integral constraints like accumulator energy. However, the computation time can be a fraction of a second for the entire lap. Tools using this method have proven to be an extremely useful, and many different analyses can be performed by leveraging its computational speed. For example, by varying the friction coefficient at each corner, a corner's importance on lap time can be calculated \cite{optimumg_corner_importance}.
 \section{Transcription methods}
 The previous section described automotive-specific methods of solving the minimum maneuvering time problem. This section explains methods of transcribing the problem into the language of optimal control problems.
 Transcription methods rewrite continuous (infinite-dimensional) OCP into finite-dimensional NLP.\@ That means representing the continuous trajectory of a state by values sampled at discrete points.
-The terminology of transcription methods can be difficult to understand, as it is a complex topic and often articles present conflicting information~\cite{kelly_traj_opt_terminology}. The website~\cite{kelly_traj_opt_terminology} and other work from Matthew Kelly~\cite{kelly_traj_opt_video,kelly_homepage,doi:10.1137/16M1062569} offer a very digestible introduction to the topic. This thesis focuses only on direct methods. The classification of methods in this thesis is based on~\cite{kelly_traj_opt_terminology}. Figure~\ref{fig:ocp_methods_taxonomy} shows how transcription methods are commonly classified.
+The terminology of transcription methods can be difficult to understand, as it is a complex topic and often articles present conflicting information~\cite{kelly_traj_opt_terminology}. The website~\cite{kelly_traj_opt_terminology} and other work from Matthew Kelly~\cite{kelly_traj_opt_video} offer a very digestible introduction to the topic. This thesis focuses only on direct methods. The classification of methods in this thesis is based on~\cite{kelly_traj_opt_terminology}. Figure~\ref{fig:ocp_methods_taxonomy} shows how transcription methods are commonly classified.
 
 \begin{figure}[H]
 \centering
@@ -133,13 +133,13 @@ only these.
 \subsection{Collocation methods}
 \begin{quote}
   The concept of collocation is old and universal in numerical analysis \ldots For ordinary differential equations it consists in searching for a polynomial of degree s whose derivative coincides ("co-locates") at s given points with the vector field of the differential equation \ldots
-    \cite[p.~224]{hairer}
+    \cite[p.~224]{SolvingOrdinaryDifferential1987}
 \end{quote}
 The article \cite{kelly_traj_opt_video} is an introductory explanation of the inner working and implementation of direct collocation methods. The theory here is based on it and on \cite{garg_overview_nodate}. More in-depth theory behind these methods was developed by Lloyd N. Trefethen in \cite{trefethenApproximationTheoryApproximation} and the implementation in \cite{SpectralMethodsinMatlab}.
 Collocation methods are a subset of implicit Runge-Kutta methods. The distinguishing property is that the solution of a boundary value problem is approximated by a piecewise polynomial in the independent variable (distance along the centerline). On each interval the polynomial is fixed by requiring it to satisfy the ODE exactly at $N$ chosen points called the collocation nodes. 
 
 
-There are numerous ways to construct a collocation method. In optimal control the classic methods are those based on roots of Legendre or Chebyshev type I polynomials, Lagrange polynomials \cite{ELGINDY199535, gargUnifiedFrameworkNumerical2010}, and the Gauss quadrature rule. In this thesis only Legendre and Gauss quadrature based collocation methods are covered. Figure \ref{fig:transcription_layer} depicts multiple ways of constructing collocation methods.
+There are numerous ways to construct a collocation method. In optimal control the classic methods are those based on roots of Legendre or Chebyshev type I polynomials, Lagrange polynomials \cite{ELGINDY199535, gargUnifiedFrameworkNumerical2010}, and the Gauss quadrature rule. In this thesis only Legendre and Gauss quadrature based collocation methods are covered, explanation and implementation is heavily based on \cite{gargUnifiedFrameworkNumerical2010}. Figure \ref{fig:transcription_layer} depicts multiple ways of constructing collocation methods.
 
 \begin{figure}[H]
 \centering
@@ -199,7 +199,7 @@ where $\tau$ is the point to be interpolated and $\tau_j$ and $\tau_i$ are node 
 \begin{equation}
     L(\tau) = \sum_{i=0}^{N} f_{i} L_i(\tau).
 \end{equation}
-Now it is possible to interpolate a state between the discretized nodes. Note that the node locations for Legendre polynomials are arbitrary. In the actual implementation, the calculation of the polynomial basis from the definition \ref{legendre} is numerically impractical. Therefore, the barycentric form from \cite{berrutBarycentricLagrangeInterpolation2004} has been used to implement these methods. The next step is to compute the definite integral using the function values at the nodes.
+Now it is possible to interpolate a state between the discretized nodes. Note that the node locations for Lagrange polynomials are arbitrary. In the actual implementation, the calculation of the polynomial basis from the definition \ref{legendre} is numerically impractical. Therefore, the barycentric form from \cite{berrutBarycentricLagrangeInterpolation2004} has been used to implement these methods. The next step is to compute the definite integral using the function values at the nodes.
 %This creates a unique polynomial of lowest degree that interpolates a given set of data. The data points or nodes can be chosen arbitrary.
 %A general RK method only yields state values at the stage points.
 %Node choice is not arbitrary, nodes have to be selected in a special manner in order for second property of collocation to work. that is quadrature rule.
@@ -234,7 +234,7 @@ Let $P_N(\tau)$ denote the Legendre polynomial of degree $N$. Three node familie
 
 %Polynomial that aproximates the solution of ODE is based on Legendre polynomials.
 Legendre-Gauss collocation methods use nodes strictly inside the interval for approximation using polynomial.
-With $N$ nodes, it is possible to approximate functions up to degree $N-1$ with machine precision.
+With $N$ nodes, it is possible to approximate functions up to degree $2N-1$ with machine precision.
 States are approximated by a series
 \begin{equation}
     x^N_j(\tau) = \sum_{i=0}^{N} x_{ij}\, L_i(\tau),
@@ -280,9 +280,9 @@ This is also a differential formulation.
 \section{Collocation at Legendre-Gauss-Lobatto points}
 The Gauss-Lobatto family includes both endpoints as collocation nodes and has a quadrature degree of exactness $2N-3$. It contains classical low-order schemes like the trapezoidal rule and Hermite--Simpson. I implement it using the Butcher tableau of LobattoIIIA implicit Runge--Kutta methods from \cite{ehlePadeApproximationsExponential}.
 
-The dynamics is collocated at $N$ LobattoIIIA nodes $c_i \in [-1,1]$ with coefficient matrix $a_{ij}$ taken from the Butcher tableau. $\mathbf{X}_i$ and $\mathbf{U}_i$ are the state and control at node $i$, placed at $\tau_i = c_i h/2$, where $h$ is the length of the interval. The node constraints are
+The dynamics is collocated at $N$ LobattoIIIA nodes $c_i \in [-1,1]$ with coefficient matrix $a_{ij}$ taken from the Butcher tableau. $\mathbf{X}_i$ and $\mathbf{U}_i$ are the state and control at node $i$, placed at $\tau_i = c_i h/2$. The node constraints are
 \begin{equation}
-    \mathbf{X}_i = \mathbf{X}_0 + \frac{h}{2} \sum_{j=1}^{N} a_{ij}\, \mathbf{F}(\mathbf{X}_j, \mathbf{U}_j), \qquad i = 2, \dots, N,
+    \mathbf{X}_i = \mathbf{X}_0 +  \sum_{j=1}^{N} a_{ij}\, \mathbf{F}(\mathbf{X}_j, \mathbf{U}_j), \qquad i = 2, \dots, N,
 \label{eq:lobattoIIIA-stage}
 \end{equation}
 where $\mathbf{X}_0$ is the left endpoint.
@@ -352,13 +352,10 @@ is below a user-defined threshold.
 
 The h methods are used when the solution to the optimal control problem is approximated by
 many intervals with a low-degree polynomial. These methods can decide to split
-segments into two smaller segments. They use different techniques to do this.
+segments into two smaller segments or merge segments. They use different techniques to do this.
 Method described in \cite{betts} calculates error using Romberg quadrature with machine precision. Another
 method described in \cite{jisongzhaoshuangliAdaptiveMeshRefinement} uses
-techniques from essentially non-oscillatory (ENO) interpolation
-
-
-\cite{Harten1997} to decide where to split and remove nodes.
+techniques from essentially non-oscillatory (ENO) interpolation~\cite{Harten1997} to decide where to split and remove nodes.
 \subsection{hp adaptive methods}
 The hp adaptive methods are state of the art in mesh refinement. They are a
 combination of increasing and decreasing mesh segments and increasing and decreasing
@@ -395,6 +392,6 @@ differentiation methods allow differentiating the optimal solution $x^*$ by para
 \begin{equation}
   \frac{\partial f(x^*(\theta))}{\partial \theta} = \frac{\partial f(x^*(\theta))}{\partial x^*(\theta)}  \frac{\partial x^*(\theta)}{\partial \theta}
 \end{equation}
-This is much faster than finite differences, a single backward pass yields the sensitivities of all parameters simultaneously. The explanation and implementation follow the DiffOpt.jl package \cite{besancon2023diffopt}. However, with this approach there is no guarantee on the area where this derivative is good representation of sensitivity. With finite differences the step size can be increased to capture behavior over a larger area.
+This is much faster than finite differences, a single backward pass yields the sensitivities of all parameters simultaneously. The explanation and implementation follow the DiffOpt.jl package \cite{besancon2023diffopt}. However, with this approach there is no guarantee on the area where this derivative is good representation of sensitivity. With finite differences the step size can be increased, to capture behavior over a larger area.
 
 

@@ -115,13 +115,13 @@ The interior point Newton step in Section~\ref{sec:interior_point} solves a line
 
 Interior point solvers or barrier solvers work by reformulating the NLP into a
 barrier problem at each step and solving a sequence of these barrier problems, with decreasing
-barrier parameter. Solver used in this thesis is IPOPT \cite{wachter_implementation_2006} and MadNLP\cite{shin2024accelerating}.
+barrier parameter. Solver used in this thesis is Ipopt \cite{wachter_implementation_2006} and MadNLP\cite{shin2024accelerating}.
 
 \subsection{Barrier problem formulation}
 \label{subsec:barrier_problem_formulation}
 There are multiple ways to transform NLP into barrier problem, this section
-will briefly describe how IPOPT does it.
-IPOPT article~\cite{wachter_implementation_2006} describes how to transform generic
+will briefly describe how Ipopt does it.
+Ipopt article~\cite{wachter_implementation_2006} describes how to transform generic
 NLP into form~\ref{eq:barrier_problem} 
 
 \begin{equation}
@@ -162,7 +162,7 @@ Here $W_k = \nabla^2 \mathcal{L}(x_k, \lambda_k, z_k)$ is the Hessian of the Lag
 
 There are numerous commercial and free algorithms to solve this system of linear equations. For smaller
 systems it is LU decomposition, but for larger sparse problems a dedicated
-solver is a must. IPOPT is most commonly used with MUMPS \cite{MUMPS:1} solver
+solver is a must. Ipopt is most commonly used with MUMPS \cite{MUMPS:1} solver
 which is free. There are several linear commercial solvers, Harwell Subroutine
 Library (HSL) offers ma27, ma57 and ma97 \cite{hsl2011collection}. Panua Technologies offers PARDISO solver
 \cite{pardiso}. Harwell Subroutine Library solvers and PARDISO solver limited to 2 cores are available free for
@@ -171,7 +171,7 @@ Linear solvers are capable of multithreading on CPU, which needs to be explicitl
 turned on. 
 
 %\section{Sequential quadratic programming}
-%Sequential quadratic programming is less commonly used for offline trajectory optimisation, usage of IPOPT prevails. celu sekciu prec
+%Sequential quadratic programming is less commonly used for offline trajectory optimisation, usage of Ipopt prevails. celu sekciu prec
 
 \section{Calculation of derivatives}
 A significant computational burden of Lagrange-Newton methods is that they require gradient of the objective function, Jacobian of the constraints and Hessian of the Lagrangian to compute every Newton step. Computing these derivatives can be time intensive. The most universal method is finite differences, which means evaluating the function around the current point and estimating the derivative, this works even for a black box model, but the derivatives are not exact. When the model is available, symbolic differentiation can be used, however, the full symbolic expression is often too large to be evaluated effectively due to repeated chain and product rules. Automatic differentiation aims to solve the problems of previous methods, by applying the chain rule to the elementary operations of a function. A comprehensive review of automatic differentiation is given in~\cite{cortildBriefReviewAutomatic2023}.
@@ -180,7 +180,7 @@ A significant computational burden of Lagrange-Newton methods is that they requi
 \section{Scaling and matrix conditioning}
 Common pitfall of nonlinear programming is poor scaling. This happens when the
 solver encounters variables, that are orders of magnitude apart, for example
-motor force in thousands of newtons and heading angle in radians. Newton steps in IPOPT are theoretically scale invariant, but the rest of the algorithm is not.. Even when the problem is well scaled, multipliers $\lambda$ and $z$ in \eqref{eq:Newton-Step} can grow very large if active-constraint gradients are nearly linearly dependent, which causes numerical difficulties in the Newton step~\cite[p.~21]{wachter_implementation_2006}.
+motor force in thousands of newtons and heading angle in radians. Newton steps in Ipopt are theoretically scale invariant, but the rest of the algorithm is not. Even when the problem is well scaled, multipliers $\lambda$ and $z$ in \eqref{eq:Newton-Step} can grow very large if active-constraint gradients are nearly linearly dependent, which causes numerical difficulties in the Newton step~\cite[p.~21]{wachter_implementation_2006}.
 
 Similar problems happen when nonsmooth function is used in the model, like abs(), max(), branching. These have to be replaced by smooth approximation or completely reformulated.
 %(MUMPS,MA97,PARDISO,...), that has to do matrix factorization every iteration,
@@ -200,17 +200,17 @@ contain a large fraction of zero entries, which interior-point solvers
 exploit through specialized linear algebra. Sparsity in the constraints
 themselves is also important: individual constraints should involve only
 a small subset of the decision variables, rather than being formulated as
-deeply nested nonlinear expressions. Example of this is that state derivatives of vehicle at each point, can be fully determined from only 7 variables:  accelerator pedal, brake pedal, steering angle, forward speed, lateral speed, yaw rate and heading. Using only these variables results in a deeply nested nonlinear expression in the constraints. Adding redundant decision variables like forces on all wheels can reduce the iterations needed and calculation time of derivatives. Counterintuitively this larger problem was faster to solve, this is elaborated on in~\cite{julia_discourse_ipopt_hessian,jump_issue_4024}
+deeply nested nonlinear expressions. Example of this is that state derivatives of vehicle at each point, can be fully determined from only 7 variables:  accelerator pedal, brake pedal, steering angle, forward speed, lateral speed, yaw rate and heading. Using only these variables results in a deeply nested nonlinear expression in the constraints. Adding redundant decision variables like forces on all wheels can reduce the iterations needed and calculation time of derivatives. Counterintuitively this larger problem was faster to solve, this is elaborated on in~\cite{julia_discourse_ipopt_hessian,jump_issue_4024}.
 Certain solvers can heavily exploit the sparsity structure, such as FATROP\cite{vanroyeFATROPFastConstrained2023}.
-In source~\cite{jorisgillisIPOPTSteroidsFatrop2024} Joris Gillis a CasADi
-developer compares IPOPT to FATROP, with \textbf{FATROP being 33 times faster
+In source~\cite{jorisgillisIpoptSteroidsFatrop2024} Joris Gillis a CasADi
+developer compares Ipopt to FATROP, with \textbf{FATROP being 33 times faster
     on a trajectory optimisation problem.}
 Also,~\cite{betts} describes how sparsity structure helps with faster derivatives approximation with finite difference and Quasi-Newton methods.
 
 \section{Initialization}
 NLP solvers require initial guess for all decision variables, to start solving.
 For this problem initial guess is obtained driving the vehicle on given track.
-PD controller is used to keep the car on the centerline and P controller is
+A PD controller is used to keep the car on the centerline and P controller is
 used to keep velocity at 5m/s. In general, it is possible to initialize all
 variables at zero, but with large scale nonlinear programming this approach is
 not used. For this problem initialization with zeros leads to singularity in
@@ -218,6 +218,6 @@ equation \ref{time2path} and is not possible at all.
 
 \section{Global and local optimums}
 This optimization problem is generally non-convex, therefore any local optimum
-does not guarantee global optimum. Commonly used NLP solvers, like IPOPT
+does not guarantee global optimum. Commonly used NLP solvers, like Ipopt
 guarantee only local optimums and not global ones. Good initialization is basis
 for finding a local optimum close to the global optimum~\cite[§5.1, p.~11]{kellyIntroductionTrajectoryOptimization2017}.

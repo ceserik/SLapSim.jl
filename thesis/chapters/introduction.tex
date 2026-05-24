@@ -1,6 +1,6 @@
 \chapter{Introduction}
 \section{Motivation}
-The topic of this thesis is motivated by my work in Formula Student team eForce
+The topic of this thesis is motivated by my work in the Formula Student team eForce
 Prague Formula, where I worked on real-time vehicle dynamics control software.
 There I got directly exposed to problems faced by racing teams: should we increase the aerodynamic downforce at the cost of higher drag? Should
 we put the accumulator in the middle of the vehicle to decrease the moment of inertia?
@@ -17,13 +17,15 @@ concepts. In my bachelor thesis I modified existing code into a prototype of suc
 this thesis come from computational and user-experience lessons learned from my previous tool.
 
 \section{Goals}
+The primary goal of this thesis is to investigate available methods for numerical optimal control with respect to their suitability for planning an optimal trajectory of a vehicle aiming to achieve the minimum lap time on a racing circuit. To accomplish it, this work will:
 \begin{itemize}
-    \item The primary goal of this thesis is to investigate available methods for numerical optimal control with respect to their suitability for planning an optimal trajectory of a vehicle aiming to achieve the minimum lap time on a racing circuit.
+    \item Conduct a brief literature review of fundamental methods for numerical optimal control, focusing primarily on direct transcription methods.
     \item Formulate the minimum lap-time problem as an optimal control problem.
     %\item Present a tool for convenient vehicle modeling
-    \item Conduct a brief literature review of fundamental methods for numerical optimal control, focusing primarily on direct transcription methods.
+    
     \item Implement and benchmark the performance of the available numerical methods.
-    \item The implementation should support scalability across vehicle models, transcription schemes, and solvers.
+    \item Ensure the implementation scales across vehicle models, transcription
+schemes, and solvers.
     \item Make the code and thesis available on GitHub: \url{https://github.com/ceserik/SLapSim.jl}.
 \end{itemize}
 
@@ -43,18 +45,7 @@ this thesis come from computational and user-experience lessons learned from my 
 %ahev already done them in bachelor thesis
 %\cite{ciglanskyAnalysisVehicleComponents}
 
-\section{Structure of thesis}
-The first part of the thesis is vehicle modeling in the context of optimal control. A universal vehicle and track model structure inspired by graph theory from~\cite{brown_engineering_2006} is presented. Following this, various methods of transcribing the problem into nonlinear programming or solving the problem are introduced. The subsequent section describes the basic working principles of Lagrange-Newton solvers of nonlinear programming. After that, frameworks for creating and solving nonlinear programming problems are reviewed. Finally, my implementation using one framework with a benchmark of different vehicle models, transcription methods and solvers follows.
-%\begin{enumerate}
-%	\item ODE models of cars
-%	\item Solving methods: time marching forward, backward pass, NLP,
-%	\item Collocation (p, h, hp refinement), integral + differential form (Gauss-Radau,
-%	      Legendre, Lobatto)
-%	\item Implementation overview, Algorithmic differentiation, JUMP/Examples/InfiniteOpt
-%	      + Julia, Python/MATLAB, CasADi, interior point solvers
-%	\item Actual implementation and results
-%	\item Conclusion
-%\end{enumerate}
+
 
 \section{Survey of lap-time simulators}
 
@@ -71,8 +62,8 @@ and Limebeer~\cite{perantoniOptimalControlFormula2014} is the main reference:
 it uses a track-fixed coordinate system, switches the independent variable from
 time to traveled distance, and applies the formulation to a twin-track
 Formula 1 model with some vehicle parameters as decision variables. Parts of
-this thesis build on it. Minimum lap-time simulation is still an active research area because better
-predictions give measurable setup gains, but higher fidelity models cost more
+this thesis build on it. Minimum lap-time simulation is still an active research area, because better
+predictions give measurable gains, but higher fidelity models cost more
 solver time. The authors of~\cite{ComputationallyEfficientFramework} use
 sequential convex programming to cut compute cost without losing accuracy.
 
@@ -83,3 +74,7 @@ same method is~\cite{mc12027Mc12027OpenLAPLapTimeSimulator2026}. My implementati
 A popular open-source C++ implementation of a lap-time simulator using nonlinear
 programming and automatic differentiation is~\cite{manzaneroJuanmanzaneroFastestlap2026}. It uses IPOPT and
 CppAD~\cite{CoinorCppAD2026}. The vehicle model is a 6DOF twin-track. Other implementations include work from Austria and Germany~\cite{Heilmeier2019} and a class project from the Georgia Institute of Technology~\cite{2026ClassProject}.
+
+
+\section{Structure of thesis}
+The first part of the thesis is vehicle modeling in the context of optimal control. A universal vehicle and track model structure inspired by graph theory from~\cite{brown_engineering_2006} is presented. Following this, various methods of transcribing the problem into nonlinear programming or solving the problem are introduced. The subsequent section describes the basic working principles of Lagrange-Newton solvers of nonlinear programming. After that, frameworks for creating and solving nonlinear programming problems are reviewed. Finally, my implementation using one framework with a benchmark of different vehicle models, transcription methods and solvers follows.

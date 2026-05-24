@@ -1,11 +1,12 @@
 %\usepackage{amsmath,amssymb,amsfonts}
-
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToClass{openany}{book}
 % arara: makeindex: { style: class/ctuthesis }
 % arara: bibtex
 
 % The class takes all the key=value arguments that \ctusetup does,
 % and a couple more: draft and oneside
-\documentclass[twoside]{ctuthesis}
+\documentclass[oneside]{ctuthesis}
 
 \ctusetup{
 %	preprint = \today,% footer timestamp
@@ -87,7 +88,7 @@ Táto práca skúma a implementuje metódy riešenia problému minimálneho čas
 
 % Abstract in English
 \begin{abstract-english}
-The thesis investigates and implements ways of solving the minimum-time maneuvering problem (lap-time simulation) for road vehicles. It divides the problem into smaller subproblems for which mature software methods already exist. The subproblems are: race-car modeling, transcription of the optimal control problem into an NLP, solving the NLP, solving sets of linear equations, and sensitivity analysis. A Julia-based implementation built on JuMP and Ipopt is presented. The framework supports several collocation schemes (Gauss-Legendre, Radau, and Lobatto) together with adaptive mesh refinement. Various vehicle models of increasing complexity, transcription strategies, and linear solver backends (MUMPS, HSL MA57/MA97) are benchmarked on representative circuits, and the parametric sensitivity of the optimal lap time is analyzed.
+The thesis investigates and implements ways of solving the minimum-time maneuvering problem (lap-time simulation) for road vehicles. It divides the problem into smaller subproblems, for which mature software methods already exist. The subproblems are: race-car modeling, transcription of the optimal control problem into an NLP, solving the NLP, solving sets of linear equations, and sensitivity analysis. A Julia-based implementation built on JuMP and Ipopt is presented. The framework supports several collocation schemes (Gauss-Legendre, Radau, and Lobatto) together with adaptive mesh refinement. Various vehicle models of increasing complexity, transcription strategies, and linear solver backends (MUMPS, HSL MA57/MA97) are benchmarked on representative circuits, and the parametric sensitivity of the optimal lap time is analyzed.
 
 \end{abstract-english}
 
