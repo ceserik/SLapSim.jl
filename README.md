@@ -11,7 +11,7 @@ One simulator for multiple complexities of vehicle models
 
 # Examples
 
-[Youtube playlist]([https://youtube.com/playlist?list=PL_TqVFNheNEL-B8Fof0HaNX4ybwSa8F1H)
+[Youtube playlist](https://youtube.com/playlist?list=PL_TqVFNheNEL-B8Fof0HaNX4ybwSa8F1H)
 
 
 <!--
