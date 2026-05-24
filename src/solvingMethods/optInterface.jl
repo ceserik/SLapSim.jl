@@ -36,13 +36,6 @@ function solve_success(model::JuMP.Model)
         status == JuMP.MOI.ALMOST_LOCALLY_SOLVED
 end
 
-struct Result
-    states::Matrix{Float64}
-    controls::Matrix{Float64}
-    path::Vector{Float64}
-end
-
-
 struct Result_interpolation
     states
     controls
@@ -264,6 +257,5 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         end
         println("Sum of all errors: ", sum(segment_errors))
     end
-    out = Result(x, u[1:end-1, :], s_all)
-    return out, exp.optiResult
+    return exp.optiResult
 end

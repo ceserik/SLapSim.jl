@@ -319,7 +319,7 @@ function run_experiment!(exp::Experiment)
     exp.analysis.plot_track_states && plotTrackStates(exp.track)
     exp.model = build_model(exp.solver)
     t_solve = @elapsed begin
-        _, interp = find_optimal_trajectory_adaptive(exp, cfg.segments, cfg.pol_order, cfg.variant)
+        interp = find_optimal_trajectory_adaptive(exp, cfg.segments, cfg.pol_order, cfg.variant)
     end
     println("Solve time: $(round(t_solve, digits=2)) s")
     exp.optiResult = interp

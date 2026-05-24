@@ -1,5 +1,10 @@
-# SLapSim.jl
-## Same code, three models, all parameters of car can be chosen to be control variable
+# SLapSim.jl a Scalabe laptime simulator
+## Modular vehicle models, all parameters of car can be chosen to be control variable
+
+
+
+
+
 One simulator for multiple complexities of vehicle models
 
 # Examples

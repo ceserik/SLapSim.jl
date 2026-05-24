@@ -41,7 +41,7 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
         if isnothing(model)
             powerElectrical.value = p_mech >= 0 ? p_mech / η : p_mech * η
         else
-            # aux var pinned to max(p_mech/η, p_mech*η) by downstream battery limits
+           
             sf = powerElectrical.limits[2]
             P = @variable(model, lower_bound = -1.0, upper_bound = 1.0, start = 0.0)
             @constraint(model, P >= (p_mech / η) / sf)

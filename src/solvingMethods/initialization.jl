@@ -51,7 +51,7 @@ function initializeSolution_interpolation(car::Car, track::Track, segments::Int6
     end
 
     # This is the actual ODEProblem which is solved car+track+controller
-    # Note that problem is not solved in time but in PATH
+    # Note that problem is not solved in time but in path
     prob = ODEProblem((du, x, _, s) -> begin
         torque, steering = ctrl(s, x)
         du .= carODE_path(car, track, s, [torque, steering, zeros(nControls - 2)...], x, nothing)

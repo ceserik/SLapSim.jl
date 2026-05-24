@@ -177,15 +177,6 @@ end
 
 #This function applies states and control from optimisation result and using Tsit5 predicts next states, the difference 
 #between states from optimisation and states from Tsit5 simulation is compared and used as output.
-
-"""
-    getSegmentErrors(problem) -> Vector{Float64}
-
-One scaled error per mesh segment. Integrates the ODE across each segment using
-the optimized polynomial controls, then compares the simulated state at the
-right endpoint to the optimizer's state there. States are normalized by
-`get_scales(state_descriptor)` so each contributes comparably.
-"""
 function getSegmentErrors(problem; method::Symbol = :ode)
     edges = problem.optiResult.segment_edges
     nseg  = length(edges) - 1
@@ -203,7 +194,7 @@ function getSegmentErrors(problem; method::Symbol = :ode)
 end
 
 
-"""ODE-integration error between every pair of stored nodes; plot vs s."""
+#ODE-integration error between every pair of stored nodes; plot vs s."
 function getNodeErrors(problem; iteration::Int=0, savepath::Union{Nothing,String}=nothing)
     p = problem.optiResult.path
     xs = get_scales(problem.car.carParameters.state_descriptor)
@@ -240,9 +231,7 @@ function getError(s, problem; x_scale=nothing)
     return norm(diff)
 end
 
-# Vector-valued Romberg quadrature on [a,b]: trapezoidal rule with successive
-# halving + Richardson extrapolation. Returns ∫_a^b f(s) ds componentwise.
-# Keeps only the previous and current row of the Romberg tableau.
+# Vector-valued Romberg 
 function romberg_vec(f, a::Float64, b::Float64; tol::Float64 = 1e-3, maxiter::Int = 6)
     h    = b - a
     fa   = f(a)
@@ -271,12 +260,8 @@ function romberg_vec(f, a::Float64, b::Float64; tol::Float64 = 1e-3, maxiter::In
     return Rcur[end]
 end
 
-# Per Betts §4.7, eq. (4.154)–(4.156): integrate |ε_i(s)| = |ỹ̇_i − f_i| over
-# the segment via Romberg quadrature, return the max relative error
-# max_i η_i / (w_i + 1) using per-state scale weights.
-#
-# Defaults tuned for mesh-refinement classification (not machine precision).
-# Tighten tol/maxiter if you want a true Betts-grade integral.
+# Betts §4.7, eq. (4.154)–(4.156): integrate |ε_i(s)| = |ỹ̇_i − f_i| over
+
 function getError_defect(s_segment, problem; tol::Float64 = 1e-3, maxiter::Int = 6)
     a, b = Float64(s_segment[1]), Float64(s_segment[2])
     x_scale     = get_scales(problem.car.carParameters.state_descriptor)

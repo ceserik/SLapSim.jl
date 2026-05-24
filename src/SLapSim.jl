@@ -60,7 +60,7 @@ include("solvingMethods/scaledProblem.jl")
 include("solvingMethods/adaptiveRK.jl")
 
 # Export public functions
-export Car, Track, Track_interpolated, interpolate_track, Result, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, csv2track, berlinTrack, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack, createBasicWheelAssembly,figureEight, carParameter, CarParameters
+export Car, Track, Track_interpolated, interpolate_track, createCTU25_1D, singleTurn, findOptimalTrajectory,kml2track, csv2track, berlinTrack, massPointSolver, createSimplestSingleTrack, time2path,initializeSolution, createTwintrack, createBasicWheelAssembly,figureEight, carParameter, CarParameters
 export JuMP, Ipopt,plotCarPath, doubleTurn,plotTrack,timeSimulation, carVar, interp1, createLobattoIIIA, create_gauss_pseudospectral_metod,get_diff_matix, skidpad, create_gauss_legendre, create_radau
 export Drivetrain, Chassis, Motor, Gearbox, Tire, Aero, Suspension, WheelAssembly, Accumulator
 export createCTU25gearbox, createFischerMotor, createR20lin, createAccumulator, createBasicAero, createSimpleSuspension, createDummySuspension, createCTU25chassis
