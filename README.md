@@ -7,7 +7,14 @@
 
 One simulator for multiple complexities of vehicle models
 
+[Thesis (PDF)](https://github.com/ceserik/SLapSim.jl/blob/main/thesis/thesis.pdf)
+
 # Examples
+
+[Youtube playlist]([https://youtube.com/playlist?list=PL_TqVFNheNEL-B8Fof0HaNX4ybwSa8F1H)
+
+
+<!-->
 ## 2026 Class Project: Race Car Minimum Lap Time 
 modelled according to https://smdogroup.github.io/ae6310/jupyter/2026_project/race_car_problem.html
 
