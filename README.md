@@ -1,4 +1,4 @@
-# SLapSim.jl a Scalabe laptime simulator
+# SLapSim.jl a Scalabe Laptime Simulator
 ## Modular vehicle models, ALL vehicle parameters can be chosen to be control variable, fixed parameter or optimizable parameter
 
 One simulator for multiple complexities of vehicle models
@@ -56,7 +56,7 @@ julia --project=. src/experiments/runGenericExperiment.jl
 Other ready-to-run scripts in [`src/experiments/`](src/experiments/):
 - `massPointOpt.jl` — mass-point lap optimisation
 - `runGenericExperiment.jl` — generic experiment runner (pick car model + track)
-- `formulaE2026.jl` — twin-track AWD on FS tracks
+- `formulaE2026.jl` — twin-track Formula Electric on Berlin track
 - `renderVehicles.jl` — animate a saved solution
 
 ### Pick a track and car
