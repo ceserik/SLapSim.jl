@@ -83,6 +83,7 @@ Solver prints lap time; GLMakie window shows trajectory and states. Animations s
 
 ## Sensitivity analysis
 This is example of sensitivity analysis, all parameters of vehicle can be cheaply included in this analysis. After solving the lap-time problem, the computation of sensitivity analysis takes couple seconds.
+<img width="1199" height="898" alt="image" src="https://github.com/user-attachments/assets/fed7b5a5-4906-4a5d-beda-6876841c720c" />
 
 
 
