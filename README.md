@@ -1,6 +1,12 @@
 # SLapSim.jl a Scalabe Laptime Simulator
-## Modular vehicle models, ALL vehicle parameters can be chosen to be control variable, fixed parameter or optimizable parameter
-
+## Features 
+- Modular vehicle models
+- ALL vehicle parameters can be chosen to be
+  - control variable
+  - fixed parameter
+  - optimizable parameter
+- Sensitivity analysis on ALL parameters, computed in seconds using DiffOpt.jl
+- Mesh refinment
 One simulator for multiple complexities of vehicle models
 
 [Thesis (PDF)](https://github.com/ceserik/SLapSim.jl/blob/main/thesis/thesis.pdf)
@@ -74,4 +80,10 @@ car = createBus(track)
 
 ### Output
 Solver prints lap time; GLMakie window shows trajectory and states. Animations save to `sync/animations/`.
+
+## Sensitivity analysis
+This is example of sensitivity analysis, all parameters of vehicle can be cheaply included in this analysis. After solving the lap-time problem, the computation of sensitivity analysis takes couple seconds.
+
+
+
 
