@@ -35,6 +35,43 @@ Power bond graphs inspired by Brown, Forbes T. Engineering System Dynamics: A Un
 
 # Getting Started
 
+### Requirements
+- Julia 1.10+
+- Optional: HSL solvers (`HSL_jll`) for faster Ipopt, CUDA + `MadNLPGPU` for GPU.
 
+### Install
+Clone and instantiate dependencies:
+```bash
+git clone https://github.com/ceserik/SLapSim.jl.git
+cd SLapSim.jl
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+```
 
+### Run an example
+From the repo root:
+```bash
+julia --project=. src/experiments/runGenericExperiment.jl
+```
+
+Other ready-to-run scripts in [`src/experiments/`](src/experiments/):
+- `massPointOpt.jl` — mass-point lap optimisation
+- `runGenericExperiment.jl` — generic experiment runner (pick car model + track)
+- `formulaE2026.jl` — twin-track AWD on FS tracks
+- `renderVehicles.jl` — animate a saved solution
+
+### Pick a track and car
+Inside any experiment script, swap the track:
+```julia
+track = doubleTurn(false, 0.1)       # synthetic
+track = kml2track("tracks/FSCZ.kml", false, true)  # from KML
+track = csv2track("src/Track/berlin_2018.csv")     # from CSV
+```
+and the car model:
+```julia
+car = createSimplestSingleTrack(track)
+car = createBus(track)
+```
+
+### Output
+Solver prints lap time; GLMakie window shows trajectory and states. Animations save to `sync/animations/`.
 
