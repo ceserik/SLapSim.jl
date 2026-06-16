@@ -19,14 +19,17 @@ One simulator for multiple complexities of vehicle models
 [Demo video (MP4)](https://github.com/user-attachments/assets/8b247832-738e-479a-9686-4933a349607b)
 
 modelled according to https://smdogroup.github.io/ae6310/jupyter/2026_project/race_car_problem.html
-<!--
-## Twintrack AWD
-[Demo video (MP4)](https://github.com/user-attachments/assets/0fbb19f6-cd7c-4648-a6b1-a0b04c9184ed)
 
+## Twintrack AWD, Formula Student Germany
+[Demo video (MP4)](https://github.com/user-attachments/assets/04ffdac6-0c06-49ac-b160-7d4860dca80a)
+
+
+## Bus with front and rear steering
+[Demo video (MP4)](https://github.com/user-attachments/assets/27b3ef73-6ede-4d06-b786-d44f40c6076a)
+
+<!--
 ## Singletrack FWD
 [Demo video (MP4)](https://github.com/user-attachments/assets/51457aef-2960-4be0-aa33-9bc9c3a62891)
 
-## Bus with front and rear steering
-[Demo video (MP4)](https://github.com/user-attachments/assets/692bd5fc-defc-4955-b364-a33a24b91b82)
 
 
