@@ -7,12 +7,13 @@
   - optimizable parameter
 - Sensitivity analysis on ALL parameters, computed in seconds using DiffOpt.jl
 - Mesh refinment
-One simulator for multiple complexities of vehicle models
 
+**One simulator for multiple complexities of vehicle models**
+
+Thesis is available here
 [Thesis (PDF)](https://github.com/ceserik/SLapSim.jl/blob/main/thesis/thesis.pdf)
-
 # Examples
-
+Playlist with video examples of lap time simulation
 [Youtube playlist](https://youtube.com/playlist?list=PL_TqVFNheNEL-B8Fof0HaNX4ybwSa8F1H)
 
 ## 2026 Class Project: Race Car Minimum Lap Time 
