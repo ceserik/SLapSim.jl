@@ -21,7 +21,7 @@ function createFischerMotor(maxTorqueVal::Float64=29.0,maxTorqueVal_regen::Float
     mass = carParameter{carVar}(3.0,"mass??","kg")
     power = carParameter{carVar}(0.0,"Power draw","W")
     powerElectrical = carParameter{carVar}(0.0,"Electrical power","W",:static,[-34_000.0,34_000.0])
-    efficiency = carParameter{carVar}(0.9,"motor+inverter efficiency","-",:sensitivity)
+    efficiency = carParameter{carVar}(0.9,"motor+inverter efficiency","-")
 
     function constraints(u,model=nothing)
         maxTorque = torqueSpeedFunction(0.0)

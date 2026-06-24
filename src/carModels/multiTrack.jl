@@ -163,7 +163,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
         end
         cogForce = cogForce .+ [aeroForces.drag, 0.0, 0.0]
 
-        dv = cogForce ./ mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
+        dv = cogForce ./ chassis.mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
         dangularVelocity = cogMoment ./ inertia.value
         dx = [dv[1], dv[2], angularVelocity.value[3], dangularVelocity[3]]
         return dx
@@ -214,7 +214,7 @@ function formulaE2026(track::Union{Track,Nothing}=nothing)
 
     velocity         = carParameter{Vector{carVar}}([10.0, 10.0, 0.0], "Velocity", "m/s", :static, [2.0, 60.0])
     angularVelocity  = carParameter{Vector{carVar}}([0.0, 0.0, 0.0], "Angular Velocity", "rad/s", :static, [-10.0, 10.0])
-    mass             = carParameter{carVar}(1200.0, "Mass", "kg", :sensitivity)
+    mass             = carParameter{carVar}(1200.0, "Mass", "kg")
     motorForce       = carParameter{carVar}(7100.0, "motorForce", "N")
     lateralForce     = carParameter{carVar}(0.0, "lateral Force", "N")
     brakeBias        = carParameter{carVar}(0.7, "brake bias front", "-", :sensitivity,[0.5,0.9])
@@ -374,7 +374,7 @@ control_descriptor = VarEntry[
         end
         cogForce = cogForce .+ [aeroForces.drag, 0.0, 0.0]
 
-        dv = cogForce ./ mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
+        dv = cogForce ./ chassis.mass.value - angularVelocity.value × velocity.value #really check what sign should be here !!!! podla mna bednarik skripta fyzika1 Kapitola 8  Neinerciální vztažné soustavy, neboli pro vyjádření časové změny libovolné vektorové veličiny v nečárkované soustavě je možné použít následujícího operátoru:  d·  dt = d′·  dt + ω × · , (8.11)
         dangularVelocity = cogMoment ./ inertia.value
         dx = [dv[1], dv[2], angularVelocity.value[3], dangularVelocity[3]]
         return dx

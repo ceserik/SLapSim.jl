@@ -15,12 +15,12 @@ GLMakie.closeall()
 # ---------------------------------------------------------------------------
 # Scenario setup
 # ---------------------------------------------------------------------------
-#track = figureEight(true, 0.1)
+track = figureEight(true, 0.1)
 #track = singleTurn(50.0, 5.0, true)
 #track = doubleTurn(true, 0.1)
 #path = "tracks/FSCZ.kml"
 #track = kml2track(path, false, true)
-track = csv2track("src/Track/berlin_2018.csv")
+#track = csv2track("src/Track/berlin_2018.csv")
 
 car = formulaE2026(track)
 

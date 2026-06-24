@@ -12,12 +12,12 @@ mutable struct Chassis{F1,F2,F3}
 end
 
 function createCTU25chassis(; mass_p::Float64 = 280.0, wheelbase_p::Float64 = 1.525, track_p::Float64 = 1.2, CoGx::Float64 = 0.5, CogY::Float64 = 0.5, width_p::Float64 = 1.525)
-    mass = carParameter{carVar}(mass_p,"mass","kg")
+    mass = carParameter{carVar}(mass_p,"mass","kg",:sensitivity)
     wheelbase = carParameter{carVar}(wheelbase_p,"wheelbase","m")
     track = carParameter{carVar}(track_p,"track","m")
     width = carParameter{carVar}(width_p,"track","m")
     CoG_X_pos = carParameter{carVar}(CoGx,"ratio of CoG on front","-",:sensitivity)
-    CoG_Y_pos = carParameter{carVar}(CogY,"ratio of CoG on left","-",:sensitivity)
+    CoG_Y_pos = carParameter{carVar}(CogY,"ratio of CoG on left","-")
     CoG_Z_pos = carParameter{carVar}(0.2,"CoG height in z from road","m",:sensitivity)
     function hitbox(n::carVar,racetrack::Union{Track,Nothing},model=nothing)
         #greaterContraint(n, -racetrack.widthR[1] + track.value / 2, model)
