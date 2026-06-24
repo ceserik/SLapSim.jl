@@ -8,6 +8,10 @@
 - Sensitivity analysis on ALL parameters, computed in seconds using DiffOpt.jl
 - Mesh refinment
 
+## Implemented vehicle models
+<img width="1380" height="598" alt="image" src="https://github.com/user-attachments/assets/8d45749e-103f-43fe-ad97-53457c9b6caf" />
+
+
 **One simulator for multiple complexities of vehicle models**
 
 Thesis is available here
