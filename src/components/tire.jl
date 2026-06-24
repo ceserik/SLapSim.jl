@@ -424,7 +424,7 @@ function create_FormulaE_pacejka(motor::Motor,gearbox::Gearbox)
     function compute(inTorque::carVar, optiModel::Union{JuMP.Model,Nothing}=nothing)
         slipAngle.value = -atan(velocity.value[2], velocity.value[1])
         α = slipAngle.value * 1
-        D = forces.value[3] * frictionCoefficient.value*(1 + -0.0813 * forces.value[3]/3000)*0.5
+        D = forces.value[3] * frictionCoefficient.value*(1 + -0.0813 * forces.value[3]/3000)
         forces.value[2] = D * sin(C * atan(B * α - E * (B * α - atan(B * α))))
         forces.value[1] = inTorque/radius.value + brakingForce.value + forces.value[3] * rollingResistance.value
     end
