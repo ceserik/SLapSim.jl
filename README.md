@@ -68,7 +68,6 @@ Other ready-to-run scripts in [`src/experiments/`](src/experiments/):
 - `massPointOpt.jl` — mass-point lap optimisation
 - `runGenericExperiment.jl` — generic experiment runner (pick car model + track)
 - `formulaE2026.jl` — twin-track Formula Electric on Berlin track
-- `renderVehicles.jl` — animate a saved solution
 
 ### Pick a track and car
 Inside any experiment script, swap the track:
