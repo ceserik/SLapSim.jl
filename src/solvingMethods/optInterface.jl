@@ -36,6 +36,52 @@ function solve_success(model::JuMP.Model)
         status == JuMP.MOI.ALMOST_LOCALLY_SOLVED
 end
 
+"""
+    _install_iterate_callback!(exp, model, RK, X_s, U_s, x_scale, u_scale, s_all, segment_edges)
+
+Install an Ipopt intermediate callback that fires once per solver iteration and
+calls `exp.iterate_hook(iter, res)` with the current iterate rebuilt into a
+`Result_interpolation`. This captures the whole solve in a SINGLE optimisation
+(used to animate the solving process). Requires a non-sensitivity, direct-mode
+`IpoptBackend` so the raw iterate vector `optimizer.inner.x` maps 1:1 to the
+JuMP variable columns.
+"""
+function _install_iterate_callback!(exp, model, RK, X_s, U_s, x_scale, u_scale, s_all, segment_edges)
+    if !(exp.solver isa IpoptBackend) || wants_sensitivity(exp.solver)
+        @warn "iterate_hook ignored: requires a non-sensitivity IpoptBackend"
+        return
+    end
+    if !exp.solver.direct
+        @warn "iterate_hook ignored: requires IpoptBackend(direct = true) for raw-iterate access"
+        return
+    end
+    hook = exp.iterate_hook
+    nX1, nX2 = size(X_s)
+    nU1, nU2 = size(U_s)
+    # Column index of every raw variable in the Ipopt problem vector (direct mode => 1:1).
+    Xcols = [Ipopt.column(JuMP.index(X_s[i, j])) for i in 1:nX1, j in 1:nX2]
+    Ucols = [Ipopt.column(JuMP.index(U_s[i, j])) for i in 1:nU1, j in 1:nU2]
+    opt = JuMP.backend(model)   # direct model => the Ipopt.Optimizer itself
+    function _cb(alg_mod::Cint, iter_count::Cint, obj_value::Float64,
+                 inf_pr::Float64, inf_du::Float64, mu::Float64, d_norm::Float64,
+                 regularization_size::Float64, alpha_du::Float64, alpha_pr::Float64,
+                 ls_trials::Cint)
+        xvec = opt.inner.x                         # current primal iterate (unscaled variables)
+        Xv = Matrix{Float64}(undef, nX1, nX2)
+        @inbounds for j in 1:nX2, i in 1:nX1
+            Xv[i, j] = x_scale[j] * xvec[Xcols[i, j]]
+        end
+        Uv = Matrix{Float64}(undef, nU1, nU2)
+        @inbounds for j in 1:nU2, i in 1:nU1
+            Uv[i, j] = u_scale[j] * xvec[Ucols[i, j]]
+        end
+        hook(Int(iter_count), RK.createInterpolator(Xv, Uv, s_all, segment_edges))
+        return true   # keep solving
+    end
+    JuMP.MOI.set(opt, Ipopt.CallbackFunction(), _cb)
+    return
+end
+
 struct Result_interpolation
     states
     controls
@@ -222,6 +268,11 @@ function find_optimal_trajectory_adaptive(exp::Experiment, segments::Int64, pol_
         #@constraint(model,-0.5 .<= diff(U[1:end-1,3]./diff(X[:,6])) .<= 0.5) #constraint on controls derivative
 
         println("Variables: $(num_variables(model)), Constraints: $(num_constraints(model; count_variable_in_set_constraints=true))")
+
+        # Optional: capture every solver iterate (single-solve animation of the NLP).
+        if exp.iterate_hook !== nothing
+            _install_iterate_callback!(exp, model, RKadaptive, X_s, U_s, sp.x_scale, sp.u_scale, s_all, segment_edges)
+        end
 
         optimize!(model)
         println("Termination: ", termination_status(model), " | Objective: ", objective_value(model))

@@ -89,6 +89,7 @@ Example:
 Base.@kwdef mutable struct IpoptBackend <: SolverBackend
     performSensitivity::Bool = false
     attributes::Dict{String,Any} = Dict{String,Any}()
+    direct::Bool = false        # use a JuMP direct_model (needed for the per-iterate callback)
 end
 
 """
@@ -188,6 +189,9 @@ Base.@kwdef mutable struct Experiment
     optiResult = nothing        # Result_interpolation, populated after solve
     params = nothing            # sensitivity parameter dict
     designRefs = nothing        # design variable JuMP ref dict (name => VariableRef)
+    # Optional: called once per solver iteration as hook(iter::Int, res::Result_interpolation).
+    # Ipopt-only; requires IpoptBackend(direct = true). Used to animate the solve.
+    iterate_hook = nothing
 end
 
 
@@ -195,9 +199,13 @@ end
 # Model construction per backend.
 # ---------------------------------------------------------------------------
 function build_model(b::IpoptBackend)
-    model = b.performSensitivity ?
-        DiffOpt.nonlinear_diff_model(Ipopt.Optimizer) :
+    model = if b.performSensitivity
+        DiffOpt.nonlinear_diff_model(Ipopt.Optimizer)
+    elseif b.direct
+        direct_model(Ipopt.Optimizer())
+    else
         Model(Ipopt.Optimizer)
+    end
     for (k, v) in b.attributes
         set_attribute(model, k, v)
     end
