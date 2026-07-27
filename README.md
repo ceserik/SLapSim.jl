@@ -34,13 +34,23 @@ modelled according to https://smdogroup.github.io/ae6310/jupyter/2026_project/ra
 
 
 ## Singletrack FWD
+This is a demo of front wheel drive vehicle on Formula Student Czech track
+
+
 [Demo video (MP4)](https://github.com/user-attachments/assets/1c7c6e15-870a-4ea0-b19b-fa1ffae2fc7d)
 
 ## Solving process
+Demo demostraing how the NLP solver iteratively converges from the initial guess to the optimal solution.
 
 [Demo video(MP4)](https://github.com/user-attachments/assets/c68c4537-4dfb-4f40-b274-518d1ff1aa32)
 
-This is a demo of front wheel drive vehicle on Formula Student Czech track
+
+
+## Comparison of vehicles
+You can also comapre two vehicle concepts visually
+
+[Demo video(MP4)](https://github.com/user-attachments/assets/5a8e53c0-3589-491b-9577-17fb199968cd)
+
 
 # Modeling framework
 Power bond graphs inspired by Brown, Forbes T. Engineering System Dynamics: A Unified Graph-Centered Approach. This approach is best visualised on the singletrack model.
