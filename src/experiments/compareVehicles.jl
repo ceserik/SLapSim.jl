@@ -193,10 +193,10 @@ function compare_cars(track, car1, res1, name1::String, car2, res2, name2::Strin
     time2s_2, T2 = _time_to_s(res2, track)
     T_max = max(T1, T2)
 
-    fig = Figure(size = (1920, 1080), backgroundcolor = :white)
-    title_obs = Observable(_fmt_time(0.0))
-    ax = Axis(fig[1, 1], aspect = DataAspect(), backgroundcolor = :white,
-              title = title_obs, titlesize = 22)
+    fig = Figure(resolution = (1920, 1080), backgroundcolor = :white)
+title_obs = Observable(_fmt_time(0.0))
+ax = Axis(fig[1, 1], backgroundcolor = :white,
+          title = title_obs, titlesize = 22)
 
     plotTrack(track; ax = ax, b_plotStartEnd = false)
 
@@ -206,7 +206,7 @@ function compare_cars(track, car1, res1, name1::String, car2, res2, name2::Strin
     legend_obs = Observable(_legend_text(name1, T1, name2, T2))
     Label(fig[2, 1], legend_obs; fontsize = 18, halign = :center)
     rowsize!(fig.layout, 2, Fixed(30))
-
+    colsize!(fig.layout, 1, Relative(1))
     #resize_to_layout!(fig)
 
     n_frames = max(2, round(Int, framerate * (T_max / max(speedup, eps())))) + hold_end

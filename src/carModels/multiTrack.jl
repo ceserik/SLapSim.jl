@@ -78,7 +78,7 @@ function createTwintrack(pacejka::Bool=true,track::Union{Track,Nothing} = nothin
     ]
 
     control_descriptor = VarEntry[
-        VarEntry("Torqu Rear [Nm]",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0], :control),
+        VarEntry("Torque Rear [Nm]",  [drivetrain.motors[3].torque => 0, drivetrain.motors[4].torque => 0], :control),
         VarEntry("Steering angle [rad]",    [wheelAssemblies[1].steeringAngle => 0, wheelAssemblies[2].steeringAngle => 0], :control),
         VarEntry("Torque Front [Nm]", [drivetrain.motors[1].torque => 0, drivetrain.motors[2].torque => 0], :control),
         VarEntry("Brake [F]", [brakeCommand => 0], :control),
