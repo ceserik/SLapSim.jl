@@ -1,4 +1,7 @@
 # SLapSim.jl a Scalabe Laptime Simulator
+**An open-source, differentiable minimum-lap-time optimal-control framework**
+
+
 Uses large scale non linear programming to find optimal trajectory and optimal controls for a race car.
 Scalability of the model allows fast comparison of various vehicle concepts.
 ## Features 
