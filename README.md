@@ -1,4 +1,6 @@
 # SLapSim.jl a Scalabe Laptime Simulator
+Uses large scale non linear programming to find optimal trajectory and optimal controls for a race car.
+Scalability of the model allows fast comparison of various vehicle concepts.
 ## Features 
 - Modular vehicle models
 - ALL vehicle parameters can be chosen to be
