@@ -4,6 +4,10 @@
 
 Uses large scale non linear programming to find optimal trajectory and optimal controls for a race car.
 Scalability of the model allows fast comparison of various vehicle concepts.
+
+<img width="1920" height="1080" alt="testotogif" src="https://github.com/user-attachments/assets/2d3ee235-7800-43fc-93db-e5ee4e2cb60a" />
+
+
 ## Features 
 - Modular vehicle models
 - ALL vehicle parameters can be chosen to be
